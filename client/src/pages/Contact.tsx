@@ -174,9 +174,12 @@ export default function Contact() {
     const sessionOnly = (sessionPackages as any).filter(
       (pkg: any) => pkg?.id === "session-1" || pkg?.id === "session-2"
     );
+    const printsPackages = (sessionPackagesWithPrints as any).filter(
+      (pkg: any) => !["special-montage-design", "prints-session-1", "prints-session-2"].includes(pkg?.id)
+    );
     return [
       ...map(sessionOnly),
-      ...map(sessionPackagesWithPrints as any),
+      ...map(printsPackages as any),
       ...map(weddingPackages as any),
     ];
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, contentMap]);
@@ -650,7 +653,7 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <div className="relative">
+                          <label className="relative block">
                             <Input
                               type="date"
                               {...field}
@@ -661,7 +664,7 @@ export default function Contact() {
                                 ? datePreview
                                 : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
                             </span>
-                          </div>
+                          </label>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -697,25 +700,15 @@ export default function Contact() {
                                   <Fragment key={opt.id}>
                                     <SelectItem
                                       value={opt.id}
-                                      className="rounded-md px-3 py-2.5 text-sm data-[highlighted]:bg-primary/10 data-[state=checked]:bg-primary/15 data-[state=checked]:text-foreground"
+                                      className="rounded-md px-3 py-3 text-sm data-[highlighted]:bg-primary/10 data-[state=checked]:bg-primary/15 data-[state=checked]:text-foreground"
                                     >
-                                      <span className="flex items-center justify-between w-full gap-3">
-                                        <span className="text-foreground">{opt.label}</span>
-                                        <span className="flex items-center gap-2">
+                                      <span className="package-option-row">
+                                        <span className="package-option-label">{opt.label}</span>
+                                        <span className="package-option-meta">
                                           {isVip ? (
-                                            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-primary-foreground bg-primary/80 border border-primary/50 px-2 py-0.5 rounded-full shadow-[0_0_14px_rgba(255,200,80,0.65)]">
-                                              VIP
-                                            </span>
+                                            <span className="package-option-badge">VIP</span>
                                           ) : null}
-                                          <span
-                                            className={
-                                              isVip
-                                                ? "text-xs font-semibold text-primary/90 drop-shadow-[0_0_10px_rgba(255,200,80,0.55)]"
-                                                : "text-xs text-muted-foreground"
-                                            }
-                                          >
-                                            {opt.price}
-                                          </span>
+                                          <span className="package-option-price">{opt.price}</span>
                                         </span>
                                       </span>
                                     </SelectItem>
@@ -1318,6 +1311,7 @@ export default function Contact() {
         }
         .date-input {
           color: transparent;
+          cursor: pointer;
         }
         .date-input::-webkit-datetime-edit,
         .date-input::-webkit-datetime-edit-text,
@@ -1336,8 +1330,9 @@ export default function Contact() {
           font-size: 0.95rem;
           color: rgba(255,245,220,0.85);
           text-shadow: 0 0 12px rgba(255,210,130,0.35);
-          pointer-events: none;
+          pointer-events: auto;
           letter-spacing: 0.04em;
+          cursor: pointer;
         }
         .receipt-body {
           display: flex;
@@ -1406,6 +1401,45 @@ export default function Contact() {
           align-items: center;
           padding-top: 10px;
           border-top: 1px solid rgba(255,210,120,0.25);
+        }
+        .package-option-row {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+        }
+        .package-option-label {
+          color: rgba(255,245,230,0.92);
+          text-shadow: 0 0 12px rgba(255,210,130,0.25);
+          font-weight: 600;
+        }
+        .package-option-meta {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+        .package-option-badge {
+          font-size: 10px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 999px;
+          color: #fff4d5;
+          border: 1px solid rgba(255,210,120,0.55);
+          background: linear-gradient(120deg, rgba(255,210,120,0.45), rgba(255,255,255,0.1));
+          box-shadow: 0 0 14px rgba(255,200,80,0.45);
+        }
+        .package-option-price {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: rgba(255,230,190,0.95);
+          text-shadow:
+            0 0 12px rgba(255,210,130,0.45),
+            0 0 20px rgba(255,210,130,0.25);
+          white-space: nowrap;
         }
         @keyframes contact-shine {
           0% { transform: translateX(-120%); }
