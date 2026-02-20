@@ -1706,6 +1706,80 @@ export default function Contact() {
         }
       `}</style>
 
+      {typeof document !== "undefined" && calendarOpen
+        ? createPortal(
+            <div
+              className="date-modal-overlay"
+              onClick={() => setCalendarOpen(false)}
+            >
+              <div
+                className="date-modal-panel"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="date-modal-header">
+                  <span className="date-modal-title">اختر التاريخ</span>
+                  <button
+                    type="button"
+                    className="date-modal-close"
+                    onClick={() => setCalendarOpen(false)}
+                  >
+                    تم
+                  </button>
+                </div>
+                <div className="md:hidden">
+                  <div className="wheel-picker">
+                    <WheelColumn
+                      label="اليوم"
+                      value={baseDay}
+                      options={dayOptions}
+                      onChange={(day) => updateDateParts({ day })}
+                    />
+                    <WheelColumn
+                      label="الشهر"
+                      value={baseMonth}
+                      options={monthOptions}
+                      onChange={(month) => updateDateParts({ month })}
+                    />
+                    <WheelColumn
+                      label="السنة"
+                      value={baseYear}
+                      options={yearOptions}
+                      onChange={(year) => updateDateParts({ year })}
+                    />
+                  </div>
+                </div>
+
+                <div className="hidden md:block">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (!date) return;
+                      form.setValue("date", formatIsoDate(date), {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      setCalendarOpen(false);
+                    }}
+                    captionLayout="dropdown"
+                    fromYear={yearRangeStart}
+                    toYear={yearRangeEnd}
+                    formatters={{
+                      formatMonthDropdown: (date) =>
+                        String(date.getMonth() + 1).padStart(2, "0"),
+                      formatYearDropdown: (date) =>
+                        String(date.getFullYear()),
+                      formatDay: (date) =>
+                        String(date.getDate()).padStart(2, "0"),
+                    }}
+                  />
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+
       <Footer />
     </div>
   );
