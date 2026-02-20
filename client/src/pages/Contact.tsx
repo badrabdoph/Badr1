@@ -1523,16 +1523,17 @@ export default function Contact() {
           letter-spacing: 0.08em;
         }
         .wheel-picker {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          display: flex;
+          flex-direction: row-reverse;
           gap: 8px;
-          padding: 4px;
-          direction: ltr;
+          padding: 6px 4px;
+          justify-content: center;
         }
         .wheel-column-wrap {
           display: flex;
           flex-direction: column;
           gap: 4px;
+          flex: 1;
         }
         .wheel-label {
           text-align: center;
@@ -1542,33 +1543,28 @@ export default function Contact() {
         }
         .wheel-column {
           position: relative;
-          border-radius: 999px;
+          border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.08);
-          background:
-            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.08), transparent 60%),
-            radial-gradient(circle at 50% 100%, rgba(255,255,255,0.08), transparent 60%),
-            linear-gradient(180deg, rgba(22,22,28,0.55), rgba(8,8,12,0.9));
+          background: linear-gradient(180deg, rgba(18,18,24,0.6), rgba(8,8,12,0.9));
           padding: 0;
           overflow: hidden;
         }
         .wheel-list {
-          height: 168px;
+          height: 160px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
-          padding-block: 69px;
-          scroll-padding-block: 69px;
           scrollbar-width: none;
         }
         .wheel-list::-webkit-scrollbar {
           display: none;
         }
         .wheel-item {
-          height: 30px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.9rem;
-          color: rgba(255,255,255,0.4);
+          font-size: 0.92rem;
+          color: rgba(255,255,255,0.5);
           font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
           transition: color 0.2s ease;
@@ -1577,20 +1573,20 @@ export default function Contact() {
           color: rgba(255,245,220,0.98);
           font-weight: 700;
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
-          background: radial-gradient(circle, rgba(255,210,120,0.22) 0%, rgba(255,210,120,0.06) 60%, transparent 70%);
-          border-radius: 999px;
+          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.04));
+          border-radius: 12px;
         }
         .wheel-highlight {
           position: absolute;
-          left: 10px;
-          right: 10px;
+          left: 8px;
+          right: 8px;
           top: 50%;
-          height: 30px;
+          height: 32px;
           transform: translateY(-50%);
-          border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.4);
-          background: linear-gradient(120deg, rgba(255,210,120,0.26), rgba(255,255,255,0.06));
-          box-shadow: 0 0 24px rgba(255,210,130,0.28);
+          border-radius: 14px;
+          border: 1px solid rgba(255,210,120,0.35);
+          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.05));
+          box-shadow: 0 0 18px rgba(255,210,130,0.22);
           pointer-events: none;
         }
         .receipt-body {
