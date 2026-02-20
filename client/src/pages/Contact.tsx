@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Phone, Mail, MapPin, Instagram, Facebook, Send, Sparkles, Copy, ChevronDown, Receipt } from "lucide-react";
+import { Phone, Mail, MapPin, Instagram, Facebook, Send, Sparkles, Copy, ChevronDown, Receipt, Gem } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
