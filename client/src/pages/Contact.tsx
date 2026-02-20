@@ -158,6 +158,82 @@ function formatIsoDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+type WheelOption = { value: number; label: string };
+
+function WheelColumn({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  options: WheelOption[];
+  onChange: (next: number) => void;
+}) {
+  const listRef = React.useRef<HTMLDivElement | null>(null);
+  const timeoutRef = React.useRef<number | null>(null);
+  const itemHeight = 36;
+
+  React.useEffect(() => {
+    if (!listRef.current) return;
+    const index = options.findIndex((opt) => opt.value === value);
+    if (index === -1) return;
+    listRef.current.scrollTop = index * itemHeight;
+  }, [options, value]);
+
+  const handleScroll = () => {
+    if (!listRef.current) return;
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
+      if (!listRef.current) return;
+      const index = Math.round(listRef.current.scrollTop / itemHeight);
+      const option = options[Math.min(Math.max(index, 0), options.length - 1)];
+      if (option && option.value !== value) {
+        onChange(option.value);
+      }
+    }, 120);
+  };
+
+  return (
+    <div className="wheel-column-wrap">
+      <div className="wheel-label">{label}</div>
+      <div className="wheel-column">
+        <div className="wheel-highlight" aria-hidden="true" />
+        <div
+          ref={listRef}
+          className="wheel-list"
+          onScroll={handleScroll}
+          role="listbox"
+          aria-label={label}
+        >
+          <div className="wheel-spacer" />
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={[
+                "wheel-item",
+                option.value === value ? "wheel-item--selected" : "",
+              ].join(" ")}
+              onClick={() => onChange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+          <div className="wheel-spacer" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WhatsAppIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
