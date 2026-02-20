@@ -1484,34 +1484,50 @@ export default function Contact() {
           color: rgba(255,210,120,0.8);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
         }
-        .date-popover-overlay {
-          position: fixed !important;
-          inset: 0 !important;
+        .date-modal-overlay {
+          position: fixed;
+          inset: 0;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 18px;
-          background: rgba(0,0,0,0.55);
-          z-index: 60;
-          transform: none !important;
-          margin: 0 !important;
-          inset-inline: 0 !important;
-          inset-block: 0 !important;
+          background: rgba(0,0,0,0.6);
+          z-index: 120;
         }
-        .date-popover-panel {
+        .date-modal-panel {
           width: min(92vw, 360px);
           border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.08);
           background: linear-gradient(180deg, rgba(8,8,10,0.96), rgba(8,8,10,0.9));
           box-shadow: 0 24px 70px rgba(0,0,0,0.55);
           padding: 14px;
-          margin: 0 auto;
+        }
+        .date-modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .date-modal-title {
+          font-size: 0.85rem;
+          color: rgba(255,245,220,0.75);
+          letter-spacing: 0.12em;
+        }
+        .date-modal-close {
+          border: 1px solid rgba(255,210,120,0.35);
+          background: rgba(255,210,120,0.08);
+          color: rgba(255,245,220,0.95);
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          letter-spacing: 0.08em;
         }
         .wheel-picker {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 8px;
           padding: 4px;
+          direction: rtl;
         }
         .wheel-column-wrap {
           display: flex;
