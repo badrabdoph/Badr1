@@ -1298,7 +1298,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
 // ============================================
 // Testimonials Manager Component
 // ============================================
-function TestimonialsManager({ onRefresh }: ManagerProps) {
+function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: boolean }) {
   const { data: testimonials, refetch, isLoading } = trpc.testimonials.getAll.useQuery();
   const createMutation = trpc.testimonials.create.useMutation({
     onSuccess: () => {
@@ -1332,42 +1332,58 @@ function TestimonialsManager({ onRefresh }: ManagerProps) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            إضافة رأي عميل
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            placeholder="اسم العميل"
-            value={newTestimonial.name}
-            onChange={(e) => setNewTestimonial({ ...newTestimonial, name: e.target.value })}
-          />
-          <Textarea
-            placeholder="رأي العميل"
-            value={newTestimonial.quote}
-            onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
-            rows={3}
-          />
-          <Button onClick={handleCreate} disabled={createMutation.isPending}>
-            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Plus className="w-4 h-4 ml-2" />}
-            إضافة الرأي
-          </Button>
-        </CardContent>
-      </Card>
+  const addForm = (
+    <div className="space-y-4">
+      <Input
+        placeholder="اسم العميل"
+        value={newTestimonial.name}
+        onChange={(e) => setNewTestimonial({ ...newTestimonial, name: e.target.value })}
+      />
+      <Textarea
+        placeholder="رأي العميل"
+        value={newTestimonial.quote}
+        onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
+        rows={3}
+      />
+      <Button onClick={handleCreate} disabled={createMutation.isPending} className={compact ? "w-full" : ""}>
+        {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Plus className="w-4 h-4 ml-2" />}
+        إضافة الرأي
+      </Button>
+    </div>
+  );
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  return (
+    <div className={compact ? "space-y-4" : "space-y-6"}>
+      {compact ? (
+        <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold mb-3">
+            <Plus className="w-4 h-4" />
+            إضافة رأي عميل
+          </div>
+          {addForm}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              إضافة رأي عميل
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {addForm}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className={compact ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
         {testimonials?.map((testimonial) => (
-          <Card key={testimonial.id}>
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start">
+          compact ? (
+            <div key={testimonial.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+              <div className="flex items-start gap-3">
                 <div className="flex-1">
-                  <p className="text-lg italic mb-4">"{testimonial.quote}"</p>
-                  <p className="font-semibold">- {testimonial.name}</p>
+                  <p className="text-sm italic text-muted-foreground">"{testimonial.quote}"</p>
+                  <p className="mt-2 text-sm font-semibold">- {testimonial.name}</p>
                 </div>
                 <Button
                   size="icon"
@@ -1377,8 +1393,26 @@ function TestimonialsManager({ onRefresh }: ManagerProps) {
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : (
+            <Card key={testimonial.id}>
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="text-lg italic mb-4">"{testimonial.quote}"</p>
+                    <p className="font-semibold">- {testimonial.name}</p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => deleteMutation.mutate({ id: testimonial.id })}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
         ))}
       </div>
 
@@ -2453,6 +2487,21 @@ function LiveEditor() {
                 </CardHeader>
                 <CardContent className="pt-2 lg:max-h-[60vh] lg:overflow-y-auto">
                   <ShareLinksManager onRefresh={refreshPreview} />
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    آراء وتعليقات العملاء
+                  </CardTitle>
+                  <CardDescription>
+                    أضف واحذف آراء وتعليقات العملاء التي تظهر بالموقع.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2 lg:max-h-[70vh] lg:overflow-y-auto">
+                  <TestimonialsManager onRefresh={refreshPreview} compact />
                 </CardContent>
               </Card>
 

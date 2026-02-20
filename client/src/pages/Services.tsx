@@ -511,17 +511,6 @@ function PackageCard({
                     category="services"
                     label={`سعر الباقة ${pkg.name}`}
                   />
-                  {vip ? (
-                    <span className="price-note-inline">
-                      <EditableText
-                        value={contentMap.services_price_note_inline}
-                        fallback="متوسط"
-                        fieldKey="services_price_note_inline"
-                        category="services"
-                        label="ملحوظة سعر VIP"
-                      />
-                    </span>
-                  ) : null}
                 </div>
                 {(contentMap[`${baseKey}_price_note`] ?? pkg.priceNote) ? (
                   <div className={["text-xs mt-2", vip ? "text-primary/90" : "text-muted-foreground"].join(" ")}>

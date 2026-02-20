@@ -113,6 +113,19 @@ function formatPriceNumber(value: number) {
   return Number.isInteger(rounded) ? String(rounded) : String(rounded);
 }
 
+function formatDatePreview(value: string) {
+  if (!value) return "";
+  const normalized = toEnglishDigits(value).trim();
+  const parts = normalized.split("-");
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    if (year && month && day) {
+      return `${day} / ${month} / ${year}`;
+    }
+  }
+  return normalized;
+}
+
 function WhatsAppIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -206,6 +219,7 @@ export default function Contact() {
   const watchedPackageId = useWatch({ control: form.control, name: "packageId" }) ?? "";
   const watchedAddonIds = useWatch({ control: form.control, name: "addonIds" }) ?? [];
   const watchedPrintIds = useWatch({ control: form.control, name: "printIds" }) ?? [];
+  const datePreview = useMemo(() => formatDatePreview(watchedDate), [watchedDate]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -266,14 +280,14 @@ export default function Contact() {
 
   const addonsPreview = selectedAddons.length
     ? selectedAddons.map((a) => a.label).join("، ")
-    : getValue("contact_addons_placeholder", "اختر الإضافات");
+    : getValue("contact_addons_placeholder", "اختر الإضافات أو اتركها فارغة");
 
   const printsText = selectedPrints.length
     ? selectedPrints.map((p) => p.label).join("، ")
     : getValue("contact_prints_empty", "—");
   const printsPreview = selectedPrints.length
     ? selectedPrints.map((p) => p.label).join("، ")
-    : getValue("contact_prints_placeholder", "اختر المطبوعات");
+    : getValue("contact_prints_placeholder", "اختر المطبوعات أو اتركها فارغة كما تشاء");
 
 
   const priceValue = useMemo(() => {
@@ -311,6 +325,40 @@ export default function Contact() {
     const emptyValue = getValue("contact_receipt_empty", "—");
     return `${getValue("contact_receipt_label_total", "الإجمالي")}: ${priceValue || emptyValue}`;
   }, [priceValue, contentMap]);
+  const receiptEmptyValue = useMemo(() => getValue("contact_receipt_empty", "—"), [contentMap]);
+  const receiptRows = useMemo(
+    () => [
+      {
+        label: getValue("contact_receipt_label_name", "الاسم"),
+        value: watchedName || receiptEmptyValue,
+      },
+      {
+        label: getValue("contact_receipt_label_phone", "الهاتف"),
+        value: watchedPhone || receiptEmptyValue,
+      },
+      {
+        label: getValue("contact_receipt_label_date", "التاريخ"),
+        value: (datePreview || watchedDate) || receiptEmptyValue,
+      },
+      {
+        label: getValue("contact_receipt_label_package", "الباقة"),
+        value: selectedPackage?.label || receiptEmptyValue,
+      },
+    ],
+    [
+      watchedName,
+      watchedPhone,
+      watchedDate,
+      datePreview,
+      selectedPackage,
+      receiptEmptyValue,
+      contentMap,
+    ]
+  );
+  const receiptTotalValue = useMemo(
+    () => priceValue || receiptEmptyValue,
+    [priceValue, receiptEmptyValue]
+  );
 
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
@@ -602,7 +650,18 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} className={fieldClass} />
+                          <div className="relative">
+                            <Input
+                              type="date"
+                              {...field}
+                              className={`${fieldClass} date-input`}
+                            />
+                            <span className="date-input-preview">
+                              {field.value
+                                ? datePreview
+                                : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -910,9 +969,53 @@ export default function Contact() {
                         />
                       </button>
                     </div>
-                    <pre className="relative whitespace-pre-line text-sm md:text-base text-foreground/85 leading-relaxed font-medium">
-                      {receiptText}
-                    </pre>
+                    <div className="receipt-body">
+                      <div className="receipt-grid">
+                        {receiptRows.map((row) => (
+                          <div key={row.label} className="receipt-row">
+                            <span className="receipt-label">{row.label}</span>
+                            <span className="receipt-value">{row.value}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="receipt-section">
+                        <div className="receipt-label">
+                          {getValue("contact_receipt_label_addons", "الإضافات")}
+                        </div>
+                        {selectedAddons.length ? (
+                          <ul className="receipt-list">
+                            {selectedAddons.map((addon) => (
+                              <li key={addon.id}>{addon.label}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="receipt-muted">{receiptEmptyValue}</div>
+                        )}
+                      </div>
+
+                      <div className="receipt-section">
+                        <div className="receipt-label">
+                          {getValue("contact_receipt_label_prints", "المطبوعات")}
+                        </div>
+                        {selectedPrints.length ? (
+                          <ul className="receipt-list">
+                            {selectedPrints.map((print) => (
+                              <li key={print.id}>{print.label}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="receipt-muted">{receiptEmptyValue}</div>
+                        )}
+                      </div>
+
+                      <div className="receipt-total">
+                        <span className="receipt-label">
+                          {getValue("contact_receipt_label_total", "الإجمالي")}
+                        </span>
+                        <span className="receipt-value receipt-value--total">{receiptTotalValue}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-2">
@@ -1212,6 +1315,97 @@ export default function Contact() {
         .contact-hint-icon {
           color: rgba(255,220,150,0.95);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.6));
+        }
+        .date-input {
+          color: transparent;
+        }
+        .date-input::-webkit-datetime-edit,
+        .date-input::-webkit-datetime-edit-text,
+        .date-input::-webkit-datetime-edit-month-field,
+        .date-input::-webkit-datetime-edit-day-field,
+        .date-input::-webkit-datetime-edit-year-field {
+          color: transparent;
+        }
+        .date-input-preview {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          padding: 0 12px;
+          font-size: 0.95rem;
+          color: rgba(255,245,220,0.85);
+          text-shadow: 0 0 12px rgba(255,210,130,0.35);
+          pointer-events: none;
+          letter-spacing: 0.04em;
+        }
+        .receipt-body {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          font-size: 0.95rem;
+          color: rgba(255,245,230,0.9);
+        }
+        .receipt-grid {
+          display: grid;
+          gap: 10px;
+        }
+        .receipt-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          gap: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px dashed rgba(255,255,255,0.08);
+        }
+        .receipt-label {
+          font-size: 0.78rem;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255,245,220,0.65);
+          white-space: nowrap;
+        }
+        .receipt-value {
+          font-size: 1rem;
+          font-weight: 600;
+          color: rgba(255,245,230,0.95);
+          text-align: left;
+        }
+        .receipt-value--total {
+          font-size: 1.1rem;
+          color: rgba(255,220,150,0.95);
+          text-shadow: 0 0 16px rgba(255,210,130,0.5);
+        }
+        .receipt-section {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .receipt-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: grid;
+          gap: 6px;
+        }
+        .receipt-list li {
+          padding: 6px 10px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(10,10,14,0.35);
+          font-size: 0.95rem;
+          color: rgba(255,245,230,0.9);
+        }
+        .receipt-muted {
+          font-size: 0.9rem;
+          color: rgba(255,255,255,0.55);
+        }
+        .receipt-total {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255,210,120,0.25);
         }
         @keyframes contact-shine {
           0% { transform: translateX(-120%); }

@@ -290,7 +290,7 @@ export const weddingPackages = [
   {
     id: "full-day-basic",
     name: "FULL DAY BASIC",
-    price: "8500 جنيه",
+    price: "8500",
     priceNote: "قد ينقص السعر أو يزيد حسب تفاصيل اليوم ومكان الفرح",
     description: "تغطية كاملة لليوم بشكل عملي وبسعر مناسب",
     features: [
