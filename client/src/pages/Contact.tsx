@@ -178,7 +178,9 @@ function WheelColumn({
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const itemHeight = 30;
+  const itemHeight = 32;
+  const listHeight = 160;
+  const spacerHeight = (listHeight - itemHeight) / 2;
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -215,6 +217,7 @@ function WheelColumn({
           role="listbox"
           aria-label={label}
         >
+          <div className="wheel-spacer" style={{ height: spacerHeight }} />
           {options.map((option) => (
             <button
               key={option.value}
@@ -228,6 +231,7 @@ function WheelColumn({
               {option.label}
             </button>
           ))}
+          <div className="wheel-spacer" style={{ height: spacerHeight }} />
         </div>
       </div>
     </div>
