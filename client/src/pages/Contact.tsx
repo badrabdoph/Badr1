@@ -824,6 +824,8 @@ export default function Contact() {
                             <PopoverContent
                               align="center"
                               className="date-popover-overlay"
+                              side="top"
+                              sideOffset={0}
                               onClick={() => setCalendarOpen(false)}
                             >
                               <div
@@ -831,7 +833,7 @@ export default function Contact() {
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 <div className="md:hidden">
-                                  <div className="wheel-picker">
+                                  <div className="wheel-picker" dir="ltr">
                                     <WheelColumn
                                       label="اليوم"
                                       value={baseDay}
@@ -1552,6 +1554,9 @@ export default function Contact() {
           background: rgba(0,0,0,0.55);
           z-index: 60;
           transform: none !important;
+          margin: 0 !important;
+          inset-inline: 0 !important;
+          inset-block: 0 !important;
         }
         .date-popover-panel {
           width: min(92vw, 360px);
@@ -1560,6 +1565,7 @@ export default function Contact() {
           background: linear-gradient(180deg, rgba(8,8,10,0.96), rgba(8,8,10,0.9));
           box-shadow: 0 24px 70px rgba(0,0,0,0.55);
           padding: 14px;
+          margin: 0 auto;
         }
         .wheel-picker {
           display: grid;
