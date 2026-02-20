@@ -1,4 +1,10 @@
-import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ElementType,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,7 +110,7 @@ type EditableTextProps = {
   className?: string;
   displayClassName?: string;
   editorClassName?: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
 };
 
 export function useInlineEditMode() {
@@ -184,7 +190,7 @@ export function EditableText({
           prev,
           next: input.value,
           category: input.category,
-          label: input.label,
+          label: input.label ?? label,
         },
       };
     },
@@ -248,7 +254,7 @@ export function EditableText({
     }
   };
 
-  const Tag = as as keyof JSX.IntrinsicElements;
+  const Tag = as ?? "span";
 
   return (
     <Tag className={cn("relative", className)}>

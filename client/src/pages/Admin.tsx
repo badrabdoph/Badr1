@@ -1792,15 +1792,20 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
     });
   };
   const listQuery = trpc.shareLinks.list.useQuery(undefined, {
-    onSuccess: (data) => {
-      updateCache((prev) => {
-        if (data.length === 0 && prev.length > 0) return prev;
-        return data;
-      });
-    },
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
+  useEffect(() => {
+    if (!listQuery.data) return;
+    setCachedLinks((prev) => {
+      const next =
+        listQuery.data.length === 0 && prev.length > 0 ? prev : listQuery.data;
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(cacheKey, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, [listQuery.data, cacheKey]);
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     title: string;
@@ -2167,7 +2172,9 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
           )}
 
           {filteredLinks.map((link) => {
-            const expiresAtMs = new Date(link.expiresAt).getTime();
+            const expiresAtMs = link.expiresAt
+              ? new Date(link.expiresAt).getTime()
+              : Number.NaN;
             const isExpired = Number.isNaN(expiresAtMs)
               ? false
               : expiresAtMs <= now;

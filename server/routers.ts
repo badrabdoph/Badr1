@@ -53,6 +53,13 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
+        if (ENV.adminLoginDisabled) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "تسجيل دخول الأدمن معطّل بسبب إعدادات غير آمنة.",
+          });
+        }
+
         if (ENV.adminRequireHttps && !isRequestSecure(ctx.req)) {
           throw new TRPCError({
             code: "FORBIDDEN",

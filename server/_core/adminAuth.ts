@@ -138,11 +138,12 @@ export async function verifyAdminSession(token: string | undefined | null) {
 
 function getAdminCookieOptions(req: Request) {
   const isSecure = isRequestSecure(req) || ENV.isProduction;
+  const sameSite: "strict" | "lax" = isSecure ? "strict" : "lax";
 
   return {
     httpOnly: true,
     path: "/",
-    sameSite: (isSecure ? "strict" : "lax") as const,
+    sameSite,
     secure: isSecure,
   };
 }

@@ -65,7 +65,18 @@ export const homeHero = {
 // =====================================================
 // قسم الخدمات في الهوم (٣ كروت preview)
 // =====================================================
-export const homeServicesPreview = [
+type HomeServicePreviewCard = {
+  id: string;
+  title: string;
+  description: string;
+  note: string;
+  bullets: string[];
+  featured: boolean;
+  vipLabel?: string;
+  badge?: string;
+};
+
+export const homeServicesPreview: HomeServicePreviewCard[] = [
   {
     id: "home-service-sessions",
     title: "جلسات تصوير",

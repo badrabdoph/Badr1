@@ -13,7 +13,9 @@ const adminSessionTtlMinutes = Number.parseInt(process.env.ADMIN_SESSION_TTL_MIN
 const adminLoginWindowMs = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "600000", 10);
 const adminLoginMaxAttempts = Number.parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS ?? "5", 10);
 const adminLoginBlockMs = Number.parseInt(process.env.ADMIN_LOGIN_BLOCK_MS ?? "1800000", 10);
-const adminRequireHttps = (process.env.ADMIN_REQUIRE_HTTPS ?? "true") === "true";
+const adminRequireHttps =
+  (process.env.ADMIN_REQUIRE_HTTPS ??
+    (isProduction ? "true" : "false")) === "true";
 
 const adminEnvIssues: string[] = [];
 if (isProduction) {
@@ -31,7 +33,7 @@ if (isProduction) {
   }
 }
 
-const adminLoginDisabled = false;
+const adminLoginDisabled = isProduction && adminEnvIssues.length > 0;
 if (adminEnvIssues.length > 0) {
   console.warn(
     `[Admin] تحذير إعدادات: ${adminEnvIssues.join(", ")}`

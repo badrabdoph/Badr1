@@ -755,7 +755,9 @@ export default function Home() {
 
       {/* ✅ Story Gallery */}
       <section
-        ref={(el) => (portfolioRef.current = el)}
+        ref={(el) => {
+          portfolioRef.current = el;
+        }}
         className="py-16 md:py-20 relative overflow-hidden"
         onMouseMove={(e) => setSpot(e.clientX, e.clientY)}
         onTouchMove={(e) => {

@@ -1,6 +1,7 @@
 import { eq, asc, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import mysql from "mysql2";
+import type { Pool } from "mysql2";
 import { 
   InsertUser, 
   users, 
@@ -37,7 +38,7 @@ import {
 } from "./_core/siteContentStore";
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _pool: mysql.Pool | null = null;
+let _pool: Pool | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
