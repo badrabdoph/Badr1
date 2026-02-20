@@ -177,13 +177,15 @@ function WheelColumn({
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const itemHeight = 36;
+  const itemHeight = 32;
+  const listHeight = 176;
+  const spacerHeight = (listHeight - itemHeight) / 2;
 
   useEffect(() => {
     if (!listRef.current) return;
     const index = options.findIndex((opt) => opt.value === value);
     if (index === -1) return;
-    listRef.current.scrollTop = index * itemHeight;
+    listRef.current.scrollTop = index * itemHeight + spacerHeight;
   }, [options, value]);
 
   const handleScroll = () => {
@@ -193,7 +195,8 @@ function WheelColumn({
     }
     timeoutRef.current = window.setTimeout(() => {
       if (!listRef.current) return;
-      const index = Math.round(listRef.current.scrollTop / itemHeight);
+      const rawIndex = (listRef.current.scrollTop - spacerHeight) / itemHeight;
+      const index = Math.round(rawIndex);
       const option = options[Math.min(Math.max(index, 0), options.length - 1)];
       if (option && option.value !== value) {
         onChange(option.value);
@@ -820,7 +823,7 @@ export default function Contact() {
                             </PopoverTrigger>
                             <PopoverContent
                               align="start"
-                              className="w-[min(92vw,360px)] border-white/10 bg-background/95 backdrop-blur-md p-3"
+                              className="date-popover w-[min(92vw,360px)] border-white/10 bg-background/95 backdrop-blur-md p-3"
                             >
                               <div className="md:hidden">
                                 <div className="wheel-picker">
@@ -1533,15 +1536,23 @@ export default function Contact() {
           color: rgba(255,210,120,0.8);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
         }
+        .date-popover {
+          position: fixed !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          z-index: 60;
+        }
         .wheel-picker {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 10px;
+          gap: 8px;
+          padding: 4px;
         }
         .wheel-column-wrap {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 4px;
         }
         .wheel-label {
           text-align: center;
@@ -1551,14 +1562,14 @@ export default function Contact() {
         }
         .wheel-column {
           position: relative;
-          border-radius: 14px;
+          border-radius: 16px;
           border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(10,10,14,0.35);
-          padding: 6px 0;
+          background: linear-gradient(180deg, rgba(20,20,26,0.55), rgba(8,8,12,0.85));
+          padding: 4px 0;
           overflow: hidden;
         }
         .wheel-list {
-          max-height: 170px;
+          max-height: 176px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
           scrollbar-width: none;
@@ -1567,34 +1578,36 @@ export default function Contact() {
           display: none;
         }
         .wheel-item {
-          height: 36px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.95rem;
-          color: rgba(255,255,255,0.6);
+          font-size: 0.9rem;
+          color: rgba(255,255,255,0.45);
           scroll-snap-align: center;
           transition: color 0.2s ease;
         }
         .wheel-item--selected {
-          color: rgba(255,245,220,0.95);
+          color: rgba(255,245,220,0.98);
           font-weight: 700;
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
+          background: radial-gradient(circle, rgba(255,210,120,0.2) 0%, rgba(255,210,120,0.05) 60%, transparent 70%);
+          border-radius: 999px;
         }
         .wheel-spacer {
-          height: 56px;
+          height: 72px;
         }
         .wheel-highlight {
           position: absolute;
-          left: 6px;
-          right: 6px;
+          left: 8px;
+          right: 8px;
           top: 50%;
-          height: 36px;
+          height: 32px;
           transform: translateY(-50%);
-          border-radius: 10px;
-          border: 1px solid rgba(255,210,120,0.35);
-          background: linear-gradient(120deg, rgba(255,210,120,0.18), rgba(255,255,255,0.04));
-          box-shadow: 0 0 18px rgba(255,210,130,0.18);
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.4);
+          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.04));
+          box-shadow: 0 0 22px rgba(255,210,130,0.25);
           pointer-events: none;
         }
         .receipt-body {
