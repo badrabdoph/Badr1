@@ -223,6 +223,7 @@ function PackageCard({
   preselectedPrintIds?: string[];
   onPreselectedPrintIdsChange?: (ids: string[]) => void;
 }) {
+  if (!pkg) return null;
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
   const vip = isWedding && isVipPlus(pkg);
@@ -231,7 +232,8 @@ function PackageCard({
   const weddingTone = isWedding;
   const popular = !!pkg.popular;
   const isPro = pkg.id === "session-2";
-  const isCollapsible = isWedding && pkg.features.length > 6;
+  const featureList = pkg.features ?? [];
+  const isCollapsible = isWedding && featureList.length > 6;
   const baseKey = `package_${pkg.id}`;
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
@@ -267,7 +269,7 @@ function PackageCard({
     ? buildContactHref({ printIds: effectiveCustomIds })
     : buildContactHref({ packageId: pkg.id, printIds: sharedPrintIds });
 
-  const featureItems = pkg.features.map((feature, index) => {
+  const featureItems = featureList.map((feature, index) => {
     const fieldKey = `${baseKey}_feature_${index + 1}`;
     const value = contentMap[fieldKey] ?? feature;
     return { index, feature, fieldKey, value, isSynthetic: false };

@@ -1,5 +1,5 @@
-const DEFAULT_ADMIN_USER = "change-me";
-const DEFAULT_ADMIN_PASS = "change-me";
+const DEFAULT_ADMIN_USER = "Badrabdoph3399";
+const DEFAULT_ADMIN_PASS = "Badr@3399";
 const DEFAULT_COOKIE_SECRET = "local-admin-secret";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -19,15 +19,18 @@ const adminRequireHttps =
   (process.env.ADMIN_REQUIRE_HTTPS ??
     (isProduction ? "true" : "false")) === "true";
 
+const hasAdminEnv = Boolean(process.env.ADMIN_USER && process.env.ADMIN_PASS);
+const usingDefaultAdmin = adminUser === DEFAULT_ADMIN_USER && adminPass === DEFAULT_ADMIN_PASS;
+
 const adminEnvIssues: string[] = [];
 if (isProduction) {
-  if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS) {
+  if (!hasAdminEnv && !adminAllowDefaults) {
     adminEnvIssues.push("ADMIN_USER/ADMIN_PASS غير محددين");
   }
-  if (!adminAllowDefaults && (adminUser === DEFAULT_ADMIN_USER || adminPass === DEFAULT_ADMIN_PASS)) {
+  if (!adminAllowDefaults && usingDefaultAdmin) {
     adminEnvIssues.push("بيانات الأدمن الافتراضية غير مسموحة");
   }
-  if (!adminAllowDefaults && (!process.env.JWT_SECRET || cookieSecret === DEFAULT_COOKIE_SECRET)) {
+  if (!process.env.JWT_SECRET || cookieSecret === DEFAULT_COOKIE_SECRET) {
     adminEnvIssues.push("JWT_SECRET غير محدد بقيمة قوية");
   }
   if (adminBypass) {
