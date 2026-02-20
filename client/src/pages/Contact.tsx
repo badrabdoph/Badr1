@@ -326,7 +326,9 @@ export default function Contact() {
 
   const totalLine = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
-    return `${getValue("contact_receipt_label_total", "الإجمالي")}: ${priceValue || emptyValue}`;
+    const totalValue = priceValue || emptyValue;
+    const suffix = priceValue ? ` ${getValue("contact_receipt_only_suffix", "فقط")}` : "";
+    return `${getValue("contact_receipt_label_total", "الإجمالي")}: ${totalValue}${suffix}`;
   }, [priceValue, contentMap]);
   const receiptEmptyValue = useMemo(() => getValue("contact_receipt_empty", "—"), [contentMap]);
   const receiptRows = useMemo(
@@ -365,22 +367,21 @@ export default function Contact() {
 
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
-    const printsLines = selectedPrints.length
-      ? selectedPrints.map((item) => `• ${item.label}`).join("\n")
-      : emptyValue;
-    const addonsLines = selectedAddons.length
-      ? selectedAddons.map((addon) => `• ${addon.label}`).join("\n")
-      : emptyValue;
+    const noneValue = getValue("contact_receipt_none", "بدون");
+    const printsSummary = selectedPrints.length
+      ? selectedPrints.map((item) => item.label).join("، ")
+      : noneValue;
+    const addonsSummary = selectedAddons.length
+      ? selectedAddons.map((addon) => addon.label).join("، ")
+      : noneValue;
     const lines = [
       getValue("contact_receipt_title", "إيصال حجز ❤️"),
       `${getValue("contact_receipt_label_name", "الاسم")}: ${watchedName || emptyValue}`,
       `${getValue("contact_receipt_label_phone", "الهاتف")}: ${watchedPhone || emptyValue}`,
       `${getValue("contact_receipt_label_date", "التاريخ")}: ${watchedDate || emptyValue}`,
       `${getValue("contact_receipt_label_package", "الباقة")}: ${selectedPackage?.label || emptyValue}`,
-      `${getValue("contact_receipt_label_addons", "الإضافات")}:`,
-      addonsLines,
-      `${getValue("contact_receipt_label_prints", "المطبوعات")}:`,
-      printsLines,
+      `${getValue("contact_receipt_label_addons", "الإضافات")}: ${addonsSummary}`,
+      `${getValue("contact_receipt_label_prints", "المطبوعات")}: ${printsSummary}`,
       "",
       totalLine,
     ];
