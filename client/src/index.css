@@ -206,7 +206,16 @@
   h5,
   h6 {
     @apply font-heading;
+    font-family: var(--font-heading);
     letter-spacing: 0.01em;
+  }
+
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
   }
 
   button:not(:disabled),
