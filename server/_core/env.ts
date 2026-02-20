@@ -1,5 +1,5 @@
-const DEFAULT_ADMIN_USER = "Badrabdoph3399";
-const DEFAULT_ADMIN_PASS = "Badr@3399";
+const DEFAULT_ADMIN_USER = "change-me";
+const DEFAULT_ADMIN_PASS = "change-me";
 const DEFAULT_COOKIE_SECRET = "local-admin-secret";
 
 const isProduction = process.env.NODE_ENV === "production";
