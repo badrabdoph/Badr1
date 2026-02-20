@@ -3,3 +3,6 @@ node_modules/
 .manus-logs/
 dist/
 .DS_Store
+.env
+.env.*
+!.env.example

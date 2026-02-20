@@ -226,10 +226,10 @@ function PackageCard({
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
   const vip = isWedding && isVipPlus(pkg);
+  const isCustom = pkg.id === "special-montage-design";
   const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
   const popular = !!pkg.popular;
-  const isCustom = pkg.id === "special-montage-design";
   const isPro = pkg.id === "session-2";
   const isCollapsible = isWedding && pkg.features.length > 6;
   const baseKey = `package_${pkg.id}`;

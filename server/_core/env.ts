@@ -1,5 +1,5 @@
-const DEFAULT_ADMIN_USER = "Badrabdoph3399";
-const DEFAULT_ADMIN_PASS = "Badr@3399";
+const DEFAULT_ADMIN_USER = "change-me";
+const DEFAULT_ADMIN_PASS = "change-me";
 const DEFAULT_COOKIE_SECRET = "local-admin-secret";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -8,6 +8,8 @@ const adminUser = process.env.ADMIN_USER ?? DEFAULT_ADMIN_USER;
 const adminPass = process.env.ADMIN_PASS ?? DEFAULT_ADMIN_PASS;
 const cookieSecret = process.env.JWT_SECRET ?? DEFAULT_COOKIE_SECRET;
 const adminBypass = (process.env.ADMIN_BYPASS ?? "false") === "true";
+const adminAllowDefaults = (process.env.ADMIN_ALLOW_DEFAULTS ?? "false") === "true";
+const adminForceEnable = (process.env.ADMIN_LOGIN_FORCE_ENABLE ?? "false") === "true";
 
 const adminSessionTtlMinutes = Number.parseInt(process.env.ADMIN_SESSION_TTL_MINUTES ?? "120", 10);
 const adminLoginWindowMs = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "600000", 10);
@@ -22,10 +24,10 @@ if (isProduction) {
   if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS) {
     adminEnvIssues.push("ADMIN_USER/ADMIN_PASS غير محددين");
   }
-  if (adminUser === DEFAULT_ADMIN_USER || adminPass === DEFAULT_ADMIN_PASS) {
+  if (!adminAllowDefaults && (adminUser === DEFAULT_ADMIN_USER || adminPass === DEFAULT_ADMIN_PASS)) {
     adminEnvIssues.push("بيانات الأدمن الافتراضية غير مسموحة");
   }
-  if (!process.env.JWT_SECRET || cookieSecret === DEFAULT_COOKIE_SECRET) {
+  if (!adminAllowDefaults && (!process.env.JWT_SECRET || cookieSecret === DEFAULT_COOKIE_SECRET)) {
     adminEnvIssues.push("JWT_SECRET غير محدد بقيمة قوية");
   }
   if (adminBypass) {
@@ -33,7 +35,7 @@ if (isProduction) {
   }
 }
 
-const adminLoginDisabled = isProduction && adminEnvIssues.length > 0;
+const adminLoginDisabled = isProduction && adminEnvIssues.length > 0 && !adminForceEnable;
 if (adminEnvIssues.length > 0) {
   console.warn(
     `[Admin] تحذير إعدادات: ${adminEnvIssues.join(", ")}`
