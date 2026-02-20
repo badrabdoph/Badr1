@@ -822,53 +822,59 @@ export default function Contact() {
                               </button>
                             </PopoverTrigger>
                             <PopoverContent
-                              align="start"
-                              className="date-popover w-[min(92vw,360px)] border-white/10 bg-background/95 backdrop-blur-md p-3"
+                              align="center"
+                              className="date-popover-overlay"
+                              onClick={() => setCalendarOpen(false)}
                             >
-                              <div className="md:hidden">
-                                <div className="wheel-picker">
-                                  <WheelColumn
-                                    label="اليوم"
-                                    value={baseDay}
-                                    options={dayOptions}
-                                    onChange={(day) => updateDateParts({ day })}
-                                  />
-                                  <WheelColumn
-                                    label="الشهر"
-                                    value={baseMonth}
-                                    options={monthOptions}
-                                    onChange={(month) => updateDateParts({ month })}
-                                  />
-                                  <WheelColumn
-                                    label="السنة"
-                                    value={baseYear}
-                                    options={yearOptions}
-                                    onChange={(year) => updateDateParts({ year })}
+                              <div
+                                className="date-popover-panel"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <div className="md:hidden">
+                                  <div className="wheel-picker">
+                                    <WheelColumn
+                                      label="اليوم"
+                                      value={baseDay}
+                                      options={dayOptions}
+                                      onChange={(day) => updateDateParts({ day })}
+                                    />
+                                    <WheelColumn
+                                      label="الشهر"
+                                      value={baseMonth}
+                                      options={monthOptions}
+                                      onChange={(month) => updateDateParts({ month })}
+                                    />
+                                    <WheelColumn
+                                      label="السنة"
+                                      value={baseYear}
+                                      options={yearOptions}
+                                      onChange={(year) => updateDateParts({ year })}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="hidden md:block">
+                                  <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => {
+                                      if (!date) return;
+                                      field.onChange(formatIsoDate(date));
+                                      setCalendarOpen(false);
+                                    }}
+                                    captionLayout="dropdown"
+                                    fromYear={yearRangeStart}
+                                    toYear={yearRangeEnd}
+                                    formatters={{
+                                      formatMonthDropdown: (date) =>
+                                        String(date.getMonth() + 1).padStart(2, "0"),
+                                      formatYearDropdown: (date) =>
+                                        String(date.getFullYear()),
+                                      formatDay: (date) =>
+                                        String(date.getDate()).padStart(2, "0"),
+                                    }}
                                   />
                                 </div>
-                              </div>
-
-                              <div className="hidden md:block">
-                                <Calendar
-                                  mode="single"
-                                  selected={selectedDate}
-                                  onSelect={(date) => {
-                                    if (!date) return;
-                                    field.onChange(formatIsoDate(date));
-                                    setCalendarOpen(false);
-                                  }}
-                                  captionLayout="dropdown"
-                                  fromYear={yearRangeStart}
-                                  toYear={yearRangeEnd}
-                                  formatters={{
-                                    formatMonthDropdown: (date) =>
-                                      String(date.getMonth() + 1).padStart(2, "0"),
-                                    formatYearDropdown: (date) =>
-                                      String(date.getFullYear()),
-                                    formatDay: (date) =>
-                                      String(date.getDate()).padStart(2, "0"),
-                                  }}
-                                />
                               </div>
                             </PopoverContent>
                           </Popover>
@@ -1536,12 +1542,24 @@ export default function Contact() {
           color: rgba(255,210,120,0.8);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
         }
-        .date-popover {
+        .date-popover-overlay {
           position: fixed !important;
-          left: 50% !important;
-          top: 50% !important;
-          transform: translate(-50%, -50%) !important;
+          inset: 0 !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 18px;
+          background: rgba(0,0,0,0.55);
           z-index: 60;
+          transform: none !important;
+        }
+        .date-popover-panel {
+          width: min(92vw, 360px);
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: linear-gradient(180deg, rgba(8,8,10,0.96), rgba(8,8,10,0.9));
+          box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+          padding: 14px;
         }
         .wheel-picker {
           display: grid;
@@ -1572,6 +1590,8 @@ export default function Contact() {
           max-height: 176px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
+          scroll-padding-top: 72px;
+          scroll-padding-bottom: 72px;
           scrollbar-width: none;
         }
         .wheel-list::-webkit-scrollbar {
