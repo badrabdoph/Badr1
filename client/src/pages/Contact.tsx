@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -807,79 +808,18 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                className={`${fieldClass} date-trigger`}
-                              >
-                                <span className="date-trigger-value" dir="ltr">
-                                  {field.value
-                                    ? datePreview
-                                    : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
-                                </span>
-                                <CalendarIcon className="date-trigger-icon" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              align="center"
-                              className="date-popover-overlay"
-                              side="top"
-                              sideOffset={0}
-                              onClick={() => setCalendarOpen(false)}
-                            >
-                              <div
-                                className="date-popover-panel"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                <div className="md:hidden">
-                                  <div className="wheel-picker" dir="ltr">
-                                    <WheelColumn
-                                      label="اليوم"
-                                      value={baseDay}
-                                      options={dayOptions}
-                                      onChange={(day) => updateDateParts({ day })}
-                                    />
-                                    <WheelColumn
-                                      label="الشهر"
-                                      value={baseMonth}
-                                      options={monthOptions}
-                                      onChange={(month) => updateDateParts({ month })}
-                                    />
-                                    <WheelColumn
-                                      label="السنة"
-                                      value={baseYear}
-                                      options={yearOptions}
-                                      onChange={(year) => updateDateParts({ year })}
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="hidden md:block">
-                                  <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => {
-                                      if (!date) return;
-                                      field.onChange(formatIsoDate(date));
-                                      setCalendarOpen(false);
-                                    }}
-                                    captionLayout="dropdown"
-                                    fromYear={yearRangeStart}
-                                    toYear={yearRangeEnd}
-                                    formatters={{
-                                      formatMonthDropdown: (date) =>
-                                        String(date.getMonth() + 1).padStart(2, "0"),
-                                      formatYearDropdown: (date) =>
-                                        String(date.getFullYear()),
-                                      formatDay: (date) =>
-                                        String(date.getDate()).padStart(2, "0"),
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
+                          <button
+                            type="button"
+                            className={`${fieldClass} date-trigger`}
+                            onClick={() => setCalendarOpen(true)}
+                          >
+                            <span className="date-trigger-value" dir="ltr">
+                              {field.value
+                                ? datePreview
+                                : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
+                            </span>
+                            <CalendarIcon className="date-trigger-icon" />
+                          </button>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
