@@ -178,9 +178,10 @@ function WheelColumn({
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const itemHeight = 32;
-  const listHeight = 160;
+  const itemHeight = 28;
+  const listHeight = 144;
   const spacerHeight = (listHeight - itemHeight) / 2;
+  const isFixed = options.length <= 1;
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -190,6 +191,7 @@ function WheelColumn({
   }, [options, value]);
 
   const handleScroll = () => {
+    if (isFixed) return;
     if (!listRef.current) return;
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
@@ -208,7 +210,7 @@ function WheelColumn({
   return (
     <div className="wheel-column-wrap">
       <div className="wheel-label">{label}</div>
-      <div className="wheel-column">
+      <div className={["wheel-column", isFixed ? "wheel-column--fixed" : ""].join(" ")}>
         <div className="wheel-highlight" aria-hidden="true" />
         <div
           ref={listRef}
@@ -226,7 +228,11 @@ function WheelColumn({
                 "wheel-item",
                 option.value === value ? "wheel-item--selected" : "",
               ].join(" ")}
-              onClick={() => onChange(option.value)}
+              onClick={() => {
+                if (isFixed) return;
+                onChange(option.value);
+              }}
+              disabled={isFixed}
             >
               {option.label}
             </button>
