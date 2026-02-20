@@ -226,6 +226,7 @@ function PackageCard({
   if (!pkg) return null;
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
+  const isAddon = kind === "addon";
   const vip = isWedding && isVipPlus(pkg);
   const isCustom = pkg.id === "special-montage-design";
   const isSessionCard = kind === "session" && !isCustom;
@@ -233,7 +234,7 @@ function PackageCard({
   const popular = !!pkg.popular;
   const isPro = pkg.id === "session-2";
   const featureList = pkg.features ?? [];
-  const isCollapsible = isWedding && featureList.length > 6;
+  const isCollapsible = (isWedding && featureList.length > 6) || (isAddon && featureList.length > 2);
   const baseKey = `package_${pkg.id}`;
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
@@ -484,6 +485,7 @@ function PackageCard({
             "full-day-body",
             isCollapsible ? "full-day-body--collapsible" : "",
             isCollapsible && !isExpanded ? "full-day-body--collapsed" : "",
+            isAddon ? "addon-body" : "",
           ].join(" ")}
         >
           <div className="text-right sm:text-left">
@@ -712,13 +714,17 @@ function PackageCard({
 
         {isCollapsible && !isExpanded ? (
           <>
-            <div className="full-day-fade" />
-            <div className="full-day-hint">
-              <span className="full-day-hint-pill">
-                <ArrowDown className="w-4 h-4" />
-                اضغط لعرض باقي التفاصيل
-              </span>
-            </div>
+            <div className={["full-day-fade", isAddon ? "addon-fade" : ""].join(" ")} />
+            {isAddon ? (
+              <div className="addon-hint">اضغط لاظهار باقي التفاصيل</div>
+            ) : (
+              <div className="full-day-hint">
+                <span className="full-day-hint-pill">
+                  <ArrowDown className="w-4 h-4" />
+                  اضغط لعرض باقي التفاصيل
+                </span>
+              </div>
+            )}
           </>
         ) : null}
       </div>
@@ -1296,6 +1302,9 @@ export default function Services() {
         .full-day-body--collapsed {
           max-height: 360px;
         }
+        .full-day-body--collapsed.addon-body {
+          max-height: 300px;
+        }
         .full-day-fade {
           position: absolute;
           left: 0;
@@ -1303,6 +1312,26 @@ export default function Services() {
           bottom: 0;
           height: 140px;
           background: linear-gradient(180deg, rgba(8,8,10,0) 0%, rgba(8,8,10,0.65) 55%, rgba(8,8,10,0.95) 100%);
+          pointer-events: none;
+        }
+        .addon-fade {
+          height: 110px;
+          background: linear-gradient(180deg, rgba(8,8,10,0) 0%, rgba(8,8,10,0.55) 45%, rgba(8,8,10,0.92) 100%);
+        }
+        .addon-hint {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 22px;
+          text-align: center;
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          color: rgba(255,245,220,0.95);
+          text-shadow:
+            0 0 12px rgba(255,210,130,0.55),
+            0 0 26px rgba(255,210,130,0.35);
+          animation: addon-hint-wiggle 2.6s ease-in-out infinite,
+            addon-hint-glow 3.2s ease-in-out infinite;
           pointer-events: none;
         }
         .full-day-hint {
@@ -1331,6 +1360,24 @@ export default function Services() {
         .full-day-hint-pill svg {
           filter: drop-shadow(0 0 8px rgba(255,200,80,0.45));
           animation: hint-bounce 1.8s ease-in-out infinite;
+        }
+        @keyframes addon-hint-wiggle {
+          0%, 100% { transform: translateY(0); }
+          25% { transform: translateY(-3px) rotate(-0.6deg); }
+          50% { transform: translateY(1px) rotate(0.6deg); }
+          75% { transform: translateY(-2px) rotate(-0.3deg); }
+        }
+        @keyframes addon-hint-glow {
+          0%, 100% {
+            text-shadow:
+              0 0 10px rgba(255,210,130,0.45),
+              0 0 20px rgba(255,210,130,0.25);
+          }
+          50% {
+            text-shadow:
+              0 0 18px rgba(255,210,130,0.75),
+              0 0 34px rgba(255,210,130,0.45);
+          }
         }
         .session-addons {
           margin-top: 18px;

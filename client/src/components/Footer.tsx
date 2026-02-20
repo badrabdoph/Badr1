@@ -30,6 +30,7 @@ export default function Footer() {
   const { contactInfo, socialLinks } = useContactData();
   const content = useContentData();
   const contentMap = content.contentMap ?? {};
+  const isServicesPage = location === "/services";
 
   const phoneClean = (contactInfo.phone ?? "").replace(/\s/g, "");
   const telHref = phoneClean ? `tel:${phoneClean}` : "";
@@ -90,12 +91,12 @@ export default function Footer() {
                 </Button>
               </Link>
 
-              <Link href="/services">
+              <Link href={isServicesPage ? "/" : "/services"}>
                 <a className="w-full md:w-auto border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none inline-flex items-center justify-center gap-2 cta-glow cta-size">
                   <ArrowDownRight className="w-4 h-4 text-primary" />
                   <EditableText
-                    value={contentMap.footer_cta_secondary}
-                    fallback="اعرف الأسعار والباقات المتاحة"
+                    value={isServicesPage ? undefined : contentMap.footer_cta_secondary}
+                    fallback={isServicesPage ? "الذهاب الي الصفحه الرئيسيه" : "اعرف الأسعار والباقات المتاحة"}
                     fieldKey="footer_cta_secondary"
                     category="cta"
                     label="زر الفوتر الثانوي"
