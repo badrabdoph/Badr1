@@ -1374,31 +1374,6 @@ export default function Contact() {
           color: rgba(255,220,150,0.95);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.6));
         }
-        .date-input {
-          color: transparent;
-          cursor: pointer;
-        }
-        .date-input::-webkit-datetime-edit,
-        .date-input::-webkit-datetime-edit-text,
-        .date-input::-webkit-datetime-edit-month-field,
-        .date-input::-webkit-datetime-edit-day-field,
-        .date-input::-webkit-datetime-edit-year-field {
-          color: transparent;
-        }
-        .date-input-preview {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          padding: 0 12px;
-          font-size: 0.95rem;
-          color: rgba(255,245,220,0.85);
-          text-shadow: 0 0 12px rgba(255,210,130,0.35);
-          pointer-events: auto;
-          letter-spacing: 0.04em;
-          cursor: pointer;
-        }
         .date-trigger {
           display: flex;
           align-items: center;
