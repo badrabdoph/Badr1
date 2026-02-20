@@ -331,6 +331,7 @@ export default function Contact() {
     return `${getValue("contact_receipt_label_total", "الإجمالي")}: ${totalValue}${suffix}`;
   }, [priceValue, contentMap]);
   const receiptEmptyValue = useMemo(() => getValue("contact_receipt_empty", "—"), [contentMap]);
+  const receiptNoneValue = useMemo(() => getValue("contact_receipt_none", "بدون"), [contentMap]);
   const receiptRows = useMemo(
     () => [
       {
@@ -360,10 +361,11 @@ export default function Contact() {
       contentMap,
     ]
   );
-  const receiptTotalValue = useMemo(
-    () => priceValue || receiptEmptyValue,
-    [priceValue, receiptEmptyValue]
-  );
+  const receiptTotalValue = useMemo(() => {
+    if (!priceValue) return receiptEmptyValue;
+    const suffix = getValue("contact_receipt_only_suffix", "فقط");
+    return `${priceValue} ${suffix}`;
+  }, [priceValue, receiptEmptyValue, contentMap]);
 
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
@@ -984,7 +986,7 @@ export default function Contact() {
                             ))}
                           </ul>
                         ) : (
-                          <div className="receipt-muted">{receiptEmptyValue}</div>
+                          <div className="receipt-muted">{receiptNoneValue}</div>
                         )}
                       </div>
 
@@ -999,7 +1001,7 @@ export default function Contact() {
                             ))}
                           </ul>
                         ) : (
-                          <div className="receipt-muted">{receiptEmptyValue}</div>
+                          <div className="receipt-muted">{receiptNoneValue}</div>
                         )}
                       </div>
 
