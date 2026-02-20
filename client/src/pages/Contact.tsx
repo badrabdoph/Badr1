@@ -178,15 +178,13 @@ function WheelColumn({
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
-  const itemHeight = 32;
-  const listHeight = 176;
-  const spacerHeight = (listHeight - itemHeight) / 2;
+  const itemHeight = 30;
 
   useEffect(() => {
     if (!listRef.current) return;
     const index = options.findIndex((opt) => opt.value === value);
     if (index === -1) return;
-    listRef.current.scrollTop = index * itemHeight + spacerHeight;
+    listRef.current.scrollTop = index * itemHeight;
   }, [options, value]);
 
   const handleScroll = () => {
@@ -196,7 +194,7 @@ function WheelColumn({
     }
     timeoutRef.current = window.setTimeout(() => {
       if (!listRef.current) return;
-      const rawIndex = (listRef.current.scrollTop - spacerHeight) / itemHeight;
+      const rawIndex = listRef.current.scrollTop / itemHeight;
       const index = Math.round(rawIndex);
       const option = options[Math.min(Math.max(index, 0), options.length - 1)];
       if (option && option.value !== value) {
@@ -217,7 +215,6 @@ function WheelColumn({
           role="listbox"
           aria-label={label}
         >
-          <div className="wheel-spacer" />
           {options.map((option) => (
             <button
               key={option.value}
@@ -231,7 +228,6 @@ function WheelColumn({
               {option.label}
             </button>
           ))}
-          <div className="wheel-spacer" />
         </div>
       </div>
     </div>
