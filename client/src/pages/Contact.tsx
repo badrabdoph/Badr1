@@ -953,6 +953,7 @@ export default function Contact() {
                 </form>
               </Form>
             </div>
+          </div>
 
             {/* Info SECOND on mobile */}
             <div className="order-2 lg:order-1 space-y-10">
