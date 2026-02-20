@@ -1010,51 +1010,6 @@ export default function Services() {
               />
             ))}
 
-            {addonsPackages.length && hasProSession ? (
-              <div className="md:col-span-2">
-                <div className="session-addons">
-                  <div className="session-addons-title">إضافات مقترحة</div>
-                  <div className="session-addons-grid session-addons-grid--buttons">
-                    {addonsPackages.map((service) => (
-                      <button
-                        type="button"
-                        key={service.id}
-                        className="session-addon-chip"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const el = document.getElementById("addons");
-                          if (!el) return;
-                          const offset = getSectionScrollMarginPx();
-                          const top = el.getBoundingClientRect().top + window.scrollY - offset;
-                          window.scrollTo({ top: Math.max(0, top), left: 0, behavior: "smooth" });
-                        }}
-                      >
-                        <span className="session-addon-chip-title">
-                          {service.emoji ? <span className="text-base">{service.emoji}</span> : null}
-                          <EditableText
-                            value={contentMap[`package_${service.id}_name`]}
-                            fallback={service.name}
-                            fieldKey={`package_${service.id}_name`}
-                            category="services"
-                            label={`اسم الإضافة ${service.name}`}
-                          />
-                        </span>
-                        <span className="session-addon-chip-price">
-                          <EditableText
-                            value={contentMap[`package_${service.id}_price`]}
-                            fallback={service.price}
-                            fieldKey={`package_${service.id}_price`}
-                            category="services"
-                            label={`سعر الإضافة ${service.name}`}
-                          />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
@@ -1063,13 +1018,16 @@ export default function Services() {
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
-              <EditableText
-                value={contentMap.services_prints_title}
-                fallback="المطبوعات"
-                fieldKey="services_prints_title"
-                category="services"
-                label="عنوان قسم المطبوعات"
-              />
+              <span className="prints-title-wrap">
+                <EditableText
+                  value={contentMap.services_prints_title}
+                  fallback="المطبوعات"
+                  fieldKey="services_prints_title"
+                  category="services"
+                  label="عنوان قسم المطبوعات"
+                />
+                <span className="prints-optional-tag">(اختياري)</span>
+              </span>
             }
             subtitle={
               <EditableText
@@ -1554,6 +1512,25 @@ export default function Services() {
           color: rgba(255,235,200,0.95);
           text-shadow: 0 0 14px rgba(255,210,130,0.45);
           letter-spacing: 0.08em;
+        }
+        .prints-title-wrap {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .prints-optional-tag {
+          font-size: 0.55em;
+          padding: 2px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.45);
+          color: rgba(255,240,210,0.95);
+          text-shadow: 0 0 14px rgba(255,210,130,0.55);
+          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.06));
+          box-shadow: 0 0 18px rgba(255,210,130,0.25);
+          letter-spacing: 0.08em;
+          white-space: nowrap;
         }
         .pro-badge {
           display: inline-flex;
