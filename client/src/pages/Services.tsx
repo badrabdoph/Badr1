@@ -226,6 +226,7 @@ function PackageCard({
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
   const vip = isWedding && isVipPlus(pkg);
+  const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
   const popular = !!pkg.popular;
   const isCustom = pkg.id === "special-montage-design";
@@ -338,7 +339,8 @@ function PackageCard({
       onClickCapture={handleCardClickCapture}
       onKeyDown={handleCardKeyDown}
       className={[
-        "relative overflow-hidden bg-card border transition-all duration-300 group premium-border p-7 md:p-8 services-card",
+        "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
+        isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
         isCustom ? "custom-package md:col-span-2" : "",
         isCollapsible && !isExpanded ? "full-day-collapsed" : "",
         weddingTone
@@ -348,6 +350,30 @@ function PackageCard({
           : "border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
       ].join(" ")}
     >
+      {isSessionCard ? (
+        <div className="price-corner">
+          <EditableText
+            value={contentMap[`${baseKey}_price`]}
+            fallback={pkg.price}
+            fieldKey={`${baseKey}_price`}
+            category="services"
+            label={`سعر الباقة ${pkg.name}`}
+          />
+          {(contentMap[`${baseKey}_price_note`] ?? pkg.priceNote) ? (
+            <span className="price-corner-note">
+              <EditableText
+                value={contentMap[`${baseKey}_price_note`]}
+                fallback={pkg.priceNote ?? ""}
+                fieldKey={`${baseKey}_price_note`}
+                category="services"
+                label={`ملاحظة السعر ${pkg.name}`}
+                multiline
+              />
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       <div
         className={[
           "absolute inset-0 pointer-events-none transition-opacity duration-300",
@@ -359,7 +385,7 @@ function PackageCard({
       <div className={["relative z-10", isCustom ? "custom-body" : ""].join(" ")}>
         <div
           className={[
-            "flex flex-col gap-4 mb-6",
+            isSessionCard ? "flex flex-col gap-3 mb-4" : "flex flex-col gap-4 mb-6",
             isCustom
               ? "items-start text-right sm:flex-row sm:items-start sm:justify-between"
               : "sm:flex-row sm:items-start sm:justify-between",
@@ -475,7 +501,7 @@ function PackageCard({
                   />
                 </div>
               </div>
-            ) : (
+            ) : !isSessionCard ? (
               <>
                 <div className="text-primary font-bold text-2xl md:text-3xl leading-none">
                   <EditableText
@@ -510,7 +536,7 @@ function PackageCard({
                   </div>
                 ) : null}
               </>
-            )}
+            ) : null}
           </div>
 
         {orderedFeatures.length && !isCustom ? (
@@ -717,7 +743,7 @@ function QuickNav({
 }) {
   const items = [
     { id: "sessions", labelKey: "services_nav_sessions", fallback: "سيشن" },
-    { id: "prints", labelKey: "services_nav_prints", fallback: "خصص باقتك" },
+    { id: "prints", labelKey: "services_nav_prints", fallback: "المطبوعات" },
     { id: "wedding", labelKey: "services_nav_wedding", fallback: "Full Day" },
     { id: "addons", labelKey: "services_nav_addons", fallback: "إضافات" },
   ];
@@ -729,7 +755,7 @@ function QuickNav({
       ref={navRef}
     >
       <div className="container mx-auto px-4 py-2 sm:py-3">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide justify-center">
           {items.map((it) => {
             const isActive = active === it.id;
             return (
@@ -1542,6 +1568,45 @@ export default function Services() {
           text-transform: uppercase;
           text-shadow: 0 0 14px rgba(255,210,130,0.7);
           box-shadow: 0 10px 30px rgba(255,200,80,0.2);
+        }
+        .price-corner {
+          position: absolute;
+          top: 1.25rem;
+          left: 1.25rem;
+          padding: 10px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,210,120,0.45);
+          background:
+            linear-gradient(140deg, rgba(255,210,120,0.25), rgba(10,10,14,0.75) 65%),
+            radial-gradient(circle at 25% 20%, rgba(255,245,210,0.35), transparent 60%);
+          color: rgba(255,245,220,0.98);
+          font-weight: 800;
+          font-size: 1.15rem;
+          line-height: 1.1;
+          letter-spacing: 0.02em;
+          text-shadow: 0 0 16px rgba(255,210,130,0.55);
+          box-shadow: 0 14px 35px rgba(0,0,0,0.4), 0 0 22px rgba(255,210,120,0.2);
+          overflow: hidden;
+          z-index: 2;
+          pointer-events: none;
+          isolation: isolate;
+        }
+        .price-corner::after {
+          content: "";
+          position: absolute;
+          inset: -120% -10%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.55) 45%, transparent 70%);
+          transform: translateX(-120%);
+          animation: services-shine 5.2s ease-in-out infinite;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        .price-corner-note {
+          display: block;
+          margin-top: 6px;
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(255,235,200,0.8);
         }
         .pro-note {
           margin-top: -8px;

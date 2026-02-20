@@ -267,7 +267,7 @@ export const weddingPackages = [
   {
     id: "full-day-vip-plus",
     name: "تصوير اليوم الكامل (VIP Plus)",
-    price: "17000",
+    price: "12000",
     priceNote: "قد ينقص السعر او يزيد حسب اختياركم وتفاصيل اليوم ❤️",
     description: "تجربة أقوى وتغطية أوسع + مفاجآت أثناء الفرح",
     features: [
@@ -290,7 +290,7 @@ export const weddingPackages = [
   {
     id: "full-day-basic",
     name: "FULL DAY BASIC",
-    price: "10000 جنيه",
+    price: "8500 جنيه",
     priceNote: "قد ينقص السعر أو يزيد حسب تفاصيل اليوم ومكان الفرح",
     description: "تغطية كاملة لليوم بشكل عملي وبسعر مناسب",
     features: [
