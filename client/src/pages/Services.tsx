@@ -948,7 +948,7 @@ export default function Services() {
         contentMap={contentMap}
       />
 
-      <section id="sessions" className="py-16 md:py-20" style={sectionStyle}>
+      <section id="sessions" className="py-10 md:py-16" style={sectionStyle}>
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
@@ -1035,7 +1035,7 @@ export default function Services() {
         </div>
       </section>
 
-      <section id="prints" className="py-16 md:py-20" style={sectionStyle}>
+      <section id="prints" className="py-10 md:py-16" style={sectionStyle}>
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
@@ -1074,7 +1074,11 @@ export default function Services() {
         </div>
       </section>
 
-      <section id="wedding" className="py-16 md:py-20 bg-card border-y border-white/5" style={sectionStyle}>
+      <section
+        id="wedding"
+        className="py-10 md:py-16 bg-card border-y border-white/5"
+        style={sectionStyle}
+      >
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
@@ -1114,7 +1118,7 @@ export default function Services() {
         </div>
       </section>
 
-      <section id="addons" className="py-16 md:py-20" style={sectionStyle}>
+      <section id="addons" className="py-10 md:py-16" style={sectionStyle}>
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
