@@ -1534,7 +1534,7 @@ export default function Contact() {
           display: flex;
           flex-direction: row-reverse;
           gap: 8px;
-          padding: 6px 4px;
+          padding: 4px 2px;
           justify-content: center;
         }
         .wheel-column-wrap {
@@ -1542,6 +1542,7 @@ export default function Contact() {
           flex-direction: column;
           gap: 4px;
           flex: 1;
+          max-width: 96px;
         }
         .wheel-label {
           text-align: center;
@@ -1557,17 +1558,21 @@ export default function Contact() {
           padding: 0;
           overflow: hidden;
         }
+        .wheel-column--fixed {
+          opacity: 0.75;
+        }
         .wheel-list {
-          height: 160px;
+          height: 144px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
           scrollbar-width: none;
+          text-align: center;
         }
         .wheel-list::-webkit-scrollbar {
           display: none;
         }
         .wheel-item {
-          height: 32px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1576,22 +1581,25 @@ export default function Contact() {
           font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
           transition: color 0.2s ease;
+          width: 100%;
+          text-align: center;
+          line-height: 1;
         }
         .wheel-item--selected {
           color: rgba(255,245,220,0.98);
           font-weight: 700;
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
           background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.04));
-          border-radius: 12px;
+          border-radius: 10px;
         }
         .wheel-highlight {
           position: absolute;
           left: 8px;
           right: 8px;
           top: 50%;
-          height: 32px;
+          height: 28px;
           transform: translateY(-50%);
-          border-radius: 14px;
+          border-radius: 12px;
           border: 1px solid rgba(255,210,120,0.35);
           background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.05));
           box-shadow: 0 0 18px rgba(255,210,130,0.22);
