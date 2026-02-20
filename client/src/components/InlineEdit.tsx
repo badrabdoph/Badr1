@@ -481,10 +481,9 @@ export function EditableContactText({
             displayClassName
           )}
           onClick={(event) => {
-            if (enabled) {
-              event.preventDefault();
-              event.stopPropagation();
-            }
+            if (!enabled) return;
+            event.preventDefault();
+            event.stopPropagation();
             setIsEditing(true);
             setDraft(normalizedValue || fallback || "");
           }}

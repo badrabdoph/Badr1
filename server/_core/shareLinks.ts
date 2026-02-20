@@ -10,9 +10,16 @@ const SHARE_CODE_PREFIX = "badrabdoph";
 const SHARE_CODE_SIGNATURE_LENGTH = 6;
 const SHARE_CODE_ALPHABET = "23456789abcdefghijkmnpqrstuvwxyz";
 const SHARE_CODE_MIN_LENGTH = 3;
-const SHARE_CODE_MAX_LENGTH = 3;
+const SHARE_CODE_MAX_LENGTH = 8;
+const SHARE_CODE_DEFAULT_LENGTH = 6;
 const SHARE_CODE_LENGTH = Math.min(
-  Math.max(Number.parseInt(process.env.SHARE_CODE_LENGTH ?? "3", 10), SHARE_CODE_MIN_LENGTH),
+  Math.max(
+    Number.parseInt(
+      process.env.SHARE_CODE_LENGTH ?? String(SHARE_CODE_DEFAULT_LENGTH),
+      10
+    ),
+    SHARE_CODE_MIN_LENGTH
+  ),
   SHARE_CODE_MAX_LENGTH
 );
 const generateShortCode = customAlphabet(SHARE_CODE_ALPHABET, SHARE_CODE_LENGTH);
