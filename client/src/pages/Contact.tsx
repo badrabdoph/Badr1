@@ -1523,7 +1523,7 @@ export default function Contact() {
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 8px;
           padding: 4px;
-          direction: rtl;
+          direction: ltr;
         }
         .wheel-column-wrap {
           display: flex;
@@ -1538,30 +1538,34 @@ export default function Contact() {
         }
         .wheel-column {
           position: relative;
-          border-radius: 16px;
+          border-radius: 999px;
           border: 1px solid rgba(255,255,255,0.08);
-          background: linear-gradient(180deg, rgba(20,20,26,0.55), rgba(8,8,12,0.85));
-          padding: 4px 0;
+          background:
+            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.08), transparent 60%),
+            radial-gradient(circle at 50% 100%, rgba(255,255,255,0.08), transparent 60%),
+            linear-gradient(180deg, rgba(22,22,28,0.55), rgba(8,8,12,0.9));
+          padding: 0;
           overflow: hidden;
         }
         .wheel-list {
-          max-height: 176px;
+          height: 168px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
-          scroll-padding-top: 72px;
-          scroll-padding-bottom: 72px;
+          padding-block: 69px;
+          scroll-padding-block: 69px;
           scrollbar-width: none;
         }
         .wheel-list::-webkit-scrollbar {
           display: none;
         }
         .wheel-item {
-          height: 32px;
+          height: 30px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 0.9rem;
-          color: rgba(255,255,255,0.45);
+          color: rgba(255,255,255,0.4);
+          font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
           transition: color 0.2s ease;
         }
@@ -1569,23 +1573,20 @@ export default function Contact() {
           color: rgba(255,245,220,0.98);
           font-weight: 700;
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
-          background: radial-gradient(circle, rgba(255,210,120,0.2) 0%, rgba(255,210,120,0.05) 60%, transparent 70%);
+          background: radial-gradient(circle, rgba(255,210,120,0.22) 0%, rgba(255,210,120,0.06) 60%, transparent 70%);
           border-radius: 999px;
-        }
-        .wheel-spacer {
-          height: 72px;
         }
         .wheel-highlight {
           position: absolute;
-          left: 8px;
-          right: 8px;
+          left: 10px;
+          right: 10px;
           top: 50%;
-          height: 32px;
+          height: 30px;
           transform: translateY(-50%);
           border-radius: 999px;
           border: 1px solid rgba(255,210,120,0.4);
-          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.04));
-          box-shadow: 0 0 22px rgba(255,210,130,0.25);
+          background: linear-gradient(120deg, rgba(255,210,120,0.26), rgba(255,255,255,0.06));
+          box-shadow: 0 0 24px rgba(255,210,130,0.28);
           pointer-events: none;
         }
         .receipt-body {
