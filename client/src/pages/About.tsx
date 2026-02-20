@@ -70,7 +70,10 @@ export default function About() {
 
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/contact">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none w-full sm:w-auto cta-glow cta-size">
+              <Button
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none w-full sm:w-auto cta-glow cta-size"
+              >
                 <EditableText
                   value={contentMap.about_cta_primary}
                   fallback={ctaTexts.bookNow ?? "احجز الآن"}
@@ -84,7 +87,7 @@ export default function About() {
             <Link href="/services">
               <Button
                 variant="outline"
-                className="border-white/15 text-foreground hover:bg-white hover:text-black rounded-none w-full sm:w-auto cta-glow cta-size"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none w-full sm:w-auto cta-glow cta-size"
               >
                 <EditableText
                   value={contentMap.about_cta_secondary}
@@ -406,7 +409,10 @@ export default function About() {
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/contact">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none w-full sm:w-auto cta-glow cta-size">
+              <Button
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none w-full sm:w-auto cta-glow cta-size"
+              >
                 <EditableText
                   value={contentMap.about_cta_primary_contact}
                   fallback={ctaTexts.contactNow ?? "تواصل الآن"}
@@ -419,7 +425,7 @@ export default function About() {
             <Link href="/services">
               <Button
                 variant="outline"
-                className="border-white/15 text-foreground hover:bg-white hover:text-black rounded-none w-full sm:w-auto cta-glow cta-size"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none w-full sm:w-auto cta-glow cta-size"
               >
                 <EditableText
                   value={contentMap.about_cta_secondary_packages}

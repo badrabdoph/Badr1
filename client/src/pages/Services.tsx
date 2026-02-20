@@ -181,14 +181,14 @@ function SectionHeader({
 }) {
   return (
     <div className="text-center mb-10">
-      <div className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 bg-black/20 backdrop-blur-md mb-4">
+      <h2 className="text-3xl md:text-4xl font-bold">{title}</h2>
+      <div className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 bg-black/20 backdrop-blur-md mt-3 mb-0">
         {icon}
         <span className={["text-xs md:text-sm text-foreground/80", subtitleClassName ?? ""].join(" ")}>
           {subtitle ?? "تفاصيل واضحة • جودة ثابتة • ستايل فاخر"}
         </span>
       </div>
-      <h2 className="text-3xl md:text-4xl font-bold">{title}</h2>
-      <div className="mt-5 h-px w-48 mx-auto bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="mt-3 h-px w-48 mx-auto bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
     </div>
   );
 }
@@ -199,7 +199,8 @@ function PrimaryCTA({ whatsappNumber, label }: { whatsappNumber: string | undefi
     <Link href="/contact">
       <Button
         size="lg"
-        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none w-full sm:w-auto cta-glow cta-size"
+        variant="outline"
+        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none w-full sm:w-auto cta-glow cta-size"
       >
         {label}
       </Button>
@@ -640,13 +641,8 @@ function PackageCard({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link href={contactHref}>
                 <Button
-                  variant={weddingTone ? "default" : "outline"}
-                            className={[
-                              "w-full rounded-none cta-glow cta-size",
-                  weddingTone
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-                ].join(" ")}
+                  variant="outline"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-size"
                 >
                 <EditableText
                   value={contentMap.services_primary_cta}

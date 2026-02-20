@@ -163,6 +163,7 @@ export default function Contact() {
     );
     return [
       ...map(sessionOnly),
+      ...map(sessionPackagesWithPrints as any),
       ...map(weddingPackages as any),
     ];
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, contentMap]);
@@ -276,9 +277,6 @@ export default function Contact() {
 
 
   const priceValue = useMemo(() => {
-    if (!selectedPackage?.price) return "";
-    const packageNumber = parsePriceValue(selectedPackage.price);
-    if (packageNumber === null) return selectedPackage.price;
     const addonsTotal = selectedAddons.reduce((sum, addon) => {
       const addonNumber = parsePriceValue(addon.price);
       return addonNumber === null ? sum : sum + addonNumber;
@@ -287,8 +285,24 @@ export default function Contact() {
       const itemNumber = parsePriceValue(item.price);
       return itemNumber === null ? sum : sum + itemNumber;
     }, 0);
-    const total = packageNumber + addonsTotal + printsTotal;
-    const unit = extractPriceUnit(selectedPackage.price);
+    const extrasTotal = addonsTotal + printsTotal;
+    const packagePrice = selectedPackage?.price;
+    const packageNumber = packagePrice ? parsePriceValue(packagePrice) : null;
+
+    const unit =
+      extractPriceUnit(packagePrice) ||
+      extractPriceUnit(selectedAddons.find((a) => a.price)?.price) ||
+      extractPriceUnit(selectedPrints.find((p) => p.price)?.price);
+
+    if (packageNumber === null) {
+      if (extrasTotal > 0) {
+        const totalText = formatPriceNumber(extrasTotal);
+        return unit ? `${totalText}${unit}` : totalText;
+      }
+      return packagePrice ?? "";
+    }
+
+    const total = packageNumber + extrasTotal;
     const totalText = formatPriceNumber(total);
     return unit ? `${totalText}${unit}` : totalText;
   }, [selectedPackage, selectedAddons, selectedPrints]);
@@ -474,42 +488,46 @@ export default function Contact() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
             {/* Form FIRST on mobile */}
-            <div className="order-1 lg:order-2 bg-card/60 p-7 md:p-10 border border-white/15 premium-border shadow-[0_25px_70px_rgba(0,0,0,0.45)] backdrop-blur-md">
-              <h2 className="text-2xl font-bold mb-6">
-                <EditableText
-                  value={contentMap.contact_form_title}
-                  fallback={pageTexts.contact.formTitle}
-                  fieldKey="contact_form_title"
-                  category="contact"
-                  label="عنوان نموذج التواصل"
-                />
-              </h2>
-              <div className="contact-hint mt-1 mb-4">
-                <Receipt className="w-4 h-4 contact-hint-icon" />
-                <span>
-                  <EditableText
-                    value={contentMap.services_vip_line_2}
-                    fallback="بعد الحجز، تكون الأسعار نهائية كما في إيصال حجزك، بدون أي زيادات أو رسوم إضافية."
-                    fieldKey="services_vip_line_2"
-                    category="services"
-                    label="تنبيه الأسعار النهائية"
-                    multiline
-                  />
-                </span>
+            <div className="order-1 lg:order-2 space-y-4">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="contact-hint">
+                  <Receipt className="w-4 h-4 contact-hint-icon" />
+                  <span>
+                    <EditableText
+                      value={contentMap.services_vip_line_2}
+                      fallback="بعد الحجز، تكون الأسعار نهائية كما في إيصال حجزك، بدون أي زيادات أو رسوم إضافية."
+                      fieldKey="services_vip_line_2"
+                      category="services"
+                      label="تنبيه الأسعار النهائية"
+                      multiline
+                    />
+                  </span>
+                </div>
+                <div className="contact-hint">
+                  <Gem className="w-4 h-4 contact-hint-icon" />
+                  <span>
+                    <EditableText
+                      value={contentMap.services_vip_line_1}
+                      fallback="- VIP بمجرد حجزك لليوم، مش بيتحجز لغيرك حتى لو سنة."
+                      fieldKey="services_vip_line_1"
+                      category="services"
+                      label="تنبيه حجز اليوم"
+                      multiline
+                    />
+                  </span>
+                </div>
               </div>
-              <div className="contact-hint mt-1 mb-4">
-                <Gem className="w-4 h-4 contact-hint-icon" />
-                <span>
+
+              <div className="bg-card/60 p-7 md:p-10 border border-white/15 premium-border shadow-[0_25px_70px_rgba(0,0,0,0.45)] backdrop-blur-md">
+                <h2 className="text-2xl font-bold mb-6">
                   <EditableText
-                    value={contentMap.services_vip_line_1}
-                    fallback="- VIP بمجرد حجزك لليوم، مش بيتحجز لغيرك حتى لو سنة."
-                    fieldKey="services_vip_line_1"
-                    category="services"
-                    label="تنبيه حجز اليوم"
-                    multiline
+                    value={contentMap.contact_form_title}
+                    fallback={pageTexts.contact.formTitle}
+                    fieldKey="contact_form_title"
+                    category="contact"
+                    label="عنوان نموذج التواصل"
                   />
-                </span>
-              </div>
+                </h2>
 
               <Form {...form}>
                 <form className="space-y-5">
@@ -906,7 +924,8 @@ export default function Contact() {
                     >
                       <Button
                         type="button"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none cta-glow cta-size"
+                        variant="outline"
+                        className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-size"
                         onClick={form.handleSubmit(onSendReceipt)}
                       >
                         <EditableText

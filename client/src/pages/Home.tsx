@@ -654,13 +654,8 @@ export default function Home() {
                     <div className="flex items-center justify-between gap-4">
                       <Link href="/services">
                         <Button
-                          variant={featured ? "default" : "outline"}
-                          className={[
-                            "rounded-none cta-glow cta-size",
-                            featured
-                              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                              : "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-                          ].join(" ")}
+                          variant="outline"
+                          className="rounded-none cta-glow cta-size border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                         >
                           <EditableText
                             value={getValue(`${baseKey}_cta`)}
@@ -881,7 +876,7 @@ export default function Home() {
 
           <a
             href={externalPortfolioUrl}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none inline-flex items-center gap-2 cta-glow cta-size"
+            className="border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none inline-flex items-center gap-2 cta-glow cta-size"
             target="_blank"
             rel="noreferrer"
           >
