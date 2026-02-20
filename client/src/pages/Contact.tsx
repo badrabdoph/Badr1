@@ -18,8 +18,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Phone, Mail, MapPin, Instagram, Facebook, Send, Sparkles, Copy, ChevronDown, Receipt, Gem } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Instagram,
+  Facebook,
+  Send,
+  Sparkles,
+  Copy,
+  ChevronDown,
+  Receipt,
+  Gem,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   pageTexts,
@@ -126,6 +140,24 @@ function formatDatePreview(value: string) {
   return normalized;
 }
 
+function parseIsoDate(value: string) {
+  if (!value) return undefined;
+  const normalized = toEnglishDigits(value).trim();
+  const parts = normalized.split("-");
+  if (parts.length !== 3) return undefined;
+  const [year, month, day] = parts.map((part) => Number(part));
+  if (!year || !month || !day) return undefined;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function formatIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function WhatsAppIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -155,6 +187,7 @@ export default function Contact() {
   } = usePackagesData();
   const contentMap = content.contentMap ?? {};
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", phone: "", date: "", packageId: "", addonIds: [], printIds: [] },
@@ -223,6 +256,7 @@ export default function Contact() {
   const watchedAddonIds = useWatch({ control: form.control, name: "addonIds" }) ?? [];
   const watchedPrintIds = useWatch({ control: form.control, name: "printIds" }) ?? [];
   const datePreview = useMemo(() => formatDatePreview(watchedDate), [watchedDate]);
+  const selectedDate = useMemo(() => parseIsoDate(watchedDate), [watchedDate]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -656,18 +690,46 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <label className="relative block">
-                            <Input
-                              type="date"
-                              {...field}
-                              className={`${fieldClass} date-input`}
-                            />
-                            <span className="date-input-preview">
-                              {field.value
-                                ? datePreview
-                                : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
-                            </span>
-                          </label>
+                          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className={`${fieldClass} date-trigger`}
+                              >
+                                <span className="date-trigger-value" dir="ltr">
+                                  {field.value
+                                    ? datePreview
+                                    : getValue("contact_placeholder_date", "يوم / شهر / سنة")}
+                                </span>
+                                <CalendarIcon className="date-trigger-icon" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              align="start"
+                              className="w-[min(92vw,360px)] border-white/10 bg-background/95 backdrop-blur-md p-3"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => {
+                                  if (!date) return;
+                                  field.onChange(formatIsoDate(date));
+                                  setCalendarOpen(false);
+                                }}
+                                captionLayout="dropdown"
+                                fromYear={new Date().getFullYear() - 1}
+                                toYear={new Date().getFullYear() + 5}
+                                formatters={{
+                                  formatMonthDropdown: (date) =>
+                                    String(date.getMonth() + 1).padStart(2, "0"),
+                                  formatYearDropdown: (date) =>
+                                    String(date.getFullYear()),
+                                  formatDay: (date) =>
+                                    String(date.getDate()).padStart(2, "0"),
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1336,6 +1398,26 @@ export default function Contact() {
           pointer-events: auto;
           letter-spacing: 0.04em;
           cursor: pointer;
+        }
+        .date-trigger {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          text-align: right;
+          cursor: pointer;
+        }
+        .date-trigger-value {
+          flex: 1;
+          color: rgba(255,245,220,0.9);
+          text-shadow: 0 0 12px rgba(255,210,130,0.35);
+          letter-spacing: 0.04em;
+        }
+        .date-trigger-icon {
+          width: 18px;
+          height: 18px;
+          color: rgba(255,210,120,0.8);
+          filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
         }
         .receipt-body {
           display: flex;
