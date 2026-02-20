@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -175,11 +175,11 @@ function WheelColumn({
   options: WheelOption[];
   onChange: (next: number) => void;
 }) {
-  const listRef = React.useRef<HTMLDivElement | null>(null);
-  const timeoutRef = React.useRef<number | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   const itemHeight = 36;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!listRef.current) return;
     const index = options.findIndex((opt) => opt.value === value);
     if (index === -1) return;
@@ -333,6 +333,44 @@ export default function Contact() {
   const watchedPrintIds = useWatch({ control: form.control, name: "printIds" }) ?? [];
   const datePreview = useMemo(() => formatDatePreview(watchedDate), [watchedDate]);
   const selectedDate = useMemo(() => parseIsoDate(watchedDate), [watchedDate]);
+  const yearRangeStart = useMemo(() => new Date().getFullYear() - 1, []);
+  const yearRangeEnd = useMemo(() => new Date().getFullYear() + 5, []);
+  const baseDate = selectedDate ?? new Date();
+  const baseYear = baseDate.getFullYear();
+  const baseMonth = baseDate.getMonth() + 1;
+  const baseDay = baseDate.getDate();
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const value = index + 1;
+        return { value, label: String(value) };
+      }),
+    []
+  );
+  const yearOptions = useMemo(
+    () =>
+      Array.from({ length: yearRangeEnd - yearRangeStart + 1 }, (_, index) => {
+        const value = yearRangeStart + index;
+        return { value, label: String(value) };
+      }),
+    [yearRangeStart, yearRangeEnd]
+  );
+  const dayOptions = useMemo(() => {
+    const maxDay = getDaysInMonth(baseYear, baseMonth);
+    return Array.from({ length: maxDay }, (_, index) => {
+      const value = index + 1;
+      return { value, label: String(value) };
+    });
+  }, [baseYear, baseMonth]);
+
+  const updateDateParts = (next: { day?: number; month?: number; year?: number }) => {
+    const nextYear = next.year ?? baseYear;
+    const nextMonth = next.month ?? baseMonth;
+    const maxDay = getDaysInMonth(nextYear, nextMonth);
+    const nextDay = Math.min(next.day ?? baseDay, maxDay);
+    const nextDate = new Date(nextYear, nextMonth - 1, nextDay);
+    form.setValue("date", formatIsoDate(nextDate), { shouldDirty: true, shouldValidate: true });
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -784,26 +822,51 @@ export default function Contact() {
                               align="start"
                               className="w-[min(92vw,360px)] border-white/10 bg-background/95 backdrop-blur-md p-3"
                             >
-                              <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => {
-                                  if (!date) return;
-                                  field.onChange(formatIsoDate(date));
-                                  setCalendarOpen(false);
-                                }}
-                                captionLayout="dropdown"
-                                fromYear={new Date().getFullYear() - 1}
-                                toYear={new Date().getFullYear() + 5}
-                                formatters={{
-                                  formatMonthDropdown: (date) =>
-                                    String(date.getMonth() + 1).padStart(2, "0"),
-                                  formatYearDropdown: (date) =>
-                                    String(date.getFullYear()),
-                                  formatDay: (date) =>
-                                    String(date.getDate()).padStart(2, "0"),
-                                }}
-                              />
+                              <div className="md:hidden">
+                                <div className="wheel-picker">
+                                  <WheelColumn
+                                    label="اليوم"
+                                    value={baseDay}
+                                    options={dayOptions}
+                                    onChange={(day) => updateDateParts({ day })}
+                                  />
+                                  <WheelColumn
+                                    label="الشهر"
+                                    value={baseMonth}
+                                    options={monthOptions}
+                                    onChange={(month) => updateDateParts({ month })}
+                                  />
+                                  <WheelColumn
+                                    label="السنة"
+                                    value={baseYear}
+                                    options={yearOptions}
+                                    onChange={(year) => updateDateParts({ year })}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="hidden md:block">
+                                <Calendar
+                                  mode="single"
+                                  selected={selectedDate}
+                                  onSelect={(date) => {
+                                    if (!date) return;
+                                    field.onChange(formatIsoDate(date));
+                                    setCalendarOpen(false);
+                                  }}
+                                  captionLayout="dropdown"
+                                  fromYear={yearRangeStart}
+                                  toYear={yearRangeEnd}
+                                  formatters={{
+                                    formatMonthDropdown: (date) =>
+                                      String(date.getMonth() + 1).padStart(2, "0"),
+                                    formatYearDropdown: (date) =>
+                                      String(date.getFullYear()),
+                                    formatDay: (date) =>
+                                      String(date.getDate()).padStart(2, "0"),
+                                  }}
+                                />
+                              </div>
                             </PopoverContent>
                           </Popover>
                         </FormControl>
@@ -1469,6 +1532,70 @@ export default function Contact() {
           height: 18px;
           color: rgba(255,210,120,0.8);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
+        }
+        .wheel-picker {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .wheel-column-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .wheel-label {
+          text-align: center;
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          color: rgba(255,245,220,0.65);
+        }
+        .wheel-column {
+          position: relative;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(10,10,14,0.35);
+          padding: 6px 0;
+          overflow: hidden;
+        }
+        .wheel-list {
+          max-height: 170px;
+          overflow-y: auto;
+          scroll-snap-type: y mandatory;
+          scrollbar-width: none;
+        }
+        .wheel-list::-webkit-scrollbar {
+          display: none;
+        }
+        .wheel-item {
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.95rem;
+          color: rgba(255,255,255,0.6);
+          scroll-snap-align: center;
+          transition: color 0.2s ease;
+        }
+        .wheel-item--selected {
+          color: rgba(255,245,220,0.95);
+          font-weight: 700;
+          text-shadow: 0 0 12px rgba(255,210,130,0.55);
+        }
+        .wheel-spacer {
+          height: 56px;
+        }
+        .wheel-highlight {
+          position: absolute;
+          left: 6px;
+          right: 6px;
+          top: 50%;
+          height: 36px;
+          transform: translateY(-50%);
+          border-radius: 10px;
+          border: 1px solid rgba(255,210,120,0.35);
+          background: linear-gradient(120deg, rgba(255,210,120,0.18), rgba(255,255,255,0.04));
+          box-shadow: 0 0 18px rgba(255,210,130,0.18);
+          pointer-events: none;
         }
         .receipt-body {
           display: flex;
