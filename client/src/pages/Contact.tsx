@@ -1568,6 +1568,10 @@ export default function Contact() {
           scrollbar-width: none;
           text-align: center;
         }
+        .wheel-list--fixed {
+          overflow: hidden;
+          pointer-events: none;
+        }
         .wheel-list::-webkit-scrollbar {
           display: none;
         }
