@@ -214,7 +214,7 @@ function WheelColumn({
         <div className="wheel-highlight" aria-hidden="true" />
         <div
           ref={listRef}
-          className="wheel-list"
+          className={["wheel-list", isFixed ? "wheel-list--fixed" : ""].join(" ")}
           onScroll={handleScroll}
           role="listbox"
           aria-label={label}
