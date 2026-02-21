@@ -240,6 +240,7 @@ function PackageCard({
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
   const [localCustomIds, setLocalCustomIds] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(!isCollapsible);
+  const [ctaOpen, setCtaOpen] = useState(!isSessionCard);
   const sharedPrintIds = useMemo(
     () => (preselectedPrintIds ?? []).filter((id) => customPrintIdSet.has(id)),
     [preselectedPrintIds]
@@ -339,6 +340,8 @@ function PackageCard({
       role={isCollapsible ? "button" : undefined}
       tabIndex={isCollapsible ? 0 : undefined}
       aria-expanded={isCollapsible ? isExpanded : undefined}
+      data-cta-mode={isSessionCard ? "compact" : "full"}
+      data-cta-open={isSessionCard ? (ctaOpen ? "true" : "false") : "true"}
       onClickCapture={handleCardClickCapture}
       onKeyDown={handleCardKeyDown}
       className={[
@@ -646,58 +649,78 @@ function PackageCard({
           </div>
         ) : null}
 
-        {isCustom ? (
-          <div className="custom-cta">
-            <Link href={contactHref} className="w-full">
-              <Button
-                variant="outline"
-                className="custom-cta-btn border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none cta-glow cta-size w-full"
-              >
-                <EditableText
-                  value={contentMap.services_custom_cta}
-                  fallback="احجز الآن"
-                  fieldKey="services_custom_cta"
-                  category="services"
-                  label="زر احجز الآن (خصص باقتك)"
-                />
-                <ArrowLeft className="mr-2 w-4 h-4" />
-              </Button>
-            </Link>
+        {isSessionCard ? (
+          <div className="cta-handle-row">
+            <button
+              type="button"
+              className="cta-handle"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setCtaOpen((prev) => !prev);
+              }}
+              aria-expanded={ctaOpen}
+            >
+              <span>{ctaOpen ? "إخفاء أزرار الحجز" : "عرض أزرار الحجز"}</span>
+              <ArrowDown className="cta-handle-icon w-4 h-4" />
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link href={contactHref}>
+        ) : null}
+
+        <div className="cta-reveal">
+          {isCustom ? (
+            <div className="custom-cta">
+              <Link href={contactHref} className="w-full">
+                <Button
+                  variant="outline"
+                  className="custom-cta-btn border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none cta-glow cta-size w-full"
+                >
+                  <EditableText
+                    value={contentMap.services_custom_cta}
+                    fallback="احجز الآن"
+                    fieldKey="services_custom_cta"
+                    category="services"
+                    label="زر احجز الآن (خصص باقتك)"
+                  />
+                  <ArrowLeft className="mr-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link href={contactHref}>
                 <Button
                   variant="outline"
                   className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-size"
                 >
-                <EditableText
-                  value={contentMap.services_primary_cta}
-                  fallback={ctaTexts.bookNow ?? "احجز الآن"}
-                  fieldKey="services_primary_cta"
-                  category="services"
-                  label="زر احجز الآن (الباقات)"
-                />
-              </Button>
-            </Link>
+                  <EditableText
+                    value={contentMap.services_primary_cta}
+                    fallback={ctaTexts.bookNow ?? "احجز الآن"}
+                    fieldKey="services_primary_cta"
+                    category="services"
+                    label="زر احجز الآن (الباقات)"
+                  />
+                </Button>
+              </Link>
 
-            <Link href="/package-details">
-              <Button
-                variant="outline"
-                className="w-full border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none cta-glow cta-size"
-              >
-                <EditableText
-                  value={contentMap.services_secondary_cta}
-                  fallback="اسأل عن التفاصيل"
-                  fieldKey="services_secondary_cta"
-                  category="services"
-                  label="زر اسأل عن التفاصيل"
-                />
-                <ArrowLeft className="mr-2 w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-        )}
+              <Link href="/package-details">
+                <Button
+                  variant="outline"
+                  className="w-full border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none cta-glow cta-size"
+                >
+                  <EditableText
+                    value={contentMap.services_secondary_cta}
+                    fallback="اسأل عن التفاصيل"
+                    fieldKey="services_secondary_cta"
+                    category="services"
+                    label="زر اسأل عن التفاصيل"
+                  />
+                  <ArrowLeft className="mr-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
 
         {vip && (
           <div className="mt-5 text-xs vip-note">
@@ -1295,6 +1318,62 @@ export default function Services() {
           animation: services-shine 6s ease-in-out infinite;
           opacity: 0.3;
           pointer-events: none;
+        }
+        .cta-handle-row {
+          display: flex;
+          justify-content: center;
+          margin-top: 6px;
+        }
+        .cta-handle {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.4);
+          background: rgba(12,12,16,0.6);
+          color: rgba(255,235,200,0.95);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.03em;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .cta-handle:hover {
+          border-color: rgba(255,210,120,0.7);
+          box-shadow: 0 10px 26px rgba(0,0,0,0.25), 0 0 14px rgba(255,200,80,0.2);
+          transform: translateY(-1px);
+        }
+        .cta-handle-icon {
+          transition: transform 0.25s ease;
+        }
+        .services-card[data-cta-mode="compact"] .cta-reveal {
+          max-height: 0;
+          opacity: 0;
+          margin-top: 0;
+          pointer-events: none;
+          transform: translateY(6px);
+          overflow: hidden;
+          transition:
+            max-height 0.35s ease,
+            opacity 0.25s ease,
+            transform 0.25s ease,
+            margin-top 0.25s ease;
+        }
+        .services-card[data-cta-mode="compact"][data-cta-open="true"] .cta-reveal {
+          max-height: 220px;
+          opacity: 1;
+          margin-top: 12px;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
+        .services-card[data-cta-mode="compact"][data-cta-open="true"] .cta-handle-icon {
+          transform: rotate(180deg);
+        }
+        @media (max-width: 640px) {
+          .cta-handle {
+            padding: 5px 12px;
+            font-size: 11px;
+          }
         }
         .full-day-collapsed {
           cursor: pointer;

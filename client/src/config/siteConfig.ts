@@ -198,7 +198,7 @@ export const testimonials = [
 export const sessionPackages = [
   {
     id: "session-1",
-    name: "فوتوسيشن",
+    name: "سيشن بيزك",
     price: "1500",
     description: "تصوير فقط",
     features: ["عدد غير محدود من الصور", "شامل REELS & TIKTOK", "وقت محدد"],
