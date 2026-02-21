@@ -1667,10 +1667,10 @@ export default function Contact() {
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 34px;
-          height: 34px;
+          width: 68%;
+          height: 28px;
           transform: translate(-50%, -50%);
-          border-radius: 50%;
+          border-radius: 6px;
           border: 1.5px solid rgba(255,210,120,0.6);
           background: transparent;
           box-shadow: 0 0 18px rgba(255,210,130,0.45);
