@@ -573,20 +573,28 @@ export default function Contact() {
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
     const noneValue = getValue("contact_receipt_none", "بدون");
-    const printsSummary = selectedPrints.length
-      ? selectedPrints.map((item) => item.label).join("، ")
-      : noneValue;
-    const addonsSummary = selectedAddons.length
-      ? selectedAddons.map((addon) => addon.label).join("، ")
-      : noneValue;
+    const formatListLines = (
+      items: Array<{ label: string }>,
+      fallback: string,
+      bullet: string
+    ) => {
+      if (!items.length) return [fallback];
+      return items.map((item) => `${bullet}${item.label}`);
+    };
+
+    const addonLines = formatListLines(selectedAddons, noneValue, "- ");
+    const printLines = formatListLines(selectedPrints, noneValue, "• ");
+
     const lines = [
       getValue("contact_receipt_title", "إيصال حجز ❤️"),
       `${getValue("contact_receipt_label_name", "الاسم")}: ${watchedName || emptyValue}`,
       `${getValue("contact_receipt_label_phone", "الهاتف")}: ${watchedPhone || emptyValue}`,
       `${getValue("contact_receipt_label_date", "التاريخ")}: ${watchedDate || emptyValue}`,
       `${getValue("contact_receipt_label_package", "الباقة")}: ${selectedPackage?.label || emptyValue}`,
-      `${getValue("contact_receipt_label_addons", "الإضافات")}: ${addonsSummary}`,
-      `${getValue("contact_receipt_label_prints", "المطبوعات")}: ${printsSummary}`,
+      `${getValue("contact_receipt_label_addons", "الإضافات")}:`,
+      ...addonLines,
+      `${getValue("contact_receipt_label_prints", "المطبوعات")}:`,
+      ...printLines,
       "",
       totalLine,
     ];
