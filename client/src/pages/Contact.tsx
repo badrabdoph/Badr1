@@ -1789,13 +1789,6 @@ export default function Contact() {
               >
                 <div className="date-modal-header">
                   <span className="date-modal-title">اختر التاريخ</span>
-                  <button
-                    type="button"
-                    className="date-modal-close"
-                    onClick={() => setCalendarOpen(false)}
-                  >
-                    تم
-                  </button>
                 </div>
                 <div className="md:hidden">
                   <div className="wheel-picker">
@@ -1844,6 +1837,15 @@ export default function Contact() {
                         String(date.getDate()).padStart(2, "0"),
                     }}
                   />
+                </div>
+                <div className="date-modal-footer">
+                  <button
+                    type="button"
+                    className="date-modal-close"
+                    onClick={() => setCalendarOpen(false)}
+                  >
+                    تم
+                  </button>
                 </div>
               </div>
             </div>,
