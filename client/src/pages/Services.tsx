@@ -1171,68 +1171,6 @@ export default function Services() {
             ))}
           </div>
 
-          <div className="text-center text-muted-foreground mt-10 text-sm leading-relaxed space-y-2">
-            <div>
-              <EditableText
-                value={contentMap.services_note_1}
-                fallback="اطمئن التزامي في المواعيد وجودة التسليم جزء من شغلي، مش ميزة إضافية."
-                fieldKey="services_note_1"
-                category="services"
-                label="ملاحظة الخدمات 1"
-                multiline
-              />
-            </div>
-            <div>
-              <EditableText
-                value={contentMap.services_note_2}
-                fallback="* الأسعار قد تختلف حسب الموقع والتفاصيل الإضافية. غير شامل رسوم اللوكيشن."
-                fieldKey="services_note_2"
-                category="services"
-                label="ملاحظة الخدمات 2"
-                multiline
-              />
-            </div>
-            <div>
-              <EditableText
-                value={contentMap.services_note_3}
-                fallback="حجز اليوم بالأسبقية — Full Day لو اليوم محجوز لعريس تاني قبلك بنعتذر."
-                fieldKey="services_note_3"
-                category="services"
-                label="ملاحظة الخدمات 3"
-                multiline
-              />
-            </div>
-            <div>
-              <EditableText
-                value={contentMap.services_note_4}
-                fallback="الحجز يتم بتأكيد على واتساب + ديبوزيت تأكيد."
-                fieldKey="services_note_4"
-                category="services"
-                label="ملاحظة الخدمات 4"
-                multiline
-              />
-            </div>
-            <div>
-              <EditableText
-                value={contentMap.services_note_5}
-                fallback="الاستفسار فقط لا يعتبر حجزًا ويتم إلغاؤه تلقائيًا بدون تأكيد."
-                fieldKey="services_note_5"
-                category="services"
-                label="ملاحظة الخدمات 5"
-                multiline
-              />
-            </div>
-            <div>
-              <EditableText
-                value={contentMap.services_note_6}
-                fallback="أقدر أساعدك في أي شيء خارج التصوير يوم الزفاف (خدمات ونصائح مجانية)."
-                fieldKey="services_note_6"
-                category="services"
-                label="ملاحظة الخدمات 6"
-                multiline
-              />
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1277,6 +1215,71 @@ export default function Services() {
           </div>
         </div>
       </section>
+
+      <div className="container mx-auto px-4 pb-8 md:pb-12">
+        <div className="text-center text-muted-foreground mt-10 text-sm leading-relaxed space-y-2">
+          <div>
+            <EditableText
+              value={contentMap.services_note_1}
+              fallback="اطمئن التزامي في المواعيد وجودة التسليم جزء من شغلي، مش ميزة إضافية."
+              fieldKey="services_note_1"
+              category="services"
+              label="ملاحظة الخدمات 1"
+              multiline
+            />
+          </div>
+          <div>
+            <EditableText
+              value={contentMap.services_note_2}
+              fallback="* الأسعار قد تختلف حسب الموقع والتفاصيل الإضافية. غير شامل رسوم اللوكيشن."
+              fieldKey="services_note_2"
+              category="services"
+              label="ملاحظة الخدمات 2"
+              multiline
+            />
+          </div>
+          <div>
+            <EditableText
+              value={contentMap.services_note_3}
+              fallback="حجز اليوم بالأسبقية — Full Day لو اليوم محجوز لعريس تاني قبلك بنعتذر."
+              fieldKey="services_note_3"
+              category="services"
+              label="ملاحظة الخدمات 3"
+              multiline
+            />
+          </div>
+          <div>
+            <EditableText
+              value={contentMap.services_note_4}
+              fallback="الحجز يتم بتأكيد على واتساب + ديبوزيت تأكيد."
+              fieldKey="services_note_4"
+              category="services"
+              label="ملاحظة الخدمات 4"
+              multiline
+            />
+          </div>
+          <div>
+            <EditableText
+              value={contentMap.services_note_5}
+              fallback="الاستفسار فقط لا يعتبر حجزًا ويتم إلغاؤه تلقائيًا بدون تأكيد."
+              fieldKey="services_note_5"
+              category="services"
+              label="ملاحظة الخدمات 5"
+              multiline
+            />
+          </div>
+          <div>
+            <EditableText
+              value={contentMap.services_note_6}
+              fallback="أقدر أساعدك في أي شيء خارج التصوير يوم الزفاف (خدمات ونصائح مجانية)."
+              fieldKey="services_note_6"
+              category="services"
+              label="ملاحظة الخدمات 6"
+              multiline
+            />
+          </div>
+        </div>
+      </div>
 
       <style>{`
         .hero-grain {
