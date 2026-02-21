@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useForm, useWatch } from "react-hook-form";
+import { FieldErrors, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
@@ -44,13 +44,16 @@ import { useContactData, usePackagesData, useContentData } from "@/hooks/useSite
 import { EditableContactText, EditableLinkIcon, EditableText } from "@/components/InlineEdit";
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "الاسم يجب أن يكون حرفين على الأقل" }),
+  name: z
+    .string()
+    .min(1, { message: "اكتب الاسم" })
+    .min(2, { message: "الاسم يجب أن يكون حرفين على الأقل" }),
   phone: z
     .string()
-    .min(10, { message: "رقم الهاتف قصير" })
+    .min(10, { message: "اكتب رقم الهاتف" })
     .regex(/^[0-9+\s()-]+$/, { message: "اكتب رقم صحيح (أرقام فقط)" }),
-  date: z.string().min(1, { message: "يرجى اختيار التاريخ" }),
-  packageId: z.string().min(1, { message: "اختر الباقة" }),
+  date: z.string().min(1, { message: "اختر التاريخ" }),
+  packageId: z.string().min(1, { message: "اختر الباقة الأساسية" }),
   addonIds: z.array(z.string()).optional(),
   printIds: z.array(z.string()).optional(),
 });
@@ -366,6 +369,14 @@ export default function Contact() {
   const datePreview = useMemo(() => formatDatePreview(watchedDate), [watchedDate]);
   const minYear = 2026;
   const maxYear = 2027;
+  const todayInRange = useMemo(() => {
+    const today = new Date();
+    const clampedYear = Math.min(Math.max(today.getFullYear(), minYear), maxYear);
+    const clampedMonth = today.getMonth() + 1;
+    const maxDay = getDaysInMonth(clampedYear, clampedMonth);
+    const clampedDay = Math.min(today.getDate(), maxDay);
+    return new Date(clampedYear, clampedMonth - 1, clampedDay);
+  }, [minYear, maxYear]);
   const selectedDate = useMemo(() => {
     const parsed = parseIsoDate(watchedDate);
     if (!parsed) return undefined;
@@ -375,7 +386,7 @@ export default function Contact() {
   }, [watchedDate]);
   const yearRangeStart = minYear;
   const yearRangeEnd = maxYear;
-  const baseDate = selectedDate ?? new Date(minYear, 0, 1);
+  const baseDate = selectedDate ?? (calendarOpen ? todayInRange : new Date(minYear, 0, 1));
   const baseYear = baseDate.getFullYear();
   const baseMonth = baseDate.getMonth() + 1;
   const baseDay = baseDate.getDate();
@@ -413,13 +424,6 @@ export default function Contact() {
   };
 
   const openCalendar = () => {
-    const today = new Date();
-    const clampedYear = Math.min(Math.max(today.getFullYear(), minYear), maxYear);
-    const clampedMonth = today.getMonth() + 1;
-    const maxDay = getDaysInMonth(clampedYear, clampedMonth);
-    const clampedDay = Math.min(today.getDate(), maxDay);
-    const nextDate = new Date(clampedYear, clampedMonth - 1, clampedDay);
-    form.setValue("date", formatIsoDate(nextDate), { shouldDirty: true, shouldValidate: true });
     setCalendarOpen(true);
   };
 
@@ -615,6 +619,25 @@ export default function Contact() {
   const fieldClass =
     "h-12 bg-black/35 border border-white/20 text-foreground placeholder:text-white/50 focus:border-primary/70 focus:ring-2 focus:ring-primary/30 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-md transition-[border,box-shadow,background]";
   const labelClass = "text-sm font-semibold text-foreground/90 tracking-wide";
+  const requiredFieldOrder: Array<keyof z.infer<typeof formSchema>> = [
+    "name",
+    "phone",
+    "date",
+    "packageId",
+  ];
+
+  const scrollToField = (field: keyof z.infer<typeof formSchema>) => {
+    const el = document.querySelector(`[data-field="${field}"]`) as HTMLElement | null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("field-shake");
+    window.setTimeout(() => {
+      el.classList.add("field-shake");
+    }, 10);
+    if (typeof (el as HTMLElement).focus === "function") {
+      el.focus({ preventScroll: true });
+    }
+  };
 
   const onSendReceipt = () => {
     if (!whatsappReceiptHref) {
@@ -622,6 +645,16 @@ export default function Contact() {
       return;
     }
     window.open(whatsappReceiptHref, "_blank");
+  };
+
+  const onInvalid = (errors: FieldErrors<z.infer<typeof formSchema>>) => {
+    const firstMissing = requiredFieldOrder.find((field) => errors[field]);
+    if (!firstMissing) return;
+    if (firstMissing === "date") {
+      openCalendar();
+    }
+    toast.error("يرجى إكمال البيانات الأساسية أولاً.");
+    scrollToField(firstMissing);
   };
 
   const onResetSelections = () => {
@@ -802,7 +835,8 @@ export default function Contact() {
                           <Input
                             placeholder={getValue("contact_placeholder_name", "أدخل اسمك")}
                             {...field}
-                            className={fieldClass}
+                            className={`${fieldClass} ${form.formState.errors.name ? "field-error" : ""}`}
+                            data-field="name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -829,7 +863,8 @@ export default function Contact() {
                             placeholder={getValue("contact_placeholder_phone", "01xxxxxxxxx")}
                             value={field.value}
                             onChange={(e) => field.onChange(normalizePhone(e.target.value))}
-                            className={`${fieldClass} text-right`}
+                            className={`${fieldClass} text-right ${form.formState.errors.phone ? "field-error" : ""}`}
+                            data-field="phone"
                             dir="ltr"
                             inputMode="tel"
                             autoComplete="tel"
@@ -857,8 +892,9 @@ export default function Contact() {
                         <FormControl>
                           <button
                             type="button"
-                            className={`${fieldClass} date-trigger`}
+                            className={`${fieldClass} date-trigger ${form.formState.errors.date ? "field-error" : ""}`}
                             onClick={openCalendar}
+                            data-field="date"
                           >
                             <span className="date-trigger-value" dir="ltr">
                               {field.value
@@ -889,7 +925,10 @@ export default function Contact() {
                         </FormLabel>
                         <FormControl>
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className={`w-full ${fieldClass}`}>
+                            <SelectTrigger
+                              className={`w-full ${fieldClass} ${form.formState.errors.packageId ? "field-error" : ""}`}
+                              data-field="packageId"
+                            >
                               <SelectValue
                                 placeholder={getValue("contact_placeholder_package", "اختر الباقة المناسبة")}
                               />
@@ -1224,7 +1263,7 @@ export default function Contact() {
                         type="button"
                         variant="outline"
                         className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-size"
-                        onClick={form.handleSubmit(onSendReceipt)}
+                        onClick={form.handleSubmit(onSendReceipt, onInvalid)}
                       >
                         <EditableText
                           value={contentMap.contact_submit_button}
@@ -1530,6 +1569,12 @@ export default function Contact() {
           height: 18px;
           color: rgba(255,210,120,0.8);
           filter: drop-shadow(0 0 10px rgba(255,210,130,0.35));
+        }
+        .field-error {
+          border-color: rgba(255,90,90,0.9) !important;
+          box-shadow:
+            0 0 0 2px rgba(255,80,80,0.2),
+            0 0 16px rgba(255,80,80,0.35);
         }
         .date-modal-overlay {
           position: fixed;

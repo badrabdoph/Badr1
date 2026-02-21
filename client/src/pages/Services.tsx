@@ -416,6 +416,18 @@ function PackageCard({
                       label={`اسم الباقة ${pkg.name}`}
                     />
                   </h3>
+                  {isCustom ? (
+                    <div className="custom-line custom-line--compact">
+                      <EditableText
+                        value={contentMap[`${baseKey}_price`]}
+                        fallback={pkg.price}
+                        fieldKey={`${baseKey}_price`}
+                        category="services"
+                        label={`سعر الباقة ${pkg.name}`}
+                        className="custom-note-text"
+                      />
+                    </div>
+                  ) : null}
                   {isCustom && customDescription ? (
                     <div className="custom-line custom-line--compact">
                       <EditableText
@@ -490,16 +502,16 @@ function PackageCard({
         >
           <div className="text-right sm:text-left">
             {isCustom ? (
-              <div className="custom-price">
-                <div className="custom-price-main tabular-nums">
-                  <EditableText
-                    value={contentMap[`${baseKey}_price`]}
-                    fallback={pkg.price}
-                    fieldKey={`${baseKey}_price`}
-                    category="services"
-                    label={`سعر الباقة ${pkg.name}`}
-                  />
-                </div>
+              <div className="custom-line custom-line--compact">
+                <EditableText
+                  value={contentMap.services_custom_prints_note}
+                  fallback="المطبوعات ليست اجباري يمكن الاستغناء عنها والحجز بدونها"
+                  fieldKey="services_custom_prints_note"
+                  category="services"
+                  label="تنبيه المطبوعات - خصص باقتك"
+                  multiline
+                  className="custom-note-text"
+                />
               </div>
             ) : !isSessionCard ? (
               <>
@@ -1924,6 +1936,13 @@ export default function Services() {
           border: 0;
           box-shadow: none;
           text-shadow: 0 0 14px rgba(255,255,255,0.25);
+        }
+        .custom-note-text {
+          color: rgba(255,245,230,0.98);
+          font-weight: 700;
+          text-shadow:
+            0 0 12px rgba(255,210,130,0.55),
+            0 0 24px rgba(255,210,130,0.35);
         }
         .promo-arrow {
           filter: drop-shadow(0 0 10px rgba(255,200,80,0.35));
