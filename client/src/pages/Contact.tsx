@@ -1541,6 +1541,18 @@ export default function Contact() {
           font-family: "Cairo", sans-serif;
           font-weight: 700;
           box-shadow: 0 0 14px rgba(255,210,130,0.35);
+          position: relative;
+          overflow: hidden;
+        }
+        .date-modal-close::after {
+          content: "";
+          position: absolute;
+          inset: -50% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.55) 45%, transparent 70%);
+          transform: translateX(-140%);
+          animation: date-cta-shine 2.8s ease-in-out infinite;
+          opacity: 0.6;
+          pointer-events: none;
         }
         .date-modal-footer {
           display: flex;
@@ -1684,6 +1696,11 @@ export default function Contact() {
           0% { transform: translateX(-120%); }
           65% { transform: translateX(120%); }
           100% { transform: translateX(120%); }
+        }
+        @keyframes date-cta-shine {
+          0% { transform: translateX(-140%); }
+          55% { transform: translateX(140%); }
+          100% { transform: translateX(140%); }
         }
         .receipt-body {
           display: flex;
