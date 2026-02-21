@@ -1605,6 +1605,8 @@ export default function Contact() {
           background: transparent;
           border: none;
           padding: 0;
+          cursor: pointer;
+          outline: none;
         }
         .wheel-item--selected {
           color: rgba(255,245,220,0.98);
