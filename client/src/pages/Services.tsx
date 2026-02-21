@@ -1296,44 +1296,46 @@ export default function Services() {
           opacity: 0.3;
           pointer-events: none;
         }
-        @property --cta-border-angle {
-          syntax: "<angle>";
-          inherits: false;
-          initial-value: 0deg;
-        }
         .cta-border-glow {
-          border-color: transparent;
-          background:
-            linear-gradient(180deg, rgba(12,12,16,0.85), rgba(12,12,16,0.55)) padding-box,
-            conic-gradient(
-              from var(--cta-border-angle),
-              rgba(255,210,120,0.15),
-              rgba(255,235,185,0.9),
-              rgba(255,210,120,0.25),
-              rgba(255,210,120,0.15)
-            ) border-box;
-          box-shadow:
-            0 0 0 1px rgba(255,210,120,0.35) inset,
-            0 18px 50px rgba(255,200,80,0.12);
-          animation: cta-border-spin 5.8s linear infinite, cta-border-pulse 2.8s ease-in-out infinite;
+          position: relative;
+          border-color: rgba(255,210,120,0.45);
+          box-shadow: 0 0 0 1px rgba(255,210,120,0.18) inset, 0 18px 45px rgba(0,0,0,0.25);
+          overflow: hidden;
+        }
+        .cta-border-glow::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,235,190,0.85) 45%, transparent 70%);
+          opacity: 0.7;
+          pointer-events: none;
+          transform: translateX(-120%);
+          animation: cta-border-sweep 4.6s ease-in-out infinite;
+          -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+        }
+        .cta-border-glow::before {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          border-radius: inherit;
+          border: 1px solid rgba(255,210,120,0.35);
+          opacity: 0.8;
+          pointer-events: none;
         }
         .cta-border-glow:hover {
-          box-shadow:
-            0 0 0 1px rgba(255,210,120,0.6) inset,
-            0 22px 70px rgba(255,200,80,0.22);
+          border-color: rgba(255,210,120,0.7);
+          box-shadow: 0 0 0 1px rgba(255,210,120,0.35) inset, 0 24px 70px rgba(255,200,80,0.2);
         }
-        @keyframes cta-border-spin {
-          to { --cta-border-angle: 1turn; }
-        }
-        @keyframes cta-border-pulse {
-          0%, 100% {
-            transform: translateY(0);
-            filter: drop-shadow(0 0 0 rgba(255,200,80,0));
-          }
-          50% {
-            transform: translateY(-1px);
-            filter: drop-shadow(0 0 10px rgba(255,200,80,0.25));
-          }
+        @keyframes cta-border-sweep {
+          0% { transform: translateX(-120%); }
+          60% { transform: translateX(120%); }
+          100% { transform: translateX(120%); }
         }
         .full-day-collapsed {
           cursor: pointer;
