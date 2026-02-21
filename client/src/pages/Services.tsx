@@ -180,15 +180,15 @@ function SectionHeader({
   subtitleClassName?: string;
 }) {
   return (
-    <div className="text-center mb-10">
-      <h2 className="text-3xl md:text-4xl font-bold">{title}</h2>
-      <div className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 bg-black/20 backdrop-blur-md mt-3 mb-0">
+    <div className="text-center mb-7 md:mb-9">
+      <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{title}</h2>
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 bg-black/20 backdrop-blur-md mt-2 mb-0 rounded-full">
         {icon}
         <span className={["text-xs md:text-sm text-foreground/80", subtitleClassName ?? ""].join(" ")}>
           {subtitle ?? "تفاصيل واضحة • جودة ثابتة • ستايل فاخر"}
         </span>
       </div>
-      <div className="mt-3 h-px w-48 mx-auto bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="mt-2 h-px w-40 md:w-48 mx-auto bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
     </div>
   );
 }
@@ -760,7 +760,7 @@ function QuickNav({
       ref={navRef}
     >
       <div className="container mx-auto px-4 py-2 sm:py-3">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide justify-center">
+        <div className="quicknav-row flex items-center gap-1.5 overflow-x-auto scrollbar-hide justify-center">
           {items.map((it) => {
             const isActive = active === it.id;
             return (
@@ -926,13 +926,13 @@ export default function Services() {
         </div>
       </div>
 
-      <header className="pt-10 md:pt-12 pb-0 relative overflow-hidden">
+      <header className="pt-7 md:pt-10 pb-1 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-background/35 to-background" />
         <div className="absolute inset-0 pointer-events-none [background:radial-gradient(circle_at_50%_20%,rgba(255,200,80,0.10),transparent_60%)]" />
         <div className="absolute inset-0 pointer-events-none hero-grain opacity-[0.10]" />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 bg-black/20 backdrop-blur-md mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 bg-black/20 backdrop-blur-md mb-4 rounded-full">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-xs md:text-sm text-foreground/80">
               <EditableText
@@ -945,7 +945,7 @@ export default function Services() {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-7xl font-bold mb-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-4xl md:text-7xl font-bold mb-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <EditableText
               value={contentMap.services_title}
               fallback={pageTexts.services.title}
@@ -980,7 +980,7 @@ export default function Services() {
         contentMap={contentMap}
       />
 
-      <section id="sessions" className="py-10 md:py-16" style={sectionStyle}>
+      <section id="sessions" className="pt-6 pb-10 md:pt-10 md:pb-14" style={sectionStyle}>
         <div className="container mx-auto px-4">
           <SectionHeader
             title={
@@ -1467,6 +1467,8 @@ export default function Services() {
           transition: transform 240ms ease, box-shadow 240ms ease, background 240ms ease;
           will-change: transform;
           position: relative;
+          margin-top: -6px;
+          margin-bottom: 10px;
         }
         .quicknav-float::after {
           content: none;
@@ -1480,6 +1482,25 @@ export default function Services() {
           box-shadow: none;
           transform: translateY(0);
           animation: nav-float 3.6s ease-in-out infinite;
+          margin-top: 0;
+          margin-bottom: 0;
+        }
+        .quicknav-row {
+          padding: 6px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.25);
+          background: linear-gradient(120deg, rgba(255,210,120,0.08), rgba(10,10,14,0.7));
+          box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+        }
+        @media (max-width: 640px) {
+          .quicknav-float {
+            margin-top: -4px;
+            margin-bottom: 6px;
+          }
+          .quicknav-row {
+            padding: 4px;
+            border-radius: 18px;
+          }
         }
         .quicknav-btn {
           position: relative;
