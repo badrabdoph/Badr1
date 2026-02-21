@@ -1618,6 +1618,10 @@ export default function Contact() {
           border-radius: 999px;
           box-shadow: 0 0 16px rgba(255,210,120,0.35);
         }
+        .wheel-item:disabled {
+          cursor: default;
+          opacity: 0.7;
+        }
         .wheel-highlight {
           position: absolute;
           left: 8px;
