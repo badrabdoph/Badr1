@@ -573,17 +573,13 @@ export default function Contact() {
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
     const noneValue = getValue("contact_receipt_none", "بدون");
-    const formatListLines = (
-      items: Array<{ label: string }>,
-      fallback: string,
-      bullet: string
-    ) => {
-      if (!items.length) return [fallback];
-      return items.map((item) => `${bullet}${item.label}`);
+    const formatList = (items: Array<{ label: string }>, fallback: string) => {
+      if (!items.length) return fallback;
+      return items.map((item) => item.label).join("، ");
     };
 
-    const addonLines = formatListLines(selectedAddons, noneValue, "- ");
-    const printLines = formatListLines(selectedPrints, noneValue, "• ");
+    const addonsText = formatList(selectedAddons, noneValue);
+    const printsText = formatList(selectedPrints, noneValue);
 
     const lines = [
       getValue("contact_receipt_title", "إيصال حجز ❤️"),
@@ -591,11 +587,8 @@ export default function Contact() {
       `${getValue("contact_receipt_label_phone", "الهاتف")}: ${watchedPhone || emptyValue}`,
       `${getValue("contact_receipt_label_date", "التاريخ")}: ${watchedDate || emptyValue}`,
       `${getValue("contact_receipt_label_package", "الباقة")}: ${selectedPackage?.label || emptyValue}`,
-      `${getValue("contact_receipt_label_addons", "الإضافات")}:`,
-      ...addonLines,
-      `${getValue("contact_receipt_label_prints", "المطبوعات")}:`,
-      ...printLines,
-      "",
+      `${getValue("contact_receipt_label_addons", "الإضافات")}: ${addonsText}`,
+      `${getValue("contact_receipt_label_prints", "المطبوعات")}: ${printsText}`,
       totalLine,
     ];
     return lines.join("\n");
@@ -1214,7 +1207,7 @@ export default function Contact() {
                     <div className="receipt-body">
                       <div className="receipt-grid">
                         {receiptRows.map((row) => (
-                          <div key={row.label} className="receipt-row">
+                          <div key={row.label} className="receipt-card">
                             <span className="receipt-label">{row.label}</span>
                             <span className="receipt-value">{row.value}</span>
                           </div>
@@ -1222,33 +1215,43 @@ export default function Contact() {
                       </div>
 
                       <div className="receipt-section">
-                        <div className="receipt-label">
-                          {getValue("contact_receipt_label_addons", "الإضافات")}
+                        <div className="receipt-section-header">
+                          <span className="receipt-label">
+                            {getValue("contact_receipt_label_addons", "الإضافات")}
+                          </span>
+                          <span
+                            className={`receipt-pill ${selectedAddons.length ? "receipt-pill--active" : "receipt-pill--muted"}`}
+                          >
+                            {selectedAddons.length ? selectedAddons.length : receiptNoneValue}
+                          </span>
                         </div>
                         {selectedAddons.length ? (
-                          <ul className="receipt-list">
+                          <ul className="receipt-tags">
                             {selectedAddons.map((addon) => (
                               <li key={addon.id}>{addon.label}</li>
                             ))}
                           </ul>
-                        ) : (
-                          <div className="receipt-muted">{receiptNoneValue}</div>
-                        )}
+                        ) : null}
                       </div>
 
                       <div className="receipt-section">
-                        <div className="receipt-label">
-                          {getValue("contact_receipt_label_prints", "المطبوعات")}
+                        <div className="receipt-section-header">
+                          <span className="receipt-label">
+                            {getValue("contact_receipt_label_prints", "المطبوعات")}
+                          </span>
+                          <span
+                            className={`receipt-pill ${selectedPrints.length ? "receipt-pill--active" : "receipt-pill--muted"}`}
+                          >
+                            {selectedPrints.length ? selectedPrints.length : receiptNoneValue}
+                          </span>
                         </div>
                         {selectedPrints.length ? (
-                          <ul className="receipt-list">
+                          <ul className="receipt-tags">
                             {selectedPrints.map((print) => (
                               <li key={print.id}>{print.label}</li>
                             ))}
                           </ul>
-                        ) : (
-                          <div className="receipt-muted">{receiptNoneValue}</div>
-                        )}
+                        ) : null}
                       </div>
 
                       <div className="receipt-total">
@@ -1800,34 +1803,41 @@ export default function Contact() {
         .receipt-body {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 16px;
           font-size: 0.95rem;
           color: rgba(255,245,230,0.9);
         }
         .receipt-grid {
           display: grid;
-          gap: 10px;
-        }
-        .receipt-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: baseline;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 12px;
-          padding-bottom: 8px;
-          border-bottom: 1px dashed rgba(255,255,255,0.08);
+        }
+        @media (max-width: 640px) {
+          .receipt-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        .receipt-card {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(10,10,14,0.3);
         }
         .receipt-label {
-          font-size: 0.78rem;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: rgba(255,245,220,0.65);
+          font-size: 0.72rem;
+          letter-spacing: 0.04em;
+          color: rgba(255,245,220,0.7);
           white-space: nowrap;
         }
         .receipt-value {
           font-size: 1rem;
           font-weight: 600;
           color: rgba(255,245,230,0.95);
-          text-align: left;
+          text-align: right;
+          word-break: break-word;
         }
         .receipt-value--total {
           font-size: 1.1rem;
@@ -1837,22 +1847,52 @@ export default function Contact() {
         .receipt-section {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 10px;
         }
-        .receipt-list {
+        .receipt-section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .receipt-pill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px 10px;
+          border-radius: 999px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.06);
+          color: rgba(255,245,230,0.88);
+          min-width: 44px;
+        }
+        .receipt-pill--active {
+          border-color: rgba(255,210,120,0.45);
+          background: rgba(255,210,120,0.12);
+          color: rgba(255,235,190,0.95);
+        }
+        .receipt-pill--muted {
+          border-color: rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.04);
+          color: rgba(255,255,255,0.6);
+        }
+        .receipt-tags {
           list-style: none;
           padding: 0;
           margin: 0;
-          display: grid;
-          gap: 6px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
         }
-        .receipt-list li {
-          padding: 6px 10px;
-          border-radius: 10px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(10,10,14,0.35);
-          font-size: 0.95rem;
-          color: rgba(255,245,230,0.9);
+        .receipt-tags li {
+          padding: 6px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(10,10,14,0.4);
+          font-size: 0.88rem;
+          color: rgba(255,245,230,0.92);
         }
         .receipt-muted {
           font-size: 0.9rem;
@@ -1862,8 +1902,10 @@ export default function Contact() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding-top: 10px;
-          border-top: 1px solid rgba(255,210,120,0.25);
+          padding: 12px 14px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,210,120,0.3);
+          background: linear-gradient(135deg, rgba(255,210,120,0.08), rgba(10,10,14,0.35));
         }
         .package-option-row {
           display: grid;
