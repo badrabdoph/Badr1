@@ -1509,6 +1509,7 @@ export default function Contact() {
           background: linear-gradient(180deg, rgba(8,8,10,0.96), rgba(8,8,10,0.9));
           box-shadow: 0 24px 70px rgba(0,0,0,0.55);
           padding: 14px;
+          font-family: "Cairo", sans-serif;
         }
         .date-modal-header {
           display: flex;
@@ -1519,7 +1520,8 @@ export default function Contact() {
         .date-modal-title {
           font-size: 0.85rem;
           color: rgba(255,245,220,0.75);
-          letter-spacing: 0.12em;
+          letter-spacing: 0.08em;
+          font-weight: 700;
         }
         .date-modal-close {
           border: 1px solid rgba(255,210,120,0.35);
@@ -1527,9 +1529,10 @@ export default function Contact() {
           color: rgba(255,245,220,0.95);
           padding: 8px 24px;
           border-radius: 999px;
-          font-size: 0.95rem;
+          font-size: 1rem;
           letter-spacing: 0.08em;
-          font-family: var(--font-heading);
+          font-family: "Cairo", sans-serif;
+          font-weight: 700;
           box-shadow: 0 0 14px rgba(255,210,130,0.35);
         }
         .date-modal-footer {
@@ -1558,10 +1561,10 @@ export default function Contact() {
           font-size: 10px;
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.18em;
+          letter-spacing: 0.12em;
           color: rgba(255,235,200,0.9);
           text-shadow: 0 0 12px rgba(255,210,130,0.45);
-          font-family: var(--font-heading);
+          font-family: "Cairo", sans-serif;
         }
         .wheel-column {
           position: relative;
@@ -1599,10 +1602,10 @@ export default function Contact() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.98rem;
-          font-weight: 600;
-          font-family: var(--font-heading);
-          color: rgba(255,255,255,0.5);
+          font-size: 1.05rem;
+          font-weight: 700;
+          font-family: "Cairo", sans-serif;
+          color: rgba(255,255,255,0.65);
           font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
           transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
