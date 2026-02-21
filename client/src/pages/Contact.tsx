@@ -1525,10 +1525,17 @@ export default function Contact() {
           border: 1px solid rgba(255,210,120,0.35);
           background: rgba(255,210,120,0.08);
           color: rgba(255,245,220,0.95);
-          padding: 4px 10px;
+          padding: 8px 24px;
           border-radius: 999px;
-          font-size: 0.75rem;
+          font-size: 0.95rem;
           letter-spacing: 0.08em;
+          font-family: var(--font-heading);
+          box-shadow: 0 0 14px rgba(255,210,130,0.35);
+        }
+        .date-modal-footer {
+          display: flex;
+          justify-content: center;
+          margin-top: 12px;
         }
         .wheel-picker {
           display: flex;
@@ -1614,9 +1621,9 @@ export default function Contact() {
           text-shadow:
             0 0 10px rgba(255,210,130,0.65),
             0 0 18px rgba(255,210,130,0.35);
-          background: linear-gradient(120deg, rgba(255,210,120,0.3), rgba(255,255,255,0.08));
-          border-radius: 999px;
-          box-shadow: 0 0 16px rgba(255,210,120,0.35);
+          background: transparent;
+          border-radius: 0;
+          box-shadow: none;
         }
         .wheel-item:disabled {
           cursor: default;
@@ -1630,13 +1637,12 @@ export default function Contact() {
           height: 28px;
           transform: translateY(-50%);
           border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.45);
-          background: linear-gradient(120deg, rgba(255,210,120,0.32), rgba(255,255,255,0.12));
-          box-shadow:
-            0 0 26px rgba(255,210,130,0.45),
-            inset 0 0 16px rgba(255,210,130,0.2);
+          border: none;
+          background: transparent;
+          box-shadow: none;
           pointer-events: none;
-          animation: wheel-glow 2.6s ease-in-out infinite;
+          animation: none;
+          opacity: 0;
         }
         .wheel-column::after {
           content: "";
