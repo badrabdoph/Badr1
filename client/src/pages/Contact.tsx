@@ -179,7 +179,7 @@ function WheelColumn({
   const listRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const itemHeight = 28;
-  const listHeight = 144;
+  const listHeight = 136;
   const spacerHeight = (listHeight - itemHeight) / 2;
   const isFixed = options.length <= 1;
 
