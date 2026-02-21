@@ -1582,6 +1582,15 @@ export default function Contact() {
         .wheel-column--fixed {
           opacity: 0.8;
         }
+        .wheel-column--fixed .wheel-item {
+          color: rgba(255,235,200,0.85);
+        }
+        .wheel-column--fixed .wheel-item--selected {
+          color: rgba(255,245,220,0.98);
+          text-shadow:
+            0 0 12px rgba(255,210,130,0.7),
+            0 0 24px rgba(255,210,130,0.45);
+        }
         .wheel-list {
           height: 136px;
           overflow-y: auto;
@@ -1634,18 +1643,18 @@ export default function Contact() {
         }
         .wheel-highlight {
           position: absolute;
-          left: 8px;
-          right: 8px;
+          left: 50%;
           top: 50%;
-          height: 28px;
-          transform: translateY(-50%);
-          border-radius: 999px;
-          border: none;
+          width: 34px;
+          height: 34px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          border: 1.5px solid rgba(255,210,120,0.6);
           background: transparent;
-          box-shadow: none;
+          box-shadow: 0 0 18px rgba(255,210,130,0.45);
           pointer-events: none;
-          animation: none;
-          opacity: 0;
+          animation: wheel-glow 2.6s ease-in-out infinite;
+          opacity: 1;
         }
         .wheel-column::after {
           content: "";
