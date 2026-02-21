@@ -1547,19 +1547,25 @@ export default function Contact() {
         .wheel-label {
           text-align: center;
           font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
           letter-spacing: 0.12em;
-          color: rgba(255,245,220,0.65);
+          color: rgba(255,230,190,0.85);
+          text-shadow: 0 0 10px rgba(255,210,130,0.35);
         }
         .wheel-column {
           position: relative;
           border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.08);
-          background: linear-gradient(180deg, rgba(18,18,24,0.6), rgba(8,8,12,0.9));
+          background:
+            linear-gradient(180deg, rgba(26,22,16,0.75), rgba(10,10,14,0.9)),
+            radial-gradient(circle at 20% 20%, rgba(255,210,120,0.15), transparent 60%);
           padding: 0;
           overflow: hidden;
+          box-shadow: inset 0 0 0 1px rgba(255,210,120,0.08), 0 10px 28px rgba(0,0,0,0.4);
         }
         .wheel-column--fixed {
-          opacity: 0.75;
+          opacity: 0.8;
         }
         .wheel-list {
           height: 144px;
@@ -1580,8 +1586,9 @@ export default function Contact() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.92rem;
-          color: rgba(255,255,255,0.5);
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: rgba(255,255,255,0.45);
           font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
           transition: color 0.2s ease;
@@ -1593,7 +1600,7 @@ export default function Contact() {
           color: rgba(255,245,220,0.98);
           font-weight: 700;
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
-          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.04));
+          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.06));
           border-radius: 10px;
         }
         .wheel-highlight {
@@ -1605,9 +1612,29 @@ export default function Contact() {
           transform: translateY(-50%);
           border-radius: 12px;
           border: 1px solid rgba(255,210,120,0.35);
-          background: linear-gradient(120deg, rgba(255,210,120,0.22), rgba(255,255,255,0.05));
-          box-shadow: 0 0 18px rgba(255,210,130,0.22);
+          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.08));
+          box-shadow: 0 0 22px rgba(255,210,130,0.35);
           pointer-events: none;
+          animation: wheel-glow 2.6s ease-in-out infinite;
+        }
+        .wheel-column::after {
+          content: "";
+          position: absolute;
+          inset: -120% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.35) 45%, transparent 70%);
+          transform: translateX(-120%);
+          animation: wheel-shine 5.2s ease-in-out infinite;
+          opacity: 0.35;
+          pointer-events: none;
+        }
+        @keyframes wheel-glow {
+          0%, 100% { box-shadow: 0 0 18px rgba(255,210,130,0.28); }
+          50% { box-shadow: 0 0 26px rgba(255,210,130,0.45); }
+        }
+        @keyframes wheel-shine {
+          0% { transform: translateX(-120%); }
+          65% { transform: translateX(120%); }
+          100% { transform: translateX(120%); }
         }
         .receipt-body {
           display: flex;
