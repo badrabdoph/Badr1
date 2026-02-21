@@ -177,7 +177,7 @@ function WheelColumn({
   onChange: (next: number) => void;
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
   const itemHeight = 28;
   const listHeight = 136;
   const spacerHeight = (listHeight - itemHeight) / 2;
@@ -193,10 +193,9 @@ function WheelColumn({
   const handleScroll = () => {
     if (isFixed) return;
     if (!listRef.current) return;
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = window.setTimeout(() => {
+    if (rafRef.current) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
       if (!listRef.current) return;
       const rawIndex = listRef.current.scrollTop / itemHeight;
       const index = Math.round(rawIndex);
@@ -204,8 +203,16 @@ function WheelColumn({
       if (option && option.value !== value) {
         onChange(option.value);
       }
-    }, 120);
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="wheel-column-wrap">
@@ -1595,9 +1602,12 @@ export default function Contact() {
           height: 136px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
+          scroll-snap-stop: always;
+          scroll-behavior: smooth;
           scrollbar-width: none;
           text-align: center;
           direction: ltr;
+          -webkit-overflow-scrolling: touch;
         }
         .wheel-list--fixed {
           overflow: hidden;
