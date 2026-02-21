@@ -748,9 +748,9 @@ function QuickNav({
 }) {
   const items = [
     { id: "sessions", labelKey: "services_nav_sessions", fallback: "سيشن" },
-    { id: "prints", labelKey: "services_nav_prints", fallback: "المطبوعات" },
     { id: "wedding", labelKey: "services_nav_wedding", fallback: "Full Day" },
     { id: "addons", labelKey: "services_nav_addons", fallback: "إضافات" },
+    { id: "prints", labelKey: "services_nav_prints", fallback: "المطبوعات" },
   ];
 
   return (
@@ -825,7 +825,7 @@ export default function Services() {
   const navAnchorRef = useRef<HTMLDivElement | null>(null);
   const [navHeight, setNavHeight] = useState(0);
 
-  const ids = useMemo(() => ["sessions", "prints", "wedding", "addons"], []);
+  const ids = useMemo(() => ["sessions", "wedding", "addons", "prints"], []);
 
   const jumpTo = (id: string) => {
     const el = document.getElementById(id);
@@ -1018,48 +1018,6 @@ export default function Services() {
               />
             ))}
 
-          </div>
-        </div>
-      </section>
-
-      <section id="prints" className="py-10 md:py-16" style={sectionStyle}>
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            title={
-              <span className="prints-title-wrap">
-                <EditableText
-                  value={contentMap.services_prints_title}
-                  fallback="المطبوعات"
-                  fieldKey="services_prints_title"
-                  category="services"
-                  label="عنوان قسم المطبوعات"
-                />
-                <span className="prints-optional-tag">(اختياري)</span>
-              </span>
-            }
-            subtitle={
-              <EditableText
-                value={contentMap.services_prints_subtitle}
-                fallback="اختار العناصر اللي تناسبك واتحسب الإجمالي فوراً"
-                fieldKey="services_prints_subtitle"
-                category="services"
-                label="وصف قسم المطبوعات"
-              />
-            }
-            icon={<Receipt className="w-4 h-4 text-primary" />}
-          />
-
-          <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto">
-            {customPackage ? (
-              <PackageCard
-                pkg={customPackage as any}
-                kind="addon"
-                whatsappNumber={contactInfo.whatsappNumber}
-                contentMap={contentMap}
-                preselectedPrintIds={prefillPrintIds}
-                onPreselectedPrintIdsChange={setPrefillPrintIds}
-              />
-            ) : null}
           </div>
         </div>
       </section>
@@ -1274,6 +1232,48 @@ export default function Services() {
                 multiline
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="prints" className="py-10 md:py-16" style={sectionStyle}>
+        <div className="container mx-auto px-4">
+          <SectionHeader
+            title={
+              <span className="prints-title-wrap">
+                <EditableText
+                  value={contentMap.services_prints_title}
+                  fallback="المطبوعات"
+                  fieldKey="services_prints_title"
+                  category="services"
+                  label="عنوان قسم المطبوعات"
+                />
+                <span className="prints-optional-tag">(اختياري)</span>
+              </span>
+            }
+            subtitle={
+              <EditableText
+                value={contentMap.services_prints_subtitle}
+                fallback="اختار العناصر اللي تناسبك واتحسب الإجمالي فوراً"
+                fieldKey="services_prints_subtitle"
+                category="services"
+                label="وصف قسم المطبوعات"
+              />
+            }
+            icon={<Receipt className="w-4 h-4 text-primary" />}
+          />
+
+          <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto">
+            {customPackage ? (
+              <PackageCard
+                pkg={customPackage as any}
+                kind="addon"
+                whatsappNumber={contactInfo.whatsappNumber}
+                contentMap={contentMap}
+                preselectedPrintIds={prefillPrintIds}
+                onPreselectedPrintIdsChange={setPrefillPrintIds}
+              />
+            ) : null}
           </div>
         </div>
       </section>
