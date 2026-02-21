@@ -178,6 +178,8 @@ function WheelColumn({
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const scrollEndRef = useRef<number | null>(null);
+  const isUserScrollingRef = useRef(false);
   const itemHeight = 28;
   const listHeight = 136;
   const spacerHeight = (listHeight - itemHeight) / 2;
@@ -187,12 +189,22 @@ function WheelColumn({
     if (!listRef.current) return;
     const index = options.findIndex((opt) => opt.value === value);
     if (index === -1) return;
-    listRef.current.scrollTop = index * itemHeight;
+    const target = index * itemHeight;
+    if (isUserScrollingRef.current) return;
+    if (Math.abs(listRef.current.scrollTop - target) < 1) return;
+    listRef.current.scrollTo({ top: target, behavior: "smooth" });
   }, [options, value]);
 
   const handleScroll = () => {
     if (isFixed) return;
     if (!listRef.current) return;
+    isUserScrollingRef.current = true;
+    if (scrollEndRef.current) {
+      window.clearTimeout(scrollEndRef.current);
+    }
+    scrollEndRef.current = window.setTimeout(() => {
+      isUserScrollingRef.current = false;
+    }, 140);
     if (rafRef.current) return;
     rafRef.current = window.requestAnimationFrame(() => {
       rafRef.current = null;
@@ -210,6 +222,9 @@ function WheelColumn({
     return () => {
       if (rafRef.current) {
         window.cancelAnimationFrame(rafRef.current);
+      }
+      if (scrollEndRef.current) {
+        window.clearTimeout(scrollEndRef.current);
       }
     };
   }, []);
@@ -1620,7 +1635,6 @@ export default function Contact() {
           height: 136px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
-          scroll-snap-stop: always;
           scroll-behavior: smooth;
           scrollbar-width: none;
           text-align: center;
