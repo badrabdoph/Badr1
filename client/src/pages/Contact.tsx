@@ -1746,10 +1746,10 @@ export default function Contact() {
                 <div className="md:hidden">
                   <div className="wheel-picker">
                     <WheelColumn
-                      label="اليوم"
-                      value={baseDay}
-                      options={dayOptions}
-                      onChange={(day) => updateDateParts({ day })}
+                      label="السنة"
+                      value={baseYear}
+                      options={yearOptions}
+                      onChange={(year) => updateDateParts({ year })}
                     />
                     <WheelColumn
                       label="الشهر"
@@ -1758,10 +1758,10 @@ export default function Contact() {
                       onChange={(month) => updateDateParts({ month })}
                     />
                     <WheelColumn
-                      label="السنة"
-                      value={baseYear}
-                      options={yearOptions}
-                      onChange={(year) => updateDateParts({ year })}
+                      label="اليوم"
+                      value={baseDay}
+                      options={dayOptions}
+                      onChange={(day) => updateDateParts({ day })}
                     />
                   </div>
                 </div>
