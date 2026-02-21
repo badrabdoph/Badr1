@@ -1532,9 +1532,10 @@ export default function Contact() {
         }
         .wheel-picker {
           display: flex;
-          flex-direction: row-reverse;
-          gap: 8px;
-          padding: 4px 2px;
+          flex-direction: row;
+          direction: rtl;
+          gap: 10px;
+          padding: 4px 0;
           justify-content: center;
         }
         .wheel-column-wrap {
@@ -1542,37 +1543,42 @@ export default function Contact() {
           flex-direction: column;
           gap: 4px;
           flex: 1;
-          max-width: 96px;
+          max-width: 88px;
+          min-width: 74px;
         }
         .wheel-label {
           text-align: center;
-          font-size: 11px;
-          font-weight: 600;
+          font-size: 10px;
+          font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: rgba(255,230,190,0.85);
-          text-shadow: 0 0 10px rgba(255,210,130,0.35);
+          letter-spacing: 0.18em;
+          color: rgba(255,235,200,0.9);
+          text-shadow: 0 0 12px rgba(255,210,130,0.45);
+          font-family: var(--font-heading);
         }
         .wheel-column {
           position: relative;
-          border-radius: 18px;
-          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          border: 1px solid rgba(255,220,160,0.18);
           background:
-            linear-gradient(180deg, rgba(26,22,16,0.75), rgba(10,10,14,0.9)),
-            radial-gradient(circle at 20% 20%, rgba(255,210,120,0.15), transparent 60%);
+            linear-gradient(180deg, rgba(28,24,20,0.85), rgba(8,8,12,0.96)),
+            radial-gradient(circle at 20% 20%, rgba(255,210,120,0.2), transparent 60%);
           padding: 0;
           overflow: hidden;
-          box-shadow: inset 0 0 0 1px rgba(255,210,120,0.08), 0 10px 28px rgba(0,0,0,0.4);
+          box-shadow:
+            inset 0 0 0 1px rgba(255,210,120,0.12),
+            0 10px 26px rgba(0,0,0,0.5);
         }
         .wheel-column--fixed {
           opacity: 0.8;
         }
         .wheel-list {
-          height: 144px;
+          height: 136px;
           overflow-y: auto;
           scroll-snap-type: y mandatory;
           scrollbar-width: none;
           text-align: center;
+          direction: ltr;
         }
         .wheel-list--fixed {
           overflow: hidden;
@@ -1586,22 +1592,29 @@ export default function Contact() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.95rem;
+          font-size: 0.98rem;
           font-weight: 600;
-          color: rgba(255,255,255,0.45);
+          font-family: var(--font-heading);
+          color: rgba(255,255,255,0.5);
           font-variant-numeric: tabular-nums;
           scroll-snap-align: center;
-          transition: color 0.2s ease;
+          transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
           width: 100%;
           text-align: center;
           line-height: 1;
+          background: transparent;
+          border: none;
+          padding: 0;
         }
         .wheel-item--selected {
           color: rgba(255,245,220,0.98);
           font-weight: 700;
-          text-shadow: 0 0 12px rgba(255,210,130,0.55);
-          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.06));
-          border-radius: 10px;
+          text-shadow:
+            0 0 10px rgba(255,210,130,0.65),
+            0 0 18px rgba(255,210,130,0.35);
+          background: linear-gradient(120deg, rgba(255,210,120,0.3), rgba(255,255,255,0.08));
+          border-radius: 999px;
+          box-shadow: 0 0 16px rgba(255,210,120,0.35);
         }
         .wheel-highlight {
           position: absolute;
@@ -1610,10 +1623,12 @@ export default function Contact() {
           top: 50%;
           height: 28px;
           transform: translateY(-50%);
-          border-radius: 12px;
-          border: 1px solid rgba(255,210,120,0.35);
-          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.08));
-          box-shadow: 0 0 22px rgba(255,210,130,0.35);
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.45);
+          background: linear-gradient(120deg, rgba(255,210,120,0.32), rgba(255,255,255,0.12));
+          box-shadow:
+            0 0 26px rgba(255,210,130,0.45),
+            inset 0 0 16px rgba(255,210,130,0.2);
           pointer-events: none;
           animation: wheel-glow 2.6s ease-in-out infinite;
         }
@@ -1621,10 +1636,10 @@ export default function Contact() {
           content: "";
           position: absolute;
           inset: -120% -20%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.35) 45%, transparent 70%);
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.4) 45%, transparent 70%);
           transform: translateX(-120%);
           animation: wheel-shine 5.2s ease-in-out infinite;
-          opacity: 0.35;
+          opacity: 0.4;
           pointer-events: none;
         }
         @keyframes wheel-glow {
