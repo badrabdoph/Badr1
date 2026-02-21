@@ -1576,6 +1576,17 @@ export default function Contact() {
             0 0 0 2px rgba(255,80,80,0.2),
             0 0 16px rgba(255,80,80,0.35);
         }
+        .field-shake {
+          animation: field-shake 0.32s ease-in-out;
+        }
+        @keyframes field-shake {
+          0% { transform: translateX(0); }
+          20% { transform: translateX(-4px); }
+          40% { transform: translateX(4px); }
+          60% { transform: translateX(-3px); }
+          80% { transform: translateX(3px); }
+          100% { transform: translateX(0); }
+        }
         .date-modal-overlay {
           position: fixed;
           inset: 0;
