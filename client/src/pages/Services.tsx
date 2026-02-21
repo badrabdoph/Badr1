@@ -815,6 +815,9 @@ export default function Services() {
     [sessionPackages]
   );
   const contentMap = content.contentMap ?? {};
+  const legacyServicesSubtitle = "اختار الباقة المناسبة… وكلها بتتعمل بنفس الجودة والاهتمام بالتفاصيل";
+  const rawServicesSubtitle = ((contentMap.services_subtitle ?? pageTexts.services.subtitle) ?? "").trim();
+  const servicesSubtitleText = rawServicesSubtitle === legacyServicesSubtitle ? "" : rawServicesSubtitle;
   const [prefillPrintIds, setPrefillPrintIds] = useState<string[]>(() => readStoredPrintIds());
   const [activeSection, setActiveSection] = useState("sessions");
   const [isNavStuck, setIsNavStuck] = useState(false);
@@ -934,7 +937,7 @@ export default function Services() {
             <span className="text-xs md:text-sm text-foreground/80">
               <EditableText
                 value={contentMap.services_kicker}
-                fallback="باقات واضحة • ستايل فاخر • تسليم احترافي"
+                fallback="كلها بتتعمل بنفس الجودة والاهتمام بالتفاصيل"
                 fieldKey="services_kicker"
                 category="services"
                 label="عنوان صغير (الخدمات)"
@@ -951,16 +954,18 @@ export default function Services() {
               label="عنوان صفحة الخدمات"
             />
           </h1>
-          <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 leading-relaxed services-subtitle-glow">
-            <EditableText
-              value={contentMap.services_subtitle}
-              fallback={pageTexts.services.subtitle}
-              fieldKey="services_subtitle"
-              category="services"
-              label="وصف صفحة الخدمات"
-              multiline
-            />
-          </p>
+          {servicesSubtitleText ? (
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200 leading-relaxed services-subtitle-glow">
+              <EditableText
+                value={contentMap.services_subtitle}
+                fallback={pageTexts.services.subtitle}
+                fieldKey="services_subtitle"
+                category="services"
+                label="وصف صفحة الخدمات"
+                multiline
+              />
+            </p>
+          ) : null}
 
         </div>
       </header>
@@ -990,7 +995,7 @@ export default function Services() {
             subtitle={
               <EditableText
                 value={contentMap.services_sessions_subtitle}
-                fallback="اختيار موفق - نفس الجودة"
+                fallback="تفاصيل تستاهل وقتك"
                 fieldKey="services_sessions_subtitle"
                 category="services"
                 label="وصف قسم السيشن"

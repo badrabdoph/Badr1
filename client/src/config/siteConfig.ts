@@ -418,8 +418,8 @@ export const pageTexts = {
   },
   services: {
     title: "اختر باقتك ✨",
-    subtitle: "اختار الباقة المناسبة… وكلها بتتعمل بنفس الجودة والاهتمام بالتفاصيل",
-    sessionsTitle: "سيشن",
+    subtitle: "",
+    sessionsTitle: "فوتوسيشن",
     sessionsWithPrintsTitle: "جلسات التصوير شامل المطبوعات",
     weddingTitle: "Full Day",
     addonsTitle: "خدمات إضافية (اختياري)",
