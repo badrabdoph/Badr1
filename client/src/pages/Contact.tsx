@@ -349,17 +349,19 @@ export default function Contact() {
   const watchedAddonIds = useWatch({ control: form.control, name: "addonIds" }) ?? [];
   const watchedPrintIds = useWatch({ control: form.control, name: "printIds" }) ?? [];
   const datePreview = useMemo(() => formatDatePreview(watchedDate), [watchedDate]);
-  const fixedYear = 2026;
+  const minYear = 2026;
+  const maxYear = 2027;
   const selectedDate = useMemo(() => {
     const parsed = parseIsoDate(watchedDate);
     if (!parsed) return undefined;
-    if (parsed.getFullYear() === fixedYear) return parsed;
-    return new Date(fixedYear, parsed.getMonth(), parsed.getDate());
+    const parsedYear = parsed.getFullYear();
+    if (parsedYear >= minYear && parsedYear <= maxYear) return parsed;
+    return new Date(minYear, parsed.getMonth(), parsed.getDate());
   }, [watchedDate]);
-  const yearRangeStart = fixedYear;
-  const yearRangeEnd = fixedYear;
-  const baseDate = selectedDate ?? new Date(fixedYear, 0, 1);
-  const baseYear = fixedYear;
+  const yearRangeStart = minYear;
+  const yearRangeEnd = maxYear;
+  const baseDate = selectedDate ?? new Date(minYear, 0, 1);
+  const baseYear = baseDate.getFullYear();
   const baseMonth = baseDate.getMonth() + 1;
   const baseDay = baseDate.getDate();
   const monthOptions = useMemo(
@@ -371,8 +373,12 @@ export default function Contact() {
     []
   );
   const yearOptions = useMemo(
-    () => [{ value: fixedYear, label: String(fixedYear) }],
-    [fixedYear]
+    () =>
+      Array.from({ length: maxYear - minYear + 1 }, (_, index) => {
+        const value = minYear + index;
+        return { value, label: String(value) };
+      }),
+    [minYear, maxYear]
   );
   const dayOptions = useMemo(() => {
     const maxDay = getDaysInMonth(baseYear, baseMonth);
@@ -383,7 +389,7 @@ export default function Contact() {
   }, [baseYear, baseMonth]);
 
   const updateDateParts = (next: { day?: number; month?: number; year?: number }) => {
-    const nextYear = fixedYear;
+    const nextYear = Math.min(Math.max(next.year ?? baseYear, minYear), maxYear);
     const nextMonth = next.month ?? baseMonth;
     const maxDay = getDaysInMonth(nextYear, nextMonth);
     const nextDay = Math.min(next.day ?? baseDay, maxDay);
