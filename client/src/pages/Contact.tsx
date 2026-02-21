@@ -412,6 +412,17 @@ export default function Contact() {
     form.setValue("date", formatIsoDate(nextDate), { shouldDirty: true, shouldValidate: true });
   };
 
+  const openCalendar = () => {
+    const today = new Date();
+    const clampedYear = Math.min(Math.max(today.getFullYear(), minYear), maxYear);
+    const clampedMonth = today.getMonth() + 1;
+    const maxDay = getDaysInMonth(clampedYear, clampedMonth);
+    const clampedDay = Math.min(today.getDate(), maxDay);
+    const nextDate = new Date(clampedYear, clampedMonth - 1, clampedDay);
+    form.setValue("date", formatIsoDate(nextDate), { shouldDirty: true, shouldValidate: true });
+    setCalendarOpen(true);
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const packageParam = params.get("package")?.trim();
@@ -847,7 +858,7 @@ export default function Contact() {
                           <button
                             type="button"
                             className={`${fieldClass} date-trigger`}
-                            onClick={() => setCalendarOpen(true)}
+                            onClick={openCalendar}
                           >
                             <span className="date-trigger-value" dir="ltr">
                               {field.value
