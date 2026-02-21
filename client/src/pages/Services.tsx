@@ -552,7 +552,7 @@ function PackageCard({
               return (
                 <li key={item.fieldKey ?? i} className="flex items-start text-sm">
                   <Check size={16} className="text-primary ml-2 mt-1 flex-shrink-0" />
-                  <span className="text-gray-300 leading-relaxed">
+                  <span className="text-foreground/90 leading-relaxed font-medium">
                     <EditableText
                       value={contentMap[item.fieldKey]}
                       fallback={item.feature}
@@ -1094,7 +1094,7 @@ export default function Services() {
             {addonsPackages.map((service) => (
               <div
                 key={service.id}
-                className="relative bg-card p-7 md:p-8 border border-white/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 premium-border group overflow-hidden"
+                className="relative bg-card p-7 md:p-8 border border-white/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 premium-border group overflow-hidden services-addon-card"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,80,0.12),transparent_60%)]" />
                 <div className="relative z-10">
@@ -1137,7 +1137,7 @@ export default function Services() {
                     {service.features.map((feature, i) => (
                       <li key={i} className="flex items-start text-sm">
                         <Check size={14} className="text-primary ml-2 mt-1 flex-shrink-0" />
-                        <span className="text-gray-300">
+                        <span className="text-foreground/90 font-medium">
                           <EditableText
                             value={contentMap[`package_${service.id}_feature_${i + 1}`]}
                             fallback={feature}
@@ -1298,6 +1298,10 @@ export default function Services() {
           animation: services-shine 6s ease-in-out infinite;
           opacity: 0.3;
           pointer-events: none;
+        }
+        .services-card .text-muted-foreground,
+        .services-addon-card .text-muted-foreground {
+          color: rgba(255,240,220,0.78);
         }
         .cta-border-glow {
           position: relative;
