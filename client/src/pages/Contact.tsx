@@ -573,13 +573,17 @@ export default function Contact() {
   const receiptText = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
     const noneValue = getValue("contact_receipt_none", "بدون");
-    const formatList = (items: Array<{ label: string }>, fallback: string) => {
-      if (!items.length) return fallback;
-      return items.map((item) => item.label).join("، ");
+    const formatListLines = (
+      items: Array<{ label: string }>,
+      fallback: string,
+      bullet: string
+    ) => {
+      if (!items.length) return [fallback];
+      return items.map((item) => `${bullet}${item.label}`);
     };
 
-    const addonsText = formatList(selectedAddons, noneValue);
-    const printsText = formatList(selectedPrints, noneValue);
+    const addonLines = formatListLines(selectedAddons, noneValue, "- ");
+    const printLines = formatListLines(selectedPrints, noneValue, "• ");
 
     const lines = [
       getValue("contact_receipt_title", "إيصال حجز ❤️"),
@@ -587,8 +591,10 @@ export default function Contact() {
       `${getValue("contact_receipt_label_phone", "الهاتف")}: ${watchedPhone || emptyValue}`,
       `${getValue("contact_receipt_label_date", "التاريخ")}: ${watchedDate || emptyValue}`,
       `${getValue("contact_receipt_label_package", "الباقة")}: ${selectedPackage?.label || emptyValue}`,
-      `${getValue("contact_receipt_label_addons", "الإضافات")}: ${addonsText}`,
-      `${getValue("contact_receipt_label_prints", "المطبوعات")}: ${printsText}`,
+      `${getValue("contact_receipt_label_addons", "الإضافات")}:`,
+      ...addonLines,
+      `${getValue("contact_receipt_label_prints", "المطبوعات")}:`,
+      ...printLines,
       totalLine,
     ];
     return lines.join("\n");
