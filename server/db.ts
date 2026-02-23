@@ -30,6 +30,7 @@ import {
   revokeLocalShareLink,
   extendLocalShareLink,
 } from "./_core/shareLinkStore";
+import { queueAdminSnapshot, type AdminSnapshotData } from "./_core/adminSnapshot";
 import {
   getLocalSiteContentByKey,
   listLocalSiteContent,
@@ -39,6 +40,56 @@ import {
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
+
+async function buildAdminSnapshot(): Promise<AdminSnapshotData | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [
+    siteContentRows,
+    siteImagesRows,
+    portfolioRows,
+    sectionsRows,
+    packagesRows,
+    testimonialsRows,
+    contactRows,
+  ] = await Promise.all([
+    db.select().from(siteContent).orderBy(asc(siteContent.key)),
+    db
+      .select()
+      .from(siteImages)
+      .orderBy(asc(siteImages.sortOrder), asc(siteImages.id)),
+    db
+      .select()
+      .from(portfolioImages)
+      .orderBy(asc(portfolioImages.sortOrder), asc(portfolioImages.id)),
+    db
+      .select()
+      .from(siteSections)
+      .orderBy(asc(siteSections.sortOrder), asc(siteSections.id)),
+    db.select().from(packages).orderBy(asc(packages.sortOrder), asc(packages.id)),
+    db
+      .select()
+      .from(testimonials)
+      .orderBy(asc(testimonials.sortOrder), asc(testimonials.id)),
+    db.select().from(contactInfo).orderBy(asc(contactInfo.key)),
+  ]);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    siteContent: siteContentRows,
+    siteImages: siteImagesRows,
+    portfolioImages: portfolioRows,
+    siteSections: sectionsRows,
+    packages: packagesRows,
+    testimonials: testimonialsRows,
+    contactInfo: contactRows,
+  };
+}
+
+function scheduleAdminSnapshot() {
+  queueAdminSnapshot(buildAdminSnapshot);
+}
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -152,13 +203,16 @@ export async function upsertSiteContent(data: InsertSiteContent) {
     set: { value: data.value, label: data.label, category: data.category },
   });
   
-  return await getSiteContentByKey(data.key);
+  const record = await getSiteContentByKey(data.key);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function deleteSiteContent(key: string) {
   const db = await getDb();
   if (!db) return await deleteLocalSiteContent(key);
   await db.delete(siteContent).where(eq(siteContent.key, key));
+  scheduleAdminSnapshot();
   return true;
 }
 
@@ -187,13 +241,16 @@ export async function upsertSiteImage(data: InsertSiteImage) {
     set: { url: data.url, alt: data.alt, category: data.category, sortOrder: data.sortOrder },
   });
   
-  return await getSiteImageByKey(data.key);
+  const record = await getSiteImageByKey(data.key);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function deleteSiteImage(key: string) {
   const db = await getDb();
   if (!db) return false;
   await db.delete(siteImages).where(eq(siteImages.key, key));
+  scheduleAdminSnapshot();
   return true;
 }
 
@@ -294,7 +351,9 @@ export async function createPortfolioImage(data: InsertPortfolioImage) {
   
   const result = await db.insert(portfolioImages).values(data);
   const insertId = result[0].insertId;
-  return await getPortfolioImageById(insertId);
+  const record = await getPortfolioImageById(insertId);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function updatePortfolioImage(id: number, data: Partial<InsertPortfolioImage>) {
@@ -302,13 +361,16 @@ export async function updatePortfolioImage(id: number, data: Partial<InsertPortf
   if (!db) return null;
   
   await db.update(portfolioImages).set(data).where(eq(portfolioImages.id, id));
-  return await getPortfolioImageById(id);
+  const record = await getPortfolioImageById(id);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function deletePortfolioImage(id: number) {
   const db = await getDb();
   if (!db) return false;
   await db.delete(portfolioImages).where(eq(portfolioImages.id, id));
+  scheduleAdminSnapshot();
   return true;
 }
 
@@ -337,7 +399,9 @@ export async function upsertSiteSection(data: InsertSiteSection) {
     set: { name: data.name, visible: data.visible, sortOrder: data.sortOrder, page: data.page },
   });
   
-  return await getSiteSectionByKey(data.key);
+  const record = await getSiteSectionByKey(data.key);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function updateSiteSectionVisibility(key: string, visible: boolean) {
@@ -345,7 +409,9 @@ export async function updateSiteSectionVisibility(key: string, visible: boolean)
   if (!db) return null;
   
   await db.update(siteSections).set({ visible }).where(eq(siteSections.key, key));
-  return await getSiteSectionByKey(key);
+  const record = await getSiteSectionByKey(key);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 // ============================================
@@ -371,7 +437,9 @@ export async function createPackage(data: InsertPackage) {
   
   const result = await db.insert(packages).values(data);
   const insertId = result[0].insertId;
-  return await getPackageById(insertId);
+  const record = await getPackageById(insertId);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function updatePackage(id: number, data: Partial<InsertPackage>) {
@@ -379,13 +447,16 @@ export async function updatePackage(id: number, data: Partial<InsertPackage>) {
   if (!db) return null;
   
   await db.update(packages).set(data).where(eq(packages.id, id));
-  return await getPackageById(id);
+  const record = await getPackageById(id);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function deletePackage(id: number) {
   const db = await getDb();
   if (!db) return false;
   await db.delete(packages).where(eq(packages.id, id));
+  scheduleAdminSnapshot();
   return true;
 }
 
@@ -412,7 +483,9 @@ export async function createTestimonial(data: InsertTestimonial) {
   
   const result = await db.insert(testimonials).values(data);
   const insertId = result[0].insertId;
-  return await getTestimonialById(insertId);
+  const record = await getTestimonialById(insertId);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function updateTestimonial(id: number, data: Partial<InsertTestimonial>) {
@@ -420,13 +493,16 @@ export async function updateTestimonial(id: number, data: Partial<InsertTestimon
   if (!db) return null;
   
   await db.update(testimonials).set(data).where(eq(testimonials.id, id));
-  return await getTestimonialById(id);
+  const record = await getTestimonialById(id);
+  scheduleAdminSnapshot();
+  return record;
 }
 
 export async function deleteTestimonial(id: number) {
   const db = await getDb();
   if (!db) return false;
   await db.delete(testimonials).where(eq(testimonials.id, id));
+  scheduleAdminSnapshot();
   return true;
 }
 
@@ -455,5 +531,7 @@ export async function upsertContactInfo(data: InsertContactInfo) {
     set: { value: data.value, label: data.label },
   });
   
-  return await getContactInfoByKey(data.key);
+  const record = await getContactInfoByKey(data.key);
+  scheduleAdminSnapshot();
+  return record;
 }
