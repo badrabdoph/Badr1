@@ -292,6 +292,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         value: z.string(),
         category: z.string(),
         label: z.string().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.upsertSiteContent(input);
@@ -320,6 +322,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         alt: z.string().optional(),
         category: z.string(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.upsertSiteImage(input);
@@ -373,6 +377,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         category: z.string(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createPortfolioImage(input);
@@ -407,6 +413,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         category: z.string().optional(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -470,6 +478,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         popular: z.boolean().optional(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createPackage(input);
@@ -485,6 +495,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         popular: z.boolean().optional(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
@@ -513,6 +525,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         quote: z.string(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createTestimonial(input);
@@ -524,6 +538,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         quote: z.string().optional(),
         visible: z.boolean().optional(),
         sortOrder: z.number().optional(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;

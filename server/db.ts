@@ -70,6 +70,17 @@ let _pool: Pool | null = null;
 const STORE_MODE = process.env.ADMIN_STORE_MODE ?? "file";
 const useFileStore = STORE_MODE === "file";
 
+type Positionable = {
+  offsetX?: number | null;
+  offsetY?: number | null;
+};
+
+function stripPositionFields<T extends Record<string, any>>(data: T): Omit<T, "offsetX" | "offsetY"> {
+  if (!data) return data as Omit<T, "offsetX" | "offsetY">;
+  const { offsetX, offsetY, ...rest } = data;
+  return rest as Omit<T, "offsetX" | "offsetY">;
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && ENV.databaseUrl) {
@@ -176,12 +187,13 @@ export async function getSiteContentByKey(key: string) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function upsertSiteContent(data: InsertSiteContent) {
+export async function upsertSiteContent(data: InsertSiteContent & Positionable) {
   if (useFileStore) return await upsertLocalSiteContent(data);
   const db = await getDb();
   if (!db) return await upsertLocalSiteContent(data);
-  
-  await db.insert(siteContent).values(data).onDuplicateKeyUpdate({
+
+  const dbData = stripPositionFields(data);
+  await db.insert(siteContent).values(dbData).onDuplicateKeyUpdate({
     set: { value: data.value, label: data.label, category: data.category },
   });
   
@@ -215,12 +227,13 @@ export async function getSiteImageByKey(key: string) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function upsertSiteImage(data: InsertSiteImage) {
+export async function upsertSiteImage(data: InsertSiteImage & Positionable) {
   if (useFileStore) return await upsertFileSiteImage(data);
   const db = await getDb();
   if (!db) return null;
-  
-  await db.insert(siteImages).values(data).onDuplicateKeyUpdate({
+
+  const dbData = stripPositionFields(data);
+  await db.insert(siteImages).values(dbData).onDuplicateKeyUpdate({
     set: { url: data.url, alt: data.alt, category: data.category, sortOrder: data.sortOrder },
   });
   
@@ -323,22 +336,27 @@ export async function getPortfolioImageById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createPortfolioImage(data: InsertPortfolioImage) {
+export async function createPortfolioImage(data: InsertPortfolioImage & Positionable) {
   if (useFileStore) return await createFilePortfolioImage(data);
   const db = await getDb();
   if (!db) return null;
-  
-  const result = await db.insert(portfolioImages).values(data);
+
+  const dbData = stripPositionFields(data);
+  const result = await db.insert(portfolioImages).values(dbData);
   const insertId = result[0].insertId;
   return await getPortfolioImageById(insertId);
 }
 
-export async function updatePortfolioImage(id: number, data: Partial<InsertPortfolioImage>) {
+export async function updatePortfolioImage(
+  id: number,
+  data: Partial<InsertPortfolioImage> & Positionable
+) {
   if (useFileStore) return await updateFilePortfolioImage(id, data);
   const db = await getDb();
   if (!db) return null;
-  
-  await db.update(portfolioImages).set(data).where(eq(portfolioImages.id, id));
+
+  const dbData = stripPositionFields(data);
+  await db.update(portfolioImages).set(dbData).where(eq(portfolioImages.id, id));
   return await getPortfolioImageById(id);
 }
 
@@ -409,22 +427,27 @@ export async function getPackageById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createPackage(data: InsertPackage) {
+export async function createPackage(data: InsertPackage & Positionable) {
   if (useFileStore) return await createFilePackage(data);
   const db = await getDb();
   if (!db) return null;
-  
-  const result = await db.insert(packages).values(data);
+
+  const dbData = stripPositionFields(data);
+  const result = await db.insert(packages).values(dbData);
   const insertId = result[0].insertId;
   return await getPackageById(insertId);
 }
 
-export async function updatePackage(id: number, data: Partial<InsertPackage>) {
+export async function updatePackage(
+  id: number,
+  data: Partial<InsertPackage> & Positionable
+) {
   if (useFileStore) return await updateFilePackage(id, data);
   const db = await getDb();
   if (!db) return null;
-  
-  await db.update(packages).set(data).where(eq(packages.id, id));
+
+  const dbData = stripPositionFields(data);
+  await db.update(packages).set(dbData).where(eq(packages.id, id));
   return await getPackageById(id);
 }
 
@@ -455,22 +478,27 @@ export async function getTestimonialById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
-export async function createTestimonial(data: InsertTestimonial) {
+export async function createTestimonial(data: InsertTestimonial & Positionable) {
   if (useFileStore) return await createFileTestimonial(data);
   const db = await getDb();
   if (!db) return null;
-  
-  const result = await db.insert(testimonials).values(data);
+
+  const dbData = stripPositionFields(data);
+  const result = await db.insert(testimonials).values(dbData);
   const insertId = result[0].insertId;
   return await getTestimonialById(insertId);
 }
 
-export async function updateTestimonial(id: number, data: Partial<InsertTestimonial>) {
+export async function updateTestimonial(
+  id: number,
+  data: Partial<InsertTestimonial> & Positionable
+) {
   if (useFileStore) return await updateFileTestimonial(id, data);
   const db = await getDb();
   if (!db) return null;
-  
-  await db.update(testimonials).set(data).where(eq(testimonials.id, id));
+
+  const dbData = stripPositionFields(data);
+  await db.update(testimonials).set(dbData).where(eq(testimonials.id, id));
   return await getTestimonialById(id);
 }
 

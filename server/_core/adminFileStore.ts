@@ -44,6 +44,16 @@ const FILES = {
   contactInfo: "contact-info.json",
 } as const;
 
+type Positionable = {
+  offsetX?: number | null;
+  offsetY?: number | null;
+};
+
+type PositionedSiteImage = SiteImage & Positionable;
+type PositionedPortfolioImage = PortfolioImage & Positionable;
+type PositionedPackage = Package & Positionable;
+type PositionedTestimonial = Testimonial & Positionable;
+
 type DateField = "createdAt" | "updatedAt" | "expiresAt" | "revokedAt";
 const DATE_FIELDS: DateField[] = ["createdAt", "updatedAt", "expiresAt", "revokedAt"];
 
@@ -216,53 +226,59 @@ function nextId(items: Array<{ id?: number | null }>) {
 }
 
 // Site Images
-export async function listFileSiteImages(): Promise<SiteImage[]> {
-  const data = await readJson<SiteImage[]>(FILES.siteImages, []);
+export async function listFileSiteImages(): Promise<PositionedSiteImage[]> {
+  const data = await readJson<PositionedSiteImage[]>(FILES.siteImages, []);
   return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
-export async function getFileSiteImageByKey(key: string): Promise<SiteImage | null> {
+export async function getFileSiteImageByKey(
+  key: string
+): Promise<PositionedSiteImage | null> {
   const data = await listFileSiteImages();
   return data.find((item) => item.key === key) ?? null;
 }
 
 export async function upsertFileSiteImage(
-  data: InsertSiteImage
-): Promise<SiteImage> {
-  const list = await readJson<SiteImage[]>(FILES.siteImages, []);
+  data: InsertSiteImage & Positionable
+): Promise<PositionedSiteImage> {
+  const list = await readJson<PositionedSiteImage[]>(FILES.siteImages, []);
   const now = new Date();
   const existingIndex = list.findIndex((item) => item.key === data.key);
   if (existingIndex >= 0) {
     const existing = list[existingIndex];
-    const updated: SiteImage = {
+    const updated: PositionedSiteImage = {
       ...existing,
       url: data.url,
       alt: data.alt ?? existing.alt ?? null,
       category: data.category,
       sortOrder: data.sortOrder ?? existing.sortOrder ?? 0,
+      offsetX: data.offsetX ?? existing.offsetX ?? null,
+      offsetY: data.offsetY ?? existing.offsetY ?? null,
       updatedAt: now,
     };
     list[existingIndex] = updated;
     await writeJson(FILES.siteImages, list);
     return updated;
   }
-  const record: SiteImage = {
+  const record: PositionedSiteImage = {
     id: nextId(list),
     key: data.key,
     url: data.url,
     alt: data.alt ?? null,
     category: data.category,
     sortOrder: data.sortOrder ?? 0,
+    offsetX: data.offsetX ?? null,
+    offsetY: data.offsetY ?? null,
     createdAt: now,
     updatedAt: now,
-  } as SiteImage;
+  } as PositionedSiteImage;
   list.push(record);
   await writeJson(FILES.siteImages, list);
   return record;
 }
 
 export async function deleteFileSiteImage(key: string) {
-  const list = await readJson<SiteImage[]>(FILES.siteImages, []);
+  const list = await readJson<PositionedSiteImage[]>(FILES.siteImages, []);
   const next = list.filter((item) => item.key !== key);
   const existed = next.length !== list.length;
   if (existed) {
@@ -272,33 +288,35 @@ export async function deleteFileSiteImage(key: string) {
 }
 
 // Portfolio Images
-export async function listFilePortfolioImages(): Promise<PortfolioImage[]> {
-  const data = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+export async function listFilePortfolioImages(): Promise<PositionedPortfolioImage[]> {
+  const data = await readJson<PositionedPortfolioImage[]>(FILES.portfolioImages, []);
   return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 export async function getFilePortfolioImageById(
   id: number
-): Promise<PortfolioImage | null> {
+): Promise<PositionedPortfolioImage | null> {
   const data = await listFilePortfolioImages();
   return data.find((item) => item.id === id) ?? null;
 }
 
 export async function createFilePortfolioImage(
-  data: InsertPortfolioImage
-): Promise<PortfolioImage> {
-  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  data: InsertPortfolioImage & Positionable
+): Promise<PositionedPortfolioImage> {
+  const list = await readJson<PositionedPortfolioImage[]>(FILES.portfolioImages, []);
   const now = new Date();
-  const record: PortfolioImage = {
+  const record: PositionedPortfolioImage = {
     id: nextId(list),
     title: data.title,
     url: data.url,
     category: data.category,
     visible: data.visible ?? true,
     sortOrder: data.sortOrder ?? 0,
+    offsetX: data.offsetX ?? null,
+    offsetY: data.offsetY ?? null,
     createdAt: now,
     updatedAt: now,
-  } as PortfolioImage;
+  } as PositionedPortfolioImage;
   list.push(record);
   await writeJson(FILES.portfolioImages, list);
   return record;
@@ -306,24 +324,24 @@ export async function createFilePortfolioImage(
 
 export async function updateFilePortfolioImage(
   id: number,
-  data: Partial<InsertPortfolioImage>
-): Promise<PortfolioImage | null> {
-  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  data: Partial<InsertPortfolioImage> & Positionable
+): Promise<PositionedPortfolioImage | null> {
+  const list = await readJson<PositionedPortfolioImage[]>(FILES.portfolioImages, []);
   const index = list.findIndex((item) => item.id === id);
   if (index === -1) return null;
   const existing = list[index];
-  const updated: PortfolioImage = {
+  const updated: PositionedPortfolioImage = {
     ...existing,
     ...data,
     updatedAt: new Date(),
-  } as PortfolioImage;
+  } as PositionedPortfolioImage;
   list[index] = updated;
   await writeJson(FILES.portfolioImages, list);
   return updated;
 }
 
 export async function deleteFilePortfolioImage(id: number) {
-  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  const list = await readJson<PositionedPortfolioImage[]>(FILES.portfolioImages, []);
   const next = list.filter((item) => item.id !== id);
   const existed = next.length !== list.length;
   if (existed) {
@@ -398,20 +416,24 @@ export async function updateFileSiteSectionVisibility(
 }
 
 // Packages
-export async function listFilePackages(): Promise<Package[]> {
-  const data = await readJson<Package[]>(FILES.packages, []);
+export async function listFilePackages(): Promise<PositionedPackage[]> {
+  const data = await readJson<PositionedPackage[]>(FILES.packages, []);
   return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
-export async function getFilePackageById(id: number): Promise<Package | null> {
+export async function getFilePackageById(
+  id: number
+): Promise<PositionedPackage | null> {
   const data = await listFilePackages();
   return data.find((item) => item.id === id) ?? null;
 }
 
-export async function createFilePackage(data: InsertPackage): Promise<Package> {
-  const list = await readJson<Package[]>(FILES.packages, []);
+export async function createFilePackage(
+  data: InsertPackage & Positionable
+): Promise<PositionedPackage> {
+  const list = await readJson<PositionedPackage[]>(FILES.packages, []);
   const now = new Date();
-  const record: Package = {
+  const record: PositionedPackage = {
     id: nextId(list),
     name: data.name,
     price: data.price,
@@ -421,9 +443,11 @@ export async function createFilePackage(data: InsertPackage): Promise<Package> {
     popular: data.popular ?? false,
     visible: data.visible ?? true,
     sortOrder: data.sortOrder ?? 0,
+    offsetX: data.offsetX ?? null,
+    offsetY: data.offsetY ?? null,
     createdAt: now,
     updatedAt: now,
-  } as Package;
+  } as PositionedPackage;
   list.push(record);
   await writeJson(FILES.packages, list);
   return record;
@@ -431,23 +455,23 @@ export async function createFilePackage(data: InsertPackage): Promise<Package> {
 
 export async function updateFilePackage(
   id: number,
-  data: Partial<InsertPackage>
-): Promise<Package | null> {
-  const list = await readJson<Package[]>(FILES.packages, []);
+  data: Partial<InsertPackage> & Positionable
+): Promise<PositionedPackage | null> {
+  const list = await readJson<PositionedPackage[]>(FILES.packages, []);
   const index = list.findIndex((item) => item.id === id);
   if (index === -1) return null;
-  const updated: Package = {
+  const updated: PositionedPackage = {
     ...list[index],
     ...data,
     updatedAt: new Date(),
-  } as Package;
+  } as PositionedPackage;
   list[index] = updated;
   await writeJson(FILES.packages, list);
   return updated;
 }
 
 export async function deleteFilePackage(id: number) {
-  const list = await readJson<Package[]>(FILES.packages, []);
+  const list = await readJson<PositionedPackage[]>(FILES.packages, []);
   const next = list.filter((item) => item.id !== id);
   const existed = next.length !== list.length;
   if (existed) {
@@ -457,32 +481,34 @@ export async function deleteFilePackage(id: number) {
 }
 
 // Testimonials
-export async function listFileTestimonials(): Promise<Testimonial[]> {
-  const data = await readJson<Testimonial[]>(FILES.testimonials, []);
+export async function listFileTestimonials(): Promise<PositionedTestimonial[]> {
+  const data = await readJson<PositionedTestimonial[]>(FILES.testimonials, []);
   return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 export async function getFileTestimonialById(
   id: number
-): Promise<Testimonial | null> {
+): Promise<PositionedTestimonial | null> {
   const data = await listFileTestimonials();
   return data.find((item) => item.id === id) ?? null;
 }
 
 export async function createFileTestimonial(
-  data: InsertTestimonial
-): Promise<Testimonial> {
-  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  data: InsertTestimonial & Positionable
+): Promise<PositionedTestimonial> {
+  const list = await readJson<PositionedTestimonial[]>(FILES.testimonials, []);
   const now = new Date();
-  const record: Testimonial = {
+  const record: PositionedTestimonial = {
     id: nextId(list),
     name: data.name,
     quote: data.quote,
     visible: data.visible ?? true,
     sortOrder: data.sortOrder ?? 0,
+    offsetX: data.offsetX ?? null,
+    offsetY: data.offsetY ?? null,
     createdAt: now,
     updatedAt: now,
-  } as Testimonial;
+  } as PositionedTestimonial;
   list.push(record);
   await writeJson(FILES.testimonials, list);
   return record;
@@ -490,23 +516,23 @@ export async function createFileTestimonial(
 
 export async function updateFileTestimonial(
   id: number,
-  data: Partial<InsertTestimonial>
-): Promise<Testimonial | null> {
-  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  data: Partial<InsertTestimonial> & Positionable
+): Promise<PositionedTestimonial | null> {
+  const list = await readJson<PositionedTestimonial[]>(FILES.testimonials, []);
   const index = list.findIndex((item) => item.id === id);
   if (index === -1) return null;
-  const updated: Testimonial = {
+  const updated: PositionedTestimonial = {
     ...list[index],
     ...data,
     updatedAt: new Date(),
-  } as Testimonial;
+  } as PositionedTestimonial;
   list[index] = updated;
   await writeJson(FILES.testimonials, list);
   return updated;
 }
 
 export async function deleteFileTestimonial(id: number) {
-  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  const list = await readJson<PositionedTestimonial[]>(FILES.testimonials, []);
   const next = list.filter((item) => item.id !== id);
   const existed = next.length !== list.length;
   if (existed) {

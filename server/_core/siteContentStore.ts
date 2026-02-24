@@ -3,9 +3,14 @@ import path from "path";
 import type { InsertSiteContent, SiteContent } from "../../drizzle/schema";
 import { queueAdminGithubSync } from "./adminFileStore";
 
-type LocalSiteContent = SiteContent;
+type SiteContentPosition = {
+  offsetX?: number | null;
+  offsetY?: number | null;
+};
 
-type StoredSiteContent = Omit<SiteContent, "createdAt" | "updatedAt"> & {
+type LocalSiteContent = SiteContent & SiteContentPosition;
+
+type StoredSiteContent = Omit<LocalSiteContent, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
 };
@@ -81,7 +86,7 @@ export async function getLocalSiteContentByKey(
 }
 
 export async function upsertLocalSiteContent(
-  data: InsertSiteContent
+  data: InsertSiteContent & SiteContentPosition
 ): Promise<LocalSiteContent> {
   await ensureStoreLoaded();
   const existing = store?.get(data.key);
@@ -92,6 +97,8 @@ export async function upsertLocalSiteContent(
     value: data.value,
     category: data.category,
     label: data.label ?? existing?.label ?? null,
+    offsetX: data.offsetX ?? existing?.offsetX ?? null,
+    offsetY: data.offsetY ?? existing?.offsetY ?? null,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

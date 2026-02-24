@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
   type ElementType,
   type KeyboardEvent,
@@ -151,6 +152,40 @@ export function useInlineEditMode() {
   };
 }
 
+function useContentPositions() {
+  const { data } = trpc.siteContent.getAll.useQuery(undefined, {
+    staleTime: 60_000,
+  });
+
+  return useMemo(() => {
+    const out: Record<string, { offsetX: number; offsetY: number }> = {};
+    (data ?? []).forEach((item: any) => {
+      out[item.key] = {
+        offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
+        offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
+      };
+    });
+    return out;
+  }, [data]);
+}
+
+function useSiteImagePositions() {
+  const { data } = trpc.siteImages.getAll.useQuery(undefined, {
+    staleTime: 60_000,
+  });
+
+  return useMemo(() => {
+    const out: Record<string, { offsetX: number; offsetY: number }> = {};
+    (data ?? []).forEach((item: any) => {
+      out[item.key] = {
+        offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
+        offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
+      };
+    });
+    return out;
+  }, [data]);
+}
+
 export function EditableText({
   value,
   fallback,
@@ -170,6 +205,14 @@ export function EditableText({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
+  const contentPositions = useContentPositions();
+  const position = contentPositions[fieldKey];
+  const hasOffset = Boolean(position?.offsetX || position?.offsetY);
+  const positionStyle = hasOffset
+    ? {
+        transform: `translate(${position?.offsetX ?? 0}px, ${position?.offsetY ?? 0}px)`,
+      }
+    : undefined;
 
   const normalizedValue = value ?? "";
   const displayValue = normalizedValue || fallback || "";
@@ -307,6 +350,7 @@ export function EditableText({
               : "",
             displayClassName
           )}
+          style={positionStyle}
           onClick={(event) => {
             if (enabled) {
               event.preventDefault();
@@ -722,6 +766,14 @@ export function EditableImage({
   const [isEditing, setIsEditing] = useState(false);
   const [draftUrl, setDraftUrl] = useState(src);
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
+  const imagePositions = useSiteImagePositions();
+  const position = imagePositions[fieldKey];
+  const hasOffset = Boolean(position?.offsetX || position?.offsetY);
+  const positionStyle = hasOffset
+    ? {
+        transform: `translate(${position?.offsetX ?? 0}px, ${position?.offsetY ?? 0}px)`,
+      }
+    : undefined;
 
   useEffect(() => {
     if (isEditing) return;
@@ -819,7 +871,7 @@ export function EditableImage({
 
   return (
     <div className={cn("relative group", className)}>
-      <img src={src} alt={alt} className={imgClassName} />
+      <img src={src} alt={alt} className={imgClassName} style={positionStyle} />
       {enabled && (
         <button
           type="button"

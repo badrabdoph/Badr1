@@ -27,6 +27,8 @@ type PackageLike = {
   priceNote?: string | null;
   visible?: boolean | null;
   sortOrder?: number | null;
+  offsetX?: number | null;
+  offsetY?: number | null;
 };
 
 function normalizePackages(list: PackageLike[]) {
@@ -45,6 +47,8 @@ function normalizePackages(list: PackageLike[]) {
       priceNote: pkg.priceNote ?? undefined,
       visible: pkg.visible !== false,
       sortOrder: pkg.sortOrder ?? 0,
+      offsetX: typeof pkg.offsetX === "number" ? pkg.offsetX : 0,
+      offsetY: typeof pkg.offsetY === "number" ? pkg.offsetY : 0,
     }))
     .filter((pkg) => pkg.visible)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -123,6 +127,8 @@ export function useTestimonialsData() {
         quote: item.quote,
         visible: item.visible !== false,
         sortOrder: item.sortOrder ?? 0,
+        offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
+        offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
       }))
       .filter((t: any) => t.visible)
       .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -146,11 +152,15 @@ export function usePortfolioData() {
           src: img.url,
           title: img.title,
           category: img.category,
+          offsetX: typeof img.offsetX === "number" ? img.offsetX : 0,
+          offsetY: typeof img.offsetY === "number" ? img.offsetY : 0,
         }));
     }
     return (siteImages.portfolioGallery ?? []).map((img) => ({
       ...img,
       id: null,
+      offsetX: 0,
+      offsetY: 0,
     }));
   }, [data]);
 
@@ -181,8 +191,20 @@ export function useContentData() {
     return out;
   }, [data]);
 
+  const positionMap = useMemo(() => {
+    const out: Record<string, { offsetX: number; offsetY: number }> = {};
+    (data ?? []).forEach((item: any) => {
+      out[item.key] = {
+        offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
+        offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
+      };
+    });
+    return out;
+  }, [data]);
+
   return {
     contentMap: map,
+    positionMap,
     heroTitle: map.hero_title ?? "",
     heroSubtitle: map.hero_subtitle ?? "",
     heroDescription: map.hero_description ?? homeHero.subTextAr ?? "",
@@ -200,9 +222,17 @@ export function useSiteImagesData() {
   });
 
   const map = useMemo(() => {
-    const out: Record<string, { url: string; alt?: string | null }> = {};
-    (data ?? []).forEach((item) => {
-      out[item.key] = { url: item.url, alt: item.alt };
+    const out: Record<
+      string,
+      { url: string; alt?: string | null; offsetX: number; offsetY: number }
+    > = {};
+    (data ?? []).forEach((item: any) => {
+      out[item.key] = {
+        url: item.url,
+        alt: item.alt,
+        offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
+        offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
+      };
     });
     return out;
   }, [data]);
