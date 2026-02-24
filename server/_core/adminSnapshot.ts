@@ -1,7 +1,5 @@
 import fs from "fs/promises";
 import path from "path";
-import { execFile } from "child_process";
-import { promisify } from "util";
 
 export type AdminSnapshotData = {
   generatedAt: string;
@@ -19,19 +17,8 @@ const snapshotEnabled =
 const snapshotDir =
   process.env.ADMIN_SNAPSHOT_DIR ??
   path.resolve(process.cwd(), "data", "admin");
-const snapshotGitEnabled =
-  (process.env.ADMIN_SNAPSHOT_GIT_ENABLED ?? "false") === "true";
-const snapshotGitDir =
-  process.env.ADMIN_SNAPSHOT_GIT_DIR ?? process.cwd();
-const snapshotGitRemote =
-  process.env.ADMIN_SNAPSHOT_GIT_REMOTE ?? "origin";
-const snapshotGitBranch =
-  process.env.ADMIN_SNAPSHOT_GIT_BRANCH ?? "main";
-const snapshotGitCommitPrefix =
-  process.env.ADMIN_SNAPSHOT_GIT_COMMIT_PREFIX ?? "chore(admin): snapshot";
 
 let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
-const execFileAsync = promisify(execFile);
 
 function serialize(value: unknown) {
   return JSON.stringify(
@@ -43,28 +30,6 @@ function serialize(value: unknown) {
 
 async function writeJson(filePath: string, data: unknown) {
   await fs.writeFile(filePath, serialize(data), "utf8");
-}
-
-async function runGit(args: string[]) {
-  await execFileAsync("git", args, { cwd: snapshotGitDir });
-}
-
-async function syncSnapshotToGit() {
-  if (!snapshotGitEnabled) return;
-  try {
-    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], {
-      cwd: snapshotGitDir,
-    });
-    if (!stdout.trim()) return;
-
-    await runGit(["add", path.relative(snapshotGitDir, snapshotDir)]);
-
-    const timestamp = new Date().toISOString();
-    await runGit(["commit", "-m", `${snapshotGitCommitPrefix} ${timestamp}`]);
-    await runGit(["push", snapshotGitRemote, snapshotGitBranch]);
-  } catch (error) {
-    console.warn("[AdminSnapshot] Git sync failed:", error);
-  }
 }
 
 export async function writeAdminSnapshot(data: AdminSnapshotData) {
@@ -88,8 +53,6 @@ export async function writeAdminSnapshot(data: AdminSnapshotData) {
     data.testimonials
   );
   await writeJson(path.join(snapshotDir, "contact-info.json"), data.contactInfo);
-
-  await syncSnapshotToGit();
 }
 
 export function queueAdminSnapshot(
