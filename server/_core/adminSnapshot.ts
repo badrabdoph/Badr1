@@ -14,11 +14,6 @@ export type AdminSnapshotData = {
   contactInfo: unknown[];
 };
 
-type SnapshotFile = {
-  name: string;
-  content: string;
-};
-
 const snapshotEnabled =
   (process.env.ADMIN_SNAPSHOT_DISABLED ?? "false") !== "true";
 const snapshotDir =
@@ -38,14 +33,6 @@ const snapshotGitRemote =
   process.env.ADMIN_SNAPSHOT_GIT_REMOTE ?? "origin";
 const snapshotGitRemoteUrl =
   process.env.ADMIN_SNAPSHOT_GIT_REMOTE_URL ?? "";
-const snapshotGithubRepo =
-  process.env.ADMIN_SNAPSHOT_GITHUB_REPO ??
-  (process.env.RAILWAY_GIT_REPO_OWNER && process.env.RAILWAY_GIT_REPO_NAME
-    ? `${process.env.RAILWAY_GIT_REPO_OWNER}/${process.env.RAILWAY_GIT_REPO_NAME}`
-    : "") ??
-  "";
-const snapshotGithubPath =
-  process.env.ADMIN_SNAPSHOT_GITHUB_PATH ?? "data/admin";
 const snapshotGitBranch =
   process.env.ADMIN_SNAPSHOT_GIT_BRANCH ?? "main";
 const snapshotGitCommitPrefix =
@@ -62,23 +49,8 @@ function serialize(value: unknown) {
   );
 }
 
-function buildSnapshotFiles(data: AdminSnapshotData): SnapshotFile[] {
-  return [
-    {
-      name: "meta.json",
-      content: serialize({
-        generatedAt: data.generatedAt,
-        schemaVersion: 1,
-      }),
-    },
-    { name: "site-content.json", content: serialize(data.siteContent) },
-    { name: "site-images.json", content: serialize(data.siteImages) },
-    { name: "portfolio-images.json", content: serialize(data.portfolioImages) },
-    { name: "site-sections.json", content: serialize(data.siteSections) },
-    { name: "packages.json", content: serialize(data.packages) },
-    { name: "testimonials.json", content: serialize(data.testimonials) },
-    { name: "contact-info.json", content: serialize(data.contactInfo) },
-  ];
+async function writeJson(filePath: string, data: unknown) {
+  await fs.writeFile(filePath, serialize(data), "utf8");
 }
 
 async function runGit(args: string[]) {
@@ -133,145 +105,34 @@ async function hasSnapshotChanges() {
   return stdout.trim().length > 0;
 }
 
-function githubPathFor(name: string) {
-  const base = snapshotGithubPath.replace(/\/+$/, "");
-  return `${base}/${name}`;
-}
-
-async function githubRequest<T>(
-  pathName: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const response = await fetch(`https://api.github.com${pathName}`, {
-    ...options,
-    headers: {
-      accept: "application/vnd.github+json",
-      "x-github-api-version": "2022-11-28",
-      authorization: `Bearer ${snapshotGitToken}`,
-      ...(options.headers ?? {}),
-    },
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `GitHub API error (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`
-    );
-  }
-  return (await response.json()) as T;
-}
-
-async function syncSnapshotViaGithubApi(files: SnapshotFile[]) {
-  if (!snapshotGitToken) {
-    console.warn(
-      "[AdminSnapshot] GitHub API sync requires ADMIN_SNAPSHOT_GIT_TOKEN."
-    );
-    return;
-  }
-  if (!snapshotGithubRepo) {
-    console.warn(
-      "[AdminSnapshot] GitHub API sync requires ADMIN_SNAPSHOT_GITHUB_REPO=owner/repo."
-    );
-    return;
-  }
-
-  type RefResponse = { object: { sha: string } };
-  type CommitResponse = { sha: string; tree: { sha: string } };
-  type BlobResponse = { sha: string };
-  type TreeResponse = { sha: string };
-
-  const ref = await githubRequest<RefResponse>(
-    `/repos/${snapshotGithubRepo}/git/ref/heads/${snapshotGitBranch}`
-  );
-  const baseCommit = await githubRequest<CommitResponse>(
-    `/repos/${snapshotGithubRepo}/git/commits/${ref.object.sha}`
-  );
-
-  const treeItems = [];
-  for (const file of files) {
-    const blob = await githubRequest<BlobResponse>(
-      `/repos/${snapshotGithubRepo}/git/blobs`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          content: file.content,
-          encoding: "utf-8",
-        }),
-      }
-    );
-    treeItems.push({
-      path: githubPathFor(file.name),
-      mode: "100644",
-      type: "blob",
-      sha: blob.sha,
-    });
-  }
-
-  const tree = await githubRequest<TreeResponse>(
-    `/repos/${snapshotGithubRepo}/git/trees`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        base_tree: baseCommit.tree.sha,
-        tree: treeItems,
-      }),
-    }
-  );
-
-  const timestamp = new Date().toISOString();
-  const commit = await githubRequest<CommitResponse>(
-    `/repos/${snapshotGithubRepo}/git/commits`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        message: `${snapshotGitCommitPrefix} ${timestamp}`,
-        tree: tree.sha,
-        parents: [baseCommit.sha],
-      }),
-    }
-  );
-
-  await githubRequest(
-    `/repos/${snapshotGithubRepo}/git/refs/heads/${snapshotGitBranch}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ sha: commit.sha, force: false }),
-    }
-  );
-}
-
-async function syncSnapshotToGit(files: SnapshotFile[]) {
+async function syncSnapshotToGit() {
   if (!snapshotGitEnabled) return;
-  const canUseGit = await isGitRepo();
+  if (!(await isGitRepo())) return;
   try {
-    if (canUseGit) {
-      const relativePath = path.relative(snapshotGitDir, snapshotDir);
-      const hasChanges = await hasSnapshotChanges();
-      if (!hasChanges) return;
+    const relativePath = path.relative(snapshotGitDir, snapshotDir);
+    const hasChanges = await hasSnapshotChanges();
+    if (!hasChanges) return;
 
-      await runGit(["add", relativePath]);
+    await runGit(["add", relativePath]);
 
-      const timestamp = new Date().toISOString();
-      await runGit(["commit", "-m", `${snapshotGitCommitPrefix} ${timestamp}`]);
-      const remoteUrl = await getRemoteUrl().catch(() => "");
-      if (!snapshotGitToken && /^https?:\/\//.test(remoteUrl)) {
-        console.warn(
-          "[AdminSnapshot] Skipping push: set ADMIN_SNAPSHOT_GIT_TOKEN (or GITHUB_TOKEN) for HTTPS remotes."
-        );
-        return;
-      }
-      if (remoteUrl) {
-        const authedUrl = withToken(remoteUrl);
-        await runGit(["push", authedUrl, snapshotGitBranch]);
-        return;
-      }
-      await runGit(["push", snapshotGitRemote, snapshotGitBranch]);
+    const timestamp = new Date().toISOString();
+    await runGit(["commit", "-m", `${snapshotGitCommitPrefix} ${timestamp}`]);
+    const remoteUrl = await getRemoteUrl().catch(() => "");
+    if (!snapshotGitToken && /^https?:\/\//.test(remoteUrl)) {
+      console.warn(
+        "[AdminSnapshot] Skipping push: set ADMIN_SNAPSHOT_GIT_TOKEN (or GITHUB_TOKEN) for HTTPS remotes."
+      );
       return;
     }
+    if (remoteUrl) {
+      const authedUrl = withToken(remoteUrl);
+      await runGit(["push", authedUrl, snapshotGitBranch]);
+      return;
+    }
+    await runGit(["push", snapshotGitRemote, snapshotGitBranch]);
   } catch (error) {
     console.warn("[AdminSnapshot] Git sync failed:", error);
   }
-
-  await syncSnapshotViaGithubApi(files);
 }
 
 export async function readAdminSnapshotFile<T>(
@@ -292,14 +153,26 @@ export async function readAdminSnapshotFile<T>(
 export async function writeAdminSnapshot(data: AdminSnapshotData) {
   if (!snapshotEnabled) return;
   await fs.mkdir(snapshotDir, { recursive: true });
-  const files = buildSnapshotFiles(data);
-  await Promise.all(
-    files.map((file) =>
-      fs.writeFile(path.join(snapshotDir, file.name), file.content, "utf8")
-    )
-  );
 
-  await syncSnapshotToGit(files);
+  await writeJson(path.join(snapshotDir, "meta.json"), {
+    generatedAt: data.generatedAt,
+    schemaVersion: 1,
+  });
+  await writeJson(path.join(snapshotDir, "site-content.json"), data.siteContent);
+  await writeJson(path.join(snapshotDir, "site-images.json"), data.siteImages);
+  await writeJson(
+    path.join(snapshotDir, "portfolio-images.json"),
+    data.portfolioImages
+  );
+  await writeJson(path.join(snapshotDir, "site-sections.json"), data.siteSections);
+  await writeJson(path.join(snapshotDir, "packages.json"), data.packages);
+  await writeJson(
+    path.join(snapshotDir, "testimonials.json"),
+    data.testimonials
+  );
+  await writeJson(path.join(snapshotDir, "contact-info.json"), data.contactInfo);
+
+  await syncSnapshotToGit();
 }
 
 export function queueAdminSnapshot(
