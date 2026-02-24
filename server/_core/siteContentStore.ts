@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import type { InsertSiteContent, SiteContent } from "../../drizzle/schema";
+import { queueAdminGithubSync } from "./adminFileStore";
 
 type LocalSiteContent = SiteContent;
 
@@ -56,7 +57,9 @@ async function persistStore() {
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   }));
-  await fs.writeFile(storeFile, JSON.stringify(data, null, 2), "utf8");
+  const content = JSON.stringify(data, null, 2);
+  await fs.writeFile(storeFile, content, "utf8");
+  queueAdminGithubSync(path.basename(storeFile), content);
 }
 
 function nextId() {

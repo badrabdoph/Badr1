@@ -165,7 +165,7 @@ async function flushGithubSync(files: PendingFile[]) {
   );
 }
 
-function queueGithubSync(filename: string, content: string) {
+export function queueAdminGithubSync(filename: string, content: string) {
   if (!githubEnabled) return;
   pendingFiles.set(filename, content);
   if (syncTimer) clearTimeout(syncTimer);
@@ -204,7 +204,7 @@ async function writeJson(filename: string, data: unknown) {
   await fs.mkdir(baseDir, { recursive: true });
   const content = serialize(data);
   await fs.writeFile(path.join(baseDir, filename), content, "utf8");
-  queueGithubSync(filename, content);
+  queueAdminGithubSync(filename, content);
 }
 
 function nextId(items: Array<{ id?: number | null }>) {
