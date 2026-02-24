@@ -19,7 +19,11 @@ const snapshotEnabled =
 const snapshotDir =
   process.env.ADMIN_SNAPSHOT_DIR ??
   path.resolve(process.cwd(), "data", "admin");
-const snapshotGitToken = process.env.ADMIN_SNAPSHOT_GIT_TOKEN ?? "";
+const snapshotGitToken =
+  process.env.ADMIN_SNAPSHOT_GIT_TOKEN ??
+  process.env.GITHUB_TOKEN ??
+  process.env.GH_TOKEN ??
+  "";
 const snapshotGitEnabled =
   (process.env.ADMIN_SNAPSHOT_GIT_ENABLED ??
     (snapshotGitToken ? "true" : "false")) === "true";
@@ -114,6 +118,12 @@ async function syncSnapshotToGit() {
     const timestamp = new Date().toISOString();
     await runGit(["commit", "-m", `${snapshotGitCommitPrefix} ${timestamp}`]);
     const remoteUrl = await getRemoteUrl().catch(() => "");
+    if (!snapshotGitToken && /^https?:\/\//.test(remoteUrl)) {
+      console.warn(
+        "[AdminSnapshot] Skipping push: set ADMIN_SNAPSHOT_GIT_TOKEN (or GITHUB_TOKEN) for HTTPS remotes."
+      );
+      return;
+    }
     if (remoteUrl) {
       const authedUrl = withToken(remoteUrl);
       await runGit(["push", authedUrl, snapshotGitBranch]);
