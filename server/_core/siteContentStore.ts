@@ -11,7 +11,7 @@ type StoredSiteContent = Omit<SiteContent, "createdAt" | "updatedAt"> & {
 
 const storeFile =
   process.env.SITE_CONTENT_FILE ??
-  path.resolve(process.cwd(), "data", "site-content.json");
+  path.resolve(process.cwd(), "data", "admin", "site-content.json");
 
 let store: Map<string, LocalSiteContent> | null = null;
 let loading: Promise<void> | null = null;

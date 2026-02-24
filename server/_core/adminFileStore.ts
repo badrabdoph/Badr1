@@ -1,0 +1,422 @@
+import fs from "fs/promises";
+import path from "path";
+import type {
+  ContactInfo,
+  InsertContactInfo,
+  InsertPackage,
+  InsertPortfolioImage,
+  InsertSiteImage,
+  InsertSiteSection,
+  InsertTestimonial,
+  Package,
+  PortfolioImage,
+  SiteImage,
+  SiteSection,
+  Testimonial,
+} from "../../drizzle/schema";
+
+const baseDir =
+  process.env.ADMIN_FILE_STORE_DIR ?? path.resolve(process.cwd(), "data", "admin");
+
+const FILES = {
+  siteImages: "site-images.json",
+  portfolioImages: "portfolio-images.json",
+  siteSections: "site-sections.json",
+  packages: "packages.json",
+  testimonials: "testimonials.json",
+  contactInfo: "contact-info.json",
+} as const;
+
+type DateField = "createdAt" | "updatedAt" | "expiresAt" | "revokedAt";
+const DATE_FIELDS: DateField[] = ["createdAt", "updatedAt", "expiresAt", "revokedAt"];
+
+function reviveDates<T extends Record<string, any>>(item: T): T {
+  const out = { ...item };
+  for (const key of DATE_FIELDS) {
+    const value = out[key];
+    if (typeof value === "string") {
+      out[key] = new Date(value);
+    }
+  }
+  return out;
+}
+
+function serialize(value: unknown) {
+  return JSON.stringify(
+    value,
+    (_key, item) => (item instanceof Date ? item.toISOString() : item),
+    2
+  );
+}
+
+async function readJson<T>(filename: string, fallback: T): Promise<T> {
+  try {
+    const raw = await fs.readFile(path.join(baseDir, filename), "utf8");
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map(reviveDates) as T;
+    }
+    return reviveDates(parsed) as T;
+  } catch (error: any) {
+    if (error?.code !== "ENOENT") {
+      console.warn("[AdminFileStore] Failed to read file:", error);
+    }
+    return fallback;
+  }
+}
+
+async function writeJson(filename: string, data: unknown) {
+  await fs.mkdir(baseDir, { recursive: true });
+  await fs.writeFile(path.join(baseDir, filename), serialize(data), "utf8");
+}
+
+function nextId(items: Array<{ id?: number | null }>) {
+  const max = items.reduce((acc, item) => {
+    const value = typeof item.id === "number" ? item.id : 0;
+    return value > acc ? value : acc;
+  }, 0);
+  return max + 1;
+}
+
+// Site Images
+export async function listFileSiteImages(): Promise<SiteImage[]> {
+  const data = await readJson<SiteImage[]>(FILES.siteImages, []);
+  return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+export async function getFileSiteImageByKey(key: string): Promise<SiteImage | null> {
+  const data = await listFileSiteImages();
+  return data.find((item) => item.key === key) ?? null;
+}
+
+export async function upsertFileSiteImage(
+  data: InsertSiteImage
+): Promise<SiteImage> {
+  const list = await readJson<SiteImage[]>(FILES.siteImages, []);
+  const now = new Date();
+  const existingIndex = list.findIndex((item) => item.key === data.key);
+  if (existingIndex >= 0) {
+    const existing = list[existingIndex];
+    const updated: SiteImage = {
+      ...existing,
+      url: data.url,
+      alt: data.alt ?? existing.alt ?? null,
+      category: data.category,
+      sortOrder: data.sortOrder ?? existing.sortOrder ?? 0,
+      updatedAt: now,
+    };
+    list[existingIndex] = updated;
+    await writeJson(FILES.siteImages, list);
+    return updated;
+  }
+  const record: SiteImage = {
+    id: nextId(list),
+    key: data.key,
+    url: data.url,
+    alt: data.alt ?? null,
+    category: data.category,
+    sortOrder: data.sortOrder ?? 0,
+    createdAt: now,
+    updatedAt: now,
+  } as SiteImage;
+  list.push(record);
+  await writeJson(FILES.siteImages, list);
+  return record;
+}
+
+export async function deleteFileSiteImage(key: string) {
+  const list = await readJson<SiteImage[]>(FILES.siteImages, []);
+  const next = list.filter((item) => item.key !== key);
+  const existed = next.length !== list.length;
+  if (existed) {
+    await writeJson(FILES.siteImages, next);
+  }
+  return existed;
+}
+
+// Portfolio Images
+export async function listFilePortfolioImages(): Promise<PortfolioImage[]> {
+  const data = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+export async function getFilePortfolioImageById(
+  id: number
+): Promise<PortfolioImage | null> {
+  const data = await listFilePortfolioImages();
+  return data.find((item) => item.id === id) ?? null;
+}
+
+export async function createFilePortfolioImage(
+  data: InsertPortfolioImage
+): Promise<PortfolioImage> {
+  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  const now = new Date();
+  const record: PortfolioImage = {
+    id: nextId(list),
+    title: data.title,
+    url: data.url,
+    category: data.category,
+    visible: data.visible ?? true,
+    sortOrder: data.sortOrder ?? 0,
+    createdAt: now,
+    updatedAt: now,
+  } as PortfolioImage;
+  list.push(record);
+  await writeJson(FILES.portfolioImages, list);
+  return record;
+}
+
+export async function updateFilePortfolioImage(
+  id: number,
+  data: Partial<InsertPortfolioImage>
+): Promise<PortfolioImage | null> {
+  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  const index = list.findIndex((item) => item.id === id);
+  if (index === -1) return null;
+  const existing = list[index];
+  const updated: PortfolioImage = {
+    ...existing,
+    ...data,
+    updatedAt: new Date(),
+  } as PortfolioImage;
+  list[index] = updated;
+  await writeJson(FILES.portfolioImages, list);
+  return updated;
+}
+
+export async function deleteFilePortfolioImage(id: number) {
+  const list = await readJson<PortfolioImage[]>(FILES.portfolioImages, []);
+  const next = list.filter((item) => item.id !== id);
+  const existed = next.length !== list.length;
+  if (existed) {
+    await writeJson(FILES.portfolioImages, next);
+  }
+  return existed;
+}
+
+// Site Sections
+export async function listFileSiteSections(): Promise<SiteSection[]> {
+  const data = await readJson<SiteSection[]>(FILES.siteSections, []);
+  return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+export async function getFileSiteSectionByKey(
+  key: string
+): Promise<SiteSection | null> {
+  const data = await listFileSiteSections();
+  return data.find((item) => item.key === key) ?? null;
+}
+
+export async function upsertFileSiteSection(
+  data: InsertSiteSection
+): Promise<SiteSection> {
+  const list = await readJson<SiteSection[]>(FILES.siteSections, []);
+  const now = new Date();
+  const index = list.findIndex((item) => item.key === data.key);
+  if (index >= 0) {
+    const existing = list[index];
+    const updated: SiteSection = {
+      ...existing,
+      name: data.name,
+      visible: data.visible,
+      sortOrder: data.sortOrder ?? existing.sortOrder ?? 0,
+      page: data.page,
+      updatedAt: now,
+    } as SiteSection;
+    list[index] = updated;
+    await writeJson(FILES.siteSections, list);
+    return updated;
+  }
+  const record: SiteSection = {
+    id: nextId(list),
+    key: data.key,
+    name: data.name,
+    visible: data.visible,
+    sortOrder: data.sortOrder ?? 0,
+    page: data.page,
+    createdAt: now,
+    updatedAt: now,
+  } as SiteSection;
+  list.push(record);
+  await writeJson(FILES.siteSections, list);
+  return record;
+}
+
+export async function updateFileSiteSectionVisibility(
+  key: string,
+  visible: boolean
+): Promise<SiteSection | null> {
+  const list = await readJson<SiteSection[]>(FILES.siteSections, []);
+  const index = list.findIndex((item) => item.key === key);
+  if (index === -1) return null;
+  const updated: SiteSection = {
+    ...list[index],
+    visible,
+    updatedAt: new Date(),
+  } as SiteSection;
+  list[index] = updated;
+  await writeJson(FILES.siteSections, list);
+  return updated;
+}
+
+// Packages
+export async function listFilePackages(): Promise<Package[]> {
+  const data = await readJson<Package[]>(FILES.packages, []);
+  return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+export async function getFilePackageById(id: number): Promise<Package | null> {
+  const data = await listFilePackages();
+  return data.find((item) => item.id === id) ?? null;
+}
+
+export async function createFilePackage(data: InsertPackage): Promise<Package> {
+  const list = await readJson<Package[]>(FILES.packages, []);
+  const now = new Date();
+  const record: Package = {
+    id: nextId(list),
+    name: data.name,
+    price: data.price,
+    description: data.description ?? null,
+    features: data.features ?? null,
+    category: data.category,
+    popular: data.popular ?? false,
+    visible: data.visible ?? true,
+    sortOrder: data.sortOrder ?? 0,
+    createdAt: now,
+    updatedAt: now,
+  } as Package;
+  list.push(record);
+  await writeJson(FILES.packages, list);
+  return record;
+}
+
+export async function updateFilePackage(
+  id: number,
+  data: Partial<InsertPackage>
+): Promise<Package | null> {
+  const list = await readJson<Package[]>(FILES.packages, []);
+  const index = list.findIndex((item) => item.id === id);
+  if (index === -1) return null;
+  const updated: Package = {
+    ...list[index],
+    ...data,
+    updatedAt: new Date(),
+  } as Package;
+  list[index] = updated;
+  await writeJson(FILES.packages, list);
+  return updated;
+}
+
+export async function deleteFilePackage(id: number) {
+  const list = await readJson<Package[]>(FILES.packages, []);
+  const next = list.filter((item) => item.id !== id);
+  const existed = next.length !== list.length;
+  if (existed) {
+    await writeJson(FILES.packages, next);
+  }
+  return existed;
+}
+
+// Testimonials
+export async function listFileTestimonials(): Promise<Testimonial[]> {
+  const data = await readJson<Testimonial[]>(FILES.testimonials, []);
+  return data.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+export async function getFileTestimonialById(
+  id: number
+): Promise<Testimonial | null> {
+  const data = await listFileTestimonials();
+  return data.find((item) => item.id === id) ?? null;
+}
+
+export async function createFileTestimonial(
+  data: InsertTestimonial
+): Promise<Testimonial> {
+  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  const now = new Date();
+  const record: Testimonial = {
+    id: nextId(list),
+    name: data.name,
+    quote: data.quote,
+    visible: data.visible ?? true,
+    sortOrder: data.sortOrder ?? 0,
+    createdAt: now,
+    updatedAt: now,
+  } as Testimonial;
+  list.push(record);
+  await writeJson(FILES.testimonials, list);
+  return record;
+}
+
+export async function updateFileTestimonial(
+  id: number,
+  data: Partial<InsertTestimonial>
+): Promise<Testimonial | null> {
+  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  const index = list.findIndex((item) => item.id === id);
+  if (index === -1) return null;
+  const updated: Testimonial = {
+    ...list[index],
+    ...data,
+    updatedAt: new Date(),
+  } as Testimonial;
+  list[index] = updated;
+  await writeJson(FILES.testimonials, list);
+  return updated;
+}
+
+export async function deleteFileTestimonial(id: number) {
+  const list = await readJson<Testimonial[]>(FILES.testimonials, []);
+  const next = list.filter((item) => item.id !== id);
+  const existed = next.length !== list.length;
+  if (existed) {
+    await writeJson(FILES.testimonials, next);
+  }
+  return existed;
+}
+
+// Contact Info
+export async function listFileContactInfo(): Promise<ContactInfo[]> {
+  return await readJson<ContactInfo[]>(FILES.contactInfo, []);
+}
+
+export async function getFileContactInfoByKey(
+  key: string
+): Promise<ContactInfo | null> {
+  const data = await listFileContactInfo();
+  return data.find((item) => item.key === key) ?? null;
+}
+
+export async function upsertFileContactInfo(
+  data: InsertContactInfo
+): Promise<ContactInfo> {
+  const list = await readJson<ContactInfo[]>(FILES.contactInfo, []);
+  const now = new Date();
+  const index = list.findIndex((item) => item.key === data.key);
+  if (index >= 0) {
+    const existing = list[index];
+    const updated: ContactInfo = {
+      ...existing,
+      value: data.value,
+      label: data.label ?? existing.label ?? null,
+      updatedAt: now,
+    } as ContactInfo;
+    list[index] = updated;
+    await writeJson(FILES.contactInfo, list);
+    return updated;
+  }
+  const record: ContactInfo = {
+    id: nextId(list),
+    key: data.key,
+    value: data.value,
+    label: data.label ?? null,
+    createdAt: now,
+    updatedAt: now,
+  } as ContactInfo;
+  list.push(record);
+  await writeJson(FILES.contactInfo, list);
+  return record;
+}
