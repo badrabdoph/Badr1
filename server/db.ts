@@ -37,6 +37,7 @@ import {
   upsertLocalSiteContent,
   deleteLocalSiteContent,
 } from "./_core/siteContentStore";
+import { ensureSchema } from "./_core/ensureSchema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
@@ -98,6 +99,7 @@ export async function getDb() {
       if (!_pool) {
         _pool = mysql.createPool(ENV.databaseUrl);
       }
+      await ensureSchema(_pool);
       _db = drizzle(_pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
