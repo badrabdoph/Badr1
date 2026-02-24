@@ -18,6 +18,23 @@ import type {
 const baseDir =
   process.env.ADMIN_FILE_STORE_DIR ?? path.resolve(process.cwd(), "data", "admin");
 
+const githubToken =
+  process.env.ADMIN_GITHUB_TOKEN ??
+  process.env.GITHUB_TOKEN ??
+  process.env.GH_TOKEN ??
+  "";
+const githubRepo =
+  process.env.ADMIN_GITHUB_REPO ??
+  (process.env.RAILWAY_GIT_REPO_OWNER && process.env.RAILWAY_GIT_REPO_NAME
+    ? `${process.env.RAILWAY_GIT_REPO_OWNER}/${process.env.RAILWAY_GIT_REPO_NAME}`
+    : "") ??
+  "";
+const githubBranch = process.env.ADMIN_GITHUB_BRANCH ?? "main";
+const githubPath = process.env.ADMIN_GITHUB_PATH ?? "data/admin";
+const githubEnabled =
+  (process.env.ADMIN_GITHUB_SYNC ??
+    (githubToken && githubRepo ? "true" : "false")) === "true";
+
 const FILES = {
   siteImages: "site-images.json",
   portfolioImages: "portfolio-images.json",
@@ -49,6 +66,124 @@ function serialize(value: unknown) {
   );
 }
 
+type PendingFile = { name: string; content: string };
+const pendingFiles = new Map<string, string>();
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function githubPathFor(name: string) {
+  const base = githubPath.replace(/\/+$/, "");
+  return `${base}/${name}`;
+}
+
+async function githubRequest<T>(
+  pathName: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`https://api.github.com${pathName}`, {
+    ...options,
+    headers: {
+      accept: "application/vnd.github+json",
+      "x-github-api-version": "2022-11-28",
+      authorization: `Bearer ${githubToken}`,
+      ...(options.headers ?? {}),
+    },
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `GitHub API error (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`
+    );
+  }
+  return (await response.json()) as T;
+}
+
+async function flushGithubSync(files: PendingFile[]) {
+  if (!githubEnabled || !githubToken || !githubRepo) return;
+
+  type RefResponse = { object: { sha: string } };
+  type CommitResponse = { sha: string; tree: { sha: string } };
+  type BlobResponse = { sha: string };
+  type TreeResponse = { sha: string };
+
+  const ref = await githubRequest<RefResponse>(
+    `/repos/${githubRepo}/git/ref/heads/${githubBranch}`
+  );
+  const baseCommit = await githubRequest<CommitResponse>(
+    `/repos/${githubRepo}/git/commits/${ref.object.sha}`
+  );
+
+  const treeItems = [];
+  for (const file of files) {
+    const blob = await githubRequest<BlobResponse>(
+      `/repos/${githubRepo}/git/blobs`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          content: file.content,
+          encoding: "utf-8",
+        }),
+      }
+    );
+    treeItems.push({
+      path: githubPathFor(file.name),
+      mode: "100644",
+      type: "blob",
+      sha: blob.sha,
+    });
+  }
+
+  const tree = await githubRequest<TreeResponse>(
+    `/repos/${githubRepo}/git/trees`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        base_tree: baseCommit.tree.sha,
+        tree: treeItems,
+      }),
+    }
+  );
+
+  const timestamp = new Date().toISOString();
+  const commit = await githubRequest<CommitResponse>(
+    `/repos/${githubRepo}/git/commits`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message: `chore(admin): update content ${timestamp}`,
+        tree: tree.sha,
+        parents: [baseCommit.sha],
+      }),
+    }
+  );
+
+  await githubRequest(
+    `/repos/${githubRepo}/git/refs/heads/${githubBranch}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ sha: commit.sha, force: false }),
+    }
+  );
+}
+
+function queueGithubSync(filename: string, content: string) {
+  if (!githubEnabled) return;
+  pendingFiles.set(filename, content);
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(async () => {
+    syncTimer = null;
+    const files = Array.from(pendingFiles.entries()).map(([name, fileContent]) => ({
+      name,
+      content: fileContent,
+    }));
+    pendingFiles.clear();
+    try {
+      await flushGithubSync(files);
+    } catch (error) {
+      console.warn("[AdminFileStore] GitHub sync failed:", error);
+    }
+  }, 800);
+}
+
 async function readJson<T>(filename: string, fallback: T): Promise<T> {
   try {
     const raw = await fs.readFile(path.join(baseDir, filename), "utf8");
@@ -67,7 +202,9 @@ async function readJson<T>(filename: string, fallback: T): Promise<T> {
 
 async function writeJson(filename: string, data: unknown) {
   await fs.mkdir(baseDir, { recursive: true });
-  await fs.writeFile(path.join(baseDir, filename), serialize(data), "utf8");
+  const content = serialize(data);
+  await fs.writeFile(path.join(baseDir, filename), content, "utf8");
+  queueGithubSync(filename, content);
 }
 
 function nextId(items: Array<{ id?: number | null }>) {
