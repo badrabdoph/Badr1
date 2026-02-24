@@ -149,6 +149,32 @@ async function runAutoMigrate(db: ReturnType<typeof drizzle>) {
         console.warn("[Database] Migration statement failed:", error);
       }
     }
+
+    try {
+      if (_pool) {
+        const [rows] = await _pool.query("SELECT DATABASE() AS db");
+        const dbName =
+          Array.isArray(rows) && rows.length > 0
+            ? (rows[0] as any).db
+            : null;
+        if (dbName) {
+          await _pool.query(
+            `ALTER DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+          );
+        }
+        for (const table of REQUIRED_TABLES) {
+          try {
+            await _pool.query(
+              `ALTER TABLE \`${table}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+            );
+          } catch (error) {
+            console.warn(`[Database] Failed to convert ${table} to utf8mb4:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("[Database] Failed to enforce utf8mb4:", error);
+    }
   })();
   return _autoMigrate;
 }
