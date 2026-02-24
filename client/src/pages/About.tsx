@@ -7,6 +7,7 @@ import { aboutContent, photographerInfo, siteImages, ctaTexts, externalPortfolio
 import { useContentData, useTestimonialsData, useSiteImagesData } from "@/hooks/useSiteData";
 import SmartImage from "@/components/SmartImage";
 import { EditableImage, EditableText } from "@/components/InlineEdit";
+import { getOffsetStyle } from "@/lib/positioning";
 
 export default function About() {
   const content = useContentData();
@@ -348,6 +349,7 @@ export default function About() {
             {testimonials.slice(0, 2).map((t, i) => (
               <div
                 key={i}
+                style={getOffsetStyle((t as any)?.offsetX, (t as any)?.offsetY)}
                 className="bg-card/40 border border-white/10 p-7 premium-border hover:border-primary/25 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-3 text-primary">

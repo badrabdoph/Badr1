@@ -23,6 +23,7 @@ import {
 } from "@/config/siteConfig";
 import { useContactData, useContentData, usePortfolioData, useTestimonialsData, useSiteImagesData } from "@/hooks/useSiteData";
 import { EditableImage, EditableLinkIcon, EditableText, useInlineEditMode } from "@/components/InlineEdit";
+import { getOffsetStyle } from "@/lib/positioning";
 
 function ServiceIcon({ title }: { title: string }) {
   const t = title.toLowerCase();
@@ -108,7 +109,7 @@ function MosaicCard({
   imageKey,
   imageLabel,
 }: {
-  img: { src: string; title: string };
+  img: { src: string; title: string; offsetX?: number; offsetY?: number };
   onClick: () => void;
   className?: string;
   eager?: boolean;
@@ -148,6 +149,7 @@ function MosaicCard({
       }}
       style={{
         backgroundImage: `url('${img.src}')`,
+        ...(getOffsetStyle((img as any)?.offsetX, (img as any)?.offsetY) ?? {}),
       }}
     >
       {enabled && imageKey ? (
@@ -335,6 +337,7 @@ export default function Home() {
             "--hero-image": `url('${heroImage}')`,
             "--hero-image-mobile": `url('${heroImageMobile}')`,
             filter: "brightness(0.36)",
+            ...(getOffsetStyle(imageMap.heroImage?.offsetX, imageMap.heroImage?.offsetY) ?? {}),
           }}
         />
 

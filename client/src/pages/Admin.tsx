@@ -50,6 +50,11 @@ import {
   Redo2,
   Pencil,
   ShieldCheck,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Move,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useEditHistory, type EditAction } from "@/lib/editHistory";
@@ -326,8 +331,188 @@ type ManagerProps = {
   onRefresh?: () => void;
 };
 
+type ConfirmState = {
+  open: boolean;
+  title: string;
+  description?: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  onConfirm?: () => void;
+};
+
+function useConfirmDialog() {
+  const [state, setState] = useState<ConfirmState>({
+    open: false,
+    title: "تأكيد الحفظ",
+    description: "هل تريد حفظ التعديل الآن؟",
+    confirmLabel: "حفظ",
+    cancelLabel: "إلغاء",
+  });
+
+  const requestConfirm = (options: {
+    title?: string;
+    description?: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm: () => void;
+  }) => {
+    setState({
+      open: true,
+      title: options.title ?? "تأكيد الحفظ",
+      description: options.description ?? "هل تريد حفظ التعديل الآن؟",
+      confirmLabel: options.confirmLabel ?? "حفظ",
+      cancelLabel: options.cancelLabel ?? "إلغاء",
+      onConfirm: options.onConfirm,
+    });
+  };
+
+  const closeDialog = () => {
+    setState((prev) => ({ ...prev, open: false, onConfirm: undefined }));
+  };
+
+  const ConfirmDialog = () => (
+    <AlertDialog
+      open={state.open}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeDialog();
+        }
+      }}
+    >
+      <AlertDialogContent dir="rtl" className="text-right">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{state.title}</AlertDialogTitle>
+          {state.description ? (
+            <AlertDialogDescription>{state.description}</AlertDialogDescription>
+          ) : null}
+        </AlertDialogHeader>
+        <AlertDialogFooter className="sm:justify-start">
+          <AlertDialogCancel>{state.cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              const action = state.onConfirm;
+              closeDialog();
+              action?.();
+            }}
+          >
+            {state.confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  return { requestConfirm, ConfirmDialog };
+}
+
+type PositionValue = { offsetX: number; offsetY: number };
+
+function toOffset(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function PositionControls({
+  value,
+  onChange,
+  onSave,
+  disabled,
+  step = 10,
+}: {
+  value: PositionValue;
+  onChange: (next: PositionValue) => void;
+  onSave: () => void;
+  disabled?: boolean;
+  step?: number;
+}) {
+  const applyDelta = (dx: number, dy: number) => {
+    onChange({ offsetX: value.offsetX + dx, offsetY: value.offsetY + dy });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <Move className="w-3 h-3" />
+          الموضع (px)
+        </span>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            value={value.offsetX}
+            onChange={(e) => onChange({ offsetX: Number(e.target.value) || 0, offsetY: value.offsetY })}
+            className="h-8 w-20 text-xs"
+            dir="ltr"
+            placeholder="X"
+          />
+          <Input
+            type="number"
+            value={value.offsetY}
+            onChange={(e) => onChange({ offsetX: value.offsetX, offsetY: Number(e.target.value) || 0 })}
+            className="h-8 w-20 text-xs"
+            dir="ltr"
+            placeholder="Y"
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            onClick={() => applyDelta(0, -step)}
+          >
+            <ArrowUp className="w-3 h-3" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            onClick={() => applyDelta(-step, 0)}
+          >
+            <ArrowRight className="w-3 h-3" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            onClick={() => applyDelta(step, 0)}
+          >
+            <ArrowLeft className="w-3 h-3" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            onClick={() => applyDelta(0, step)}
+          >
+            <ArrowDown className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="secondary" type="button" onClick={onSave} disabled={disabled}>
+          حفظ الموضع
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          type="button"
+          onClick={() => onChange({ offsetX: 0, offsetY: 0 })}
+          disabled={disabled}
+        >
+          تصفير الموضع
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function PortfolioManager({ onRefresh }: ManagerProps) {
   const { data: images, refetch, isLoading } = trpc.portfolio.getAll.useQuery();
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
   const createMutation = trpc.portfolio.upload.useMutation({
     onSuccess: () => {
       toast.success("تم إضافة الصورة بنجاح");
@@ -364,6 +549,8 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
         url: string;
         visible: boolean;
         sortOrder: number;
+        offsetX: number;
+        offsetY: number;
       }
     >
   >({});
@@ -405,6 +592,8 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
         url: image.url ?? "",
         visible: image.visible !== false,
         sortOrder: Number.isFinite(image.sortOrder) ? Number(image.sortOrder) : 0,
+        offsetX: toOffset(image.offsetX),
+        offsetY: toOffset(image.offsetY),
       },
     }));
   };
@@ -425,6 +614,8 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
       url: draft.url,
       visible: draft.visible,
       sortOrder: draft.sortOrder,
+      offsetX: draft.offsetX,
+      offsetY: draft.offsetY,
     });
     closeEdit();
   };
@@ -555,6 +746,31 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
                 }
               />
             </div>
+            <div className="md:col-span-2">
+              <PositionControls
+                value={{ offsetX: draft.offsetX, offsetY: draft.offsetY }}
+                onChange={(next) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, offsetX: next.offsetX, offsetY: next.offsetY },
+                  }))
+                }
+                onSave={() => {
+                  requestConfirm({
+                    title: "تأكيد حفظ الموضع",
+                    description: `حفظ موضع الصورة "${draft.title}"؟`,
+                    onConfirm: async () => {
+                      await updateMutation.mutateAsync({
+                        id: image.id,
+                        offsetX: draft.offsetX,
+                        offsetY: draft.offsetY,
+                      });
+                    },
+                  });
+                }}
+                disabled={updateMutation.isPending}
+              />
+            </div>
             <div className="md:col-span-2 flex flex-wrap gap-2">
               <Button onClick={() => handleUpdate(image.id)} disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? (
@@ -654,6 +870,7 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
         </CardContent>
       </Card>
 
+      <ConfirmDialog />
     </div>
   );
 }
@@ -680,45 +897,66 @@ function AboutManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
   const [editingImages, setEditingImages] = useState<Record<string, string>>({});
+  const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
+  const [editingImagePositions, setEditingImagePositions] = useState<Record<string, PositionValue>>({});
 
   useEffect(() => {
     if (content) {
       const map: Record<string, string> = {};
+      const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
         map[item.key] = item.value;
+        positions[item.key] = {
+          offsetX: toOffset((item as any).offsetX),
+          offsetY: toOffset((item as any).offsetY),
+        };
       });
       setEditingContent(map);
+      setEditingPositions(positions);
     }
   }, [content]);
 
   useEffect(() => {
     if (images) {
       const map: Record<string, string> = {};
+      const positions: Record<string, PositionValue> = {};
       images.forEach((item) => {
         map[item.key] = item.url;
+        positions[item.key] = {
+          offsetX: toOffset((item as any).offsetX),
+          offsetY: toOffset((item as any).offsetY),
+        };
       });
       setEditingImages(map);
+      setEditingImagePositions(positions);
     }
   }, [images]);
 
   const handleSave = async (key: string, label: string) => {
+    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertContentMutation.mutateAsync({
       key,
       value: editingContent[key] || "",
       category: "about",
       label,
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
     });
   };
 
   const handleSaveImage = async (key: string, label: string) => {
+    const pos = editingImagePositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertImageMutation.mutateAsync({
       key,
       url: editingImages[key] || "",
       alt: label,
       category: "about",
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
     });
   };
 
@@ -821,6 +1059,20 @@ function AboutManager({ onRefresh }: ManagerProps) {
                 <Save className="w-4 h-4" />
               </Button>
             </div>
+            <PositionControls
+              value={editingImagePositions.aboutImage ?? { offsetX: 0, offsetY: 0 }}
+              onChange={(next) =>
+                setEditingImagePositions((prev) => ({ ...prev, aboutImage: next }))
+              }
+              onSave={() =>
+                requestConfirm({
+                  title: "تأكيد حفظ الموضع",
+                  description: "حفظ موضع صورة من أنا؟",
+                  onConfirm: () => handleSaveImage("aboutImage", "صورة من أنا"),
+                })
+              }
+              disabled={upsertImageMutation.isPending}
+            />
           </div>
 
           {groups.map((group, idx) => (
@@ -858,6 +1110,20 @@ function AboutManager({ onRefresh }: ManagerProps) {
                         <Save className="w-4 h-4" />
                       </Button>
                     </div>
+                    <PositionControls
+                      value={editingPositions[item.key] ?? { offsetX: 0, offsetY: 0 }}
+                      onChange={(next) =>
+                        setEditingPositions((prev) => ({ ...prev, [item.key]: next }))
+                      }
+                      onSave={() =>
+                        requestConfirm({
+                          title: "تأكيد حفظ الموضع",
+                          description: `حفظ موضع "${item.label}"؟`,
+                          onConfirm: () => handleSave(item.key, item.label),
+                        })
+                      }
+                      disabled={upsertContentMutation.isPending}
+                    />
                   </div>
                 ))}
               </div>
@@ -865,6 +1131,8 @@ function AboutManager({ onRefresh }: ManagerProps) {
           ))}
         </CardContent>
       </Card>
+
+      <ConfirmDialog />
     </div>
   );
 }
