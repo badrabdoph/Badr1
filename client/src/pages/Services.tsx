@@ -25,6 +25,7 @@ import {
 } from "@/config/siteConfig";
 import { useContactData, usePackagesData, useContentData } from "@/hooks/useSiteData";
 import { EditableText } from "@/components/InlineEdit";
+import { getOffsetStyle } from "@/lib/positioning";
 
 type Pkg = {
   id: string;
