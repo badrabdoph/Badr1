@@ -19,16 +19,12 @@ const snapshotEnabled =
 const snapshotDir =
   process.env.ADMIN_SNAPSHOT_DIR ??
   path.resolve(process.cwd(), "data", "admin");
-const snapshotGitToken = process.env.ADMIN_SNAPSHOT_GIT_TOKEN ?? "";
 const snapshotGitEnabled =
-  (process.env.ADMIN_SNAPSHOT_GIT_ENABLED ??
-    (snapshotGitToken ? "true" : "false")) === "true";
+  (process.env.ADMIN_SNAPSHOT_GIT_ENABLED ?? "false") === "true";
 const snapshotGitDir =
   process.env.ADMIN_SNAPSHOT_GIT_DIR ?? process.cwd();
 const snapshotGitRemote =
   process.env.ADMIN_SNAPSHOT_GIT_REMOTE ?? "origin";
-const snapshotGitRemoteUrl =
-  process.env.ADMIN_SNAPSHOT_GIT_REMOTE_URL ?? "";
 const snapshotGitBranch =
   process.env.ADMIN_SNAPSHOT_GIT_BRANCH ?? "main";
 const snapshotGitCommitPrefix =
@@ -53,90 +49,21 @@ async function runGit(args: string[]) {
   await execFileAsync("git", args, { cwd: snapshotGitDir });
 }
 
-async function isGitRepo() {
-  try {
-    const { stdout } = await execFileAsync(
-      "git",
-      ["rev-parse", "--is-inside-work-tree"],
-      { cwd: snapshotGitDir }
-    );
-    return stdout.trim() === "true";
-  } catch {
-    return false;
-  }
-}
-
-async function getRemoteUrl() {
-  if (snapshotGitRemoteUrl) return snapshotGitRemoteUrl;
-  const { stdout } = await execFileAsync(
-    "git",
-    ["remote", "get-url", snapshotGitRemote],
-    { cwd: snapshotGitDir }
-  );
-  return stdout.trim();
-}
-
-function withToken(remoteUrl: string) {
-  if (!snapshotGitToken) return remoteUrl;
-  if (remoteUrl.startsWith("https://")) {
-    return remoteUrl.replace("https://", `https://${snapshotGitToken}@`);
-  }
-  if (remoteUrl.startsWith("http://")) {
-    return remoteUrl.replace("http://", `http://${snapshotGitToken}@`);
-  }
-  const sshMatch = remoteUrl.match(/^git@([^:]+):(.+)$/);
-  if (sshMatch) {
-    return `https://${snapshotGitToken}@${sshMatch[1]}/${sshMatch[2]}`;
-  }
-  return remoteUrl;
-}
-
-async function hasSnapshotChanges() {
-  const relativePath = path.relative(snapshotGitDir, snapshotDir);
-  const { stdout } = await execFileAsync(
-    "git",
-    ["status", "--porcelain", "--", relativePath],
-    { cwd: snapshotGitDir }
-  );
-  return stdout.trim().length > 0;
-}
-
 async function syncSnapshotToGit() {
   if (!snapshotGitEnabled) return;
-  if (!(await isGitRepo())) return;
   try {
-    const relativePath = path.relative(snapshotGitDir, snapshotDir);
-    const hasChanges = await hasSnapshotChanges();
-    if (!hasChanges) return;
+    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], {
+      cwd: snapshotGitDir,
+    });
+    if (!stdout.trim()) return;
 
-    await runGit(["add", relativePath]);
+    await runGit(["add", path.relative(snapshotGitDir, snapshotDir)]);
 
     const timestamp = new Date().toISOString();
     await runGit(["commit", "-m", `${snapshotGitCommitPrefix} ${timestamp}`]);
-    const remoteUrl = await getRemoteUrl().catch(() => "");
-    if (remoteUrl) {
-      const authedUrl = withToken(remoteUrl);
-      await runGit(["push", authedUrl, snapshotGitBranch]);
-      return;
-    }
     await runGit(["push", snapshotGitRemote, snapshotGitBranch]);
   } catch (error) {
     console.warn("[AdminSnapshot] Git sync failed:", error);
-  }
-}
-
-export async function readAdminSnapshotFile<T>(
-  filename: string,
-  fallback: T
-): Promise<T> {
-  try {
-    const raw = await fs.readFile(path.join(snapshotDir, filename), "utf8");
-    return JSON.parse(raw) as T;
-  } catch (error: any) {
-    if (error?.code !== "ENOENT") {
-      console.warn("[AdminSnapshot] Failed to read snapshot file:", error);
-    }
-    return fallback;
   }
 }
 
