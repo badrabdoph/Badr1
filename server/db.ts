@@ -1,9 +1,7 @@
-import { eq, asc, desc, sql } from "drizzle-orm";
+import { eq, asc, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
 import type { Pool } from "mysql2";
-import fs from "fs/promises";
-import path from "path";
 import { 
   InsertUser, 
   users, 
@@ -55,103 +53,6 @@ import {
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
-let _autoMigrate: Promise<void> | null = null;
-
-const AUTO_MIGRATE =
-  (process.env.DB_AUTO_MIGRATE ?? "true") === "true";
-const MIGRATIONS_DIR =
-  process.env.DB_MIGRATIONS_DIR ?? path.resolve(process.cwd(), "drizzle");
-const REQUIRED_TABLES = [
-  "users",
-  "site_content",
-  "site_images",
-  "portfolio_images",
-  "site_sections",
-  "packages",
-  "testimonials",
-  "contact_info",
-  "share_links",
-];
-const EXTRA_STATEMENTS = [
-  `CREATE TABLE IF NOT EXISTS \`share_links\` (
-\t\`id\` int AUTO_INCREMENT NOT NULL,
-\t\`code\` varchar(120) NOT NULL,
-\t\`note\` text,
-\t\`expiresAt\` timestamp,
-\t\`revokedAt\` timestamp,
-\t\`createdAt\` timestamp NOT NULL DEFAULT (now()),
-\t\`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-\tCONSTRAINT \`share_links_id\` PRIMARY KEY(\`id\`),
-\tCONSTRAINT \`share_links_code_unique\` UNIQUE(\`code\`)
-);`,
-];
-
-async function shouldAutoMigrate() {
-  if (!AUTO_MIGRATE) return false;
-  if (!_pool) return false;
-  try {
-    const [rows] = await _pool.query(
-      "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN (?)",
-      [REQUIRED_TABLES]
-    );
-    const existing = new Set(
-      Array.isArray(rows)
-        ? rows.map((row: any) => row.table_name || row.TABLE_NAME)
-        : []
-    );
-    return existing.size < REQUIRED_TABLES.length;
-  } catch (error) {
-    console.warn("[Database] Auto-migrate check failed:", error);
-    return false;
-  }
-}
-
-function normalizeStatement(statement: string) {
-  if (/^CREATE TABLE\s+IF NOT EXISTS/i.test(statement)) return statement;
-  return statement.replace(/^CREATE TABLE\s+/i, "CREATE TABLE IF NOT EXISTS ");
-}
-
-async function loadMigrationStatements() {
-  try {
-    const entries = await fs.readdir(MIGRATIONS_DIR);
-    const files = entries.filter((file) => file.endsWith(".sql")).sort();
-    const statements: string[] = [];
-    for (const file of files) {
-      const raw = await fs.readFile(path.join(MIGRATIONS_DIR, file), "utf8");
-      const parts = raw
-        .split("--> statement-breakpoint")
-        .map((part) => part.trim())
-        .filter(Boolean)
-        .map(normalizeStatement);
-      statements.push(...parts);
-    }
-    for (const extra of EXTRA_STATEMENTS) {
-      const exists = statements.some((stmt) => stmt.includes("`share_links`"));
-      if (!exists) statements.push(extra);
-    }
-    return statements;
-  } catch (error) {
-    console.warn("[Database] Failed to load migrations:", error);
-    return [...EXTRA_STATEMENTS];
-  }
-}
-
-async function runAutoMigrate(db: ReturnType<typeof drizzle>) {
-  if (_autoMigrate) return _autoMigrate;
-  _autoMigrate = (async () => {
-    const needsMigration = await shouldAutoMigrate();
-    if (!needsMigration) return;
-    const statements = await loadMigrationStatements();
-    for (const stmt of statements) {
-      try {
-        await db.execute(sql.raw(stmt));
-      } catch (error) {
-        console.warn("[Database] Migration statement failed:", error);
-      }
-    }
-  })();
-  return _autoMigrate;
-}
 
 async function buildAdminSnapshot(): Promise<AdminSnapshotData | null> {
   const db = await getDb();
@@ -211,7 +112,6 @@ export async function getDb() {
         _pool = mysql.createPool(ENV.databaseUrl);
       }
       _db = drizzle(_pool);
-      await runAutoMigrate(_db);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
