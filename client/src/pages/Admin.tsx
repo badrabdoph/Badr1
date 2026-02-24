@@ -433,6 +433,147 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
 
+  const visibleImages = (images ?? []).filter((img) => img.visible !== false);
+  const hiddenImages = (images ?? []).filter((img) => img.visible === false);
+
+  const toggleImageVisibility = async (id: number, visible: boolean) => {
+    await updateMutation.mutateAsync({ id, visible });
+  };
+
+  const renderImageCard = (image: any) => {
+    const draft = drafts[image.id];
+    const isEditing = editingId === image.id;
+    const isVisible = image.visible !== false;
+    return (
+      <div key={image.id} className="border border-white/10 rounded-lg p-4 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <img
+              src={image.url}
+              alt={image.title}
+              className="w-16 h-16 rounded-md object-cover border border-white/10"
+            />
+            <div>
+              <div className="font-semibold">{image.title}</div>
+              <div className="text-xs text-muted-foreground">
+                {image.category} • ترتيب {image.sortOrder ?? 0}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={isVisible ? "secondary" : "outline"}>
+              {isVisible ? "ظاهر" : "مخفي"}
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toggleImageVisibility(image.id, !isVisible)}
+              disabled={updateMutation.isPending}
+            >
+              {isVisible ? "إخفاء" : "استعادة"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => (isEditing ? closeEdit() : openEdit(image))}>
+              {isEditing ? "إغلاق" : "تعديل"}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => deleteMutation.mutate({ id: image.id })}
+            >
+              حذف
+            </Button>
+          </div>
+        </div>
+
+        {isEditing && draft ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>عنوان الصورة</Label>
+              <Input
+                value={draft.title}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, title: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تصنيف الصورة</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={draft.category}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, category: e.target.value },
+                  }))
+                }
+              >
+                <option value="wedding">زفاف</option>
+                <option value="engagement">خطوبة</option>
+                <option value="outdoor">جلسات خارجية</option>
+                <option value="portrait">بورتريه</option>
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>رابط الصورة</Label>
+              <Input
+                value={draft.url}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, url: e.target.value },
+                  }))
+                }
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>ترتيب الظهور</Label>
+              <Input
+                type="number"
+                value={draft.sortOrder}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, sortOrder: Number(e.target.value) || 0 },
+                  }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between border rounded-md px-3 py-2">
+              <span className="text-sm">إظهار الصورة</span>
+              <Switch
+                checked={draft.visible}
+                onCheckedChange={(value) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [image.id]: { ...draft, visible: Boolean(value) },
+                  }))
+                }
+              />
+            </div>
+            <div className="md:col-span-2 flex flex-wrap gap-2">
+              <Button onClick={() => handleUpdate(image.id)} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                ) : (
+                  <Save className="w-4 h-4 ml-2" />
+                )}
+                حفظ التعديلات
+              </Button>
+              <Button variant="outline" onClick={closeEdit}>
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -481,136 +622,33 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
           <CardDescription>عدّل عنوان الصورة، التصنيف، الرابط، والترتيب بسهولة.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {images?.map((image) => {
-            const draft = drafts[image.id];
-            const isEditing = editingId === image.id;
-            return (
-              <div key={image.id} className="border border-white/10 rounded-lg p-4 space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={image.url}
-                      alt={image.title}
-                      className="w-16 h-16 rounded-md object-cover border border-white/10"
-                    />
-                    <div>
-                      <div className="font-semibold">{image.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {image.category} • ترتيب {image.sortOrder ?? 0}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={image.visible ? "secondary" : "outline"}>
-                      {image.visible ? "ظاهر" : "مخفي"}
-                    </Badge>
-                    <Button size="sm" variant="outline" onClick={() => (isEditing ? closeEdit() : openEdit(image))}>
-                      {isEditing ? "إغلاق" : "تعديل"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => deleteMutation.mutate({ id: image.id })}
-                    >
-                      حذف
-                    </Button>
-                  </div>
-                </div>
+          {visibleImages.map(renderImageCard)}
 
-                {isEditing && draft ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>عنوان الصورة</Label>
-                      <Input
-                        value={draft.title}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [image.id]: { ...draft, title: e.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>تصنيف الصورة</Label>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={draft.category}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [image.id]: { ...draft, category: e.target.value },
-                          }))
-                        }
-                      >
-                        <option value="wedding">زفاف</option>
-                        <option value="engagement">خطوبة</option>
-                        <option value="outdoor">جلسات خارجية</option>
-                        <option value="portrait">بورتريه</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>رابط الصورة</Label>
-                      <Input
-                        value={draft.url}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [image.id]: { ...draft, url: e.target.value },
-                          }))
-                        }
-                        dir="ltr"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>ترتيب الظهور</Label>
-                      <Input
-                        type="number"
-                        value={draft.sortOrder}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [image.id]: { ...draft, sortOrder: Number(e.target.value) || 0 },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center justify-between border rounded-md px-3 py-2">
-                      <span className="text-sm">إظهار الصورة</span>
-                      <Switch
-                        checked={draft.visible}
-                        onCheckedChange={(value) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [image.id]: { ...draft, visible: Boolean(value) },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="md:col-span-2 flex flex-wrap gap-2">
-                      <Button onClick={() => handleUpdate(image.id)} disabled={updateMutation.isPending}>
-                        {updateMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                        ) : (
-                          <Save className="w-4 h-4 ml-2" />
-                        )}
-                        حفظ التعديلات
-                      </Button>
-                      <Button variant="outline" onClick={closeEdit}>
-                        إلغاء
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-
-          {(!images || images.length === 0) && (
+          {visibleImages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Image className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد صور في المعرض بعد</p>
               <p className="text-sm">قم بإضافة صور جديدة من الأعلى</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <EyeOff className="w-5 h-5" />
+            الصور المخفية
+          </CardTitle>
+          <CardDescription>استعد أي صورة مخفية بضغطة واحدة.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hiddenImages.length > 0 ? (
+            hiddenImages.map(renderImageCard)
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>لا توجد صور مخفية</p>
             </div>
           )}
         </CardContent>
@@ -1037,6 +1075,201 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     wedding: "Full Day",
     addon: "إضافات",
   };
+  const visiblePackages = (packages ?? []).filter((pkg) => pkg.visible !== false);
+  const hiddenPackages = (packages ?? []).filter((pkg) => pkg.visible === false);
+
+  const togglePackageVisibility = async (pkgId: number, visible: boolean) => {
+    await updateMutation.mutateAsync({ id: pkgId, visible });
+  };
+
+  const renderPackageCard = (pkg: any) => {
+    const draft = drafts[pkg.id];
+    const isEditing = editingId === pkg.id;
+    const isVisible = pkg.visible !== false;
+    return (
+      <div key={pkg.id} className="border border-white/10 rounded-lg p-4 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-lg font-bold">{pkg.name}</div>
+            <div className="text-sm text-muted-foreground">
+              {pkg.price} • {categoryLabel[pkg.category ?? "session"]}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={isVisible ? "secondary" : "outline"}>
+              {isVisible ? "ظاهر" : "مخفي"}
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => togglePackageVisibility(pkg.id, !isVisible)}
+              disabled={updateMutation.isPending}
+            >
+              {isVisible ? "إخفاء" : "استعادة"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => (isEditing ? closeEdit() : openEdit(pkg))}
+            >
+              {isEditing ? "إغلاق" : "تعديل"}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => deleteMutation.mutate({ id: pkg.id })}
+            >
+              حذف
+            </Button>
+          </div>
+        </div>
+
+        {isEditing && draft ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>اسم الباقة</Label>
+              <Input
+                value={draft.name}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, name: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>السعر</Label>
+              <Input
+                value={draft.price}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, price: e.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>التصنيف</Label>
+              <select
+                value={draft.category}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, category: e.target.value },
+                  }))
+                }
+                className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+              >
+                <option value="session">جلسات التصوير</option>
+                <option value="prints">جلسات + مطبوعات</option>
+                <option value="wedding">Full Day</option>
+                <option value="addon">إضافات</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>ترتيب الظهور</Label>
+              <Input
+                type="number"
+                value={draft.sortOrder}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, sortOrder: Number(e.target.value) || 0 },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الوصف</Label>
+              <Textarea
+                value={draft.description}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, description: e.target.value },
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>المميزات (كل ميزة في سطر)</Label>
+              <Textarea
+                value={draft.features}
+                onChange={(e) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, features: e.target.value },
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between border rounded-md px-3 py-2">
+                <span className="text-sm">مميزة (Popular)</span>
+                <Switch
+                  checked={draft.popular}
+                  onCheckedChange={(value) =>
+                    setDrafts((prev) => ({
+                      ...prev,
+                      [pkg.id]: { ...draft, popular: Boolean(value) },
+                    }))
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between border rounded-md px-3 py-2">
+                <span className="text-sm">إظهار الباقة</span>
+                <Switch
+                  checked={draft.visible}
+                  onCheckedChange={(value) =>
+                    setDrafts((prev) => ({
+                      ...prev,
+                      [pkg.id]: { ...draft, visible: Boolean(value) },
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="md:col-span-2 flex flex-wrap gap-2">
+              <Button
+                onClick={() => handleUpdate(pkg.id)}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                ) : (
+                  <Save className="w-4 h-4 ml-2" />
+                )}
+                حفظ التعديلات
+              </Button>
+              <Button variant="outline" onClick={closeEdit}>
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {pkg.description ? (
+              <p className="text-sm text-muted-foreground">{pkg.description}</p>
+            ) : null}
+            {pkg.features && (
+              <ul className="text-sm space-y-1 mt-2">
+                {(pkg.features as string[]).map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -1102,190 +1335,32 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <CardDescription>عدّل الباقات مباشرة، أو غيّر الترتيب والظهور.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {packages?.map((pkg) => {
-            const draft = drafts[pkg.id];
-            const isEditing = editingId === pkg.id;
-            return (
-              <div key={pkg.id} className="border border-white/10 rounded-lg p-4 space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <div>
-                    <div className="text-lg font-bold">{pkg.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {pkg.price} • {categoryLabel[pkg.category ?? "session"]}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={pkg.visible ? "secondary" : "outline"}>
-                      {pkg.visible ? "ظاهر" : "مخفي"}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => (isEditing ? closeEdit() : openEdit(pkg))}
-                    >
-                      {isEditing ? "إغلاق" : "تعديل"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => deleteMutation.mutate({ id: pkg.id })}
-                    >
-                      حذف
-                    </Button>
-                  </div>
-                </div>
+          {visiblePackages.map(renderPackageCard)}
 
-                {isEditing && draft ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>اسم الباقة</Label>
-                      <Input
-                        value={draft.name}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, name: e.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>السعر</Label>
-                      <Input
-                        value={draft.price}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, price: e.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>التصنيف</Label>
-                      <select
-                        value={draft.category}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, category: e.target.value },
-                          }))
-                        }
-                        className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
-                      >
-                        <option value="session">جلسات التصوير</option>
-                        <option value="prints">جلسات + مطبوعات</option>
-                        <option value="wedding">Full Day</option>
-                        <option value="addon">إضافات</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>ترتيب الظهور</Label>
-                      <Input
-                        type="number"
-                        value={draft.sortOrder}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, sortOrder: Number(e.target.value) || 0 },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>الوصف</Label>
-                      <Textarea
-                        value={draft.description}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, description: e.target.value },
-                          }))
-                        }
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>المميزات (كل ميزة في سطر)</Label>
-                      <Textarea
-                        value={draft.features}
-                        onChange={(e) =>
-                          setDrafts((prev) => ({
-                            ...prev,
-                            [pkg.id]: { ...draft, features: e.target.value },
-                          }))
-                        }
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between border rounded-md px-3 py-2">
-                        <span className="text-sm">مميزة (Popular)</span>
-                        <Switch
-                          checked={draft.popular}
-                          onCheckedChange={(value) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [pkg.id]: { ...draft, popular: Boolean(value) },
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between border rounded-md px-3 py-2">
-                        <span className="text-sm">إظهار الباقة</span>
-                        <Switch
-                          checked={draft.visible}
-                          onCheckedChange={(value) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [pkg.id]: { ...draft, visible: Boolean(value) },
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="md:col-span-2 flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => handleUpdate(pkg.id)}
-                        disabled={updateMutation.isPending}
-                      >
-                        {updateMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                        ) : (
-                          <Save className="w-4 h-4 ml-2" />
-                        )}
-                        حفظ التعديلات
-                      </Button>
-                      <Button variant="outline" onClick={closeEdit}>
-                        إلغاء
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {pkg.description ? (
-                      <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                    ) : null}
-                    {pkg.features && (
-                      <ul className="text-sm space-y-1 mt-2">
-                        {(pkg.features as string[]).map((feature, i) => (
-                          <li key={i} className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
-
-          {(!packages || packages.length === 0) && (
+          {visiblePackages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد باقات بعد</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <EyeOff className="w-5 h-5" />
+            الباقات المخفية
+          </CardTitle>
+          <CardDescription>يمكنك استعادة أي باقة مخفية بضغطة واحدة.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hiddenPackages.length > 0 ? (
+            hiddenPackages.map(renderPackageCard)
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>لا توجد باقات مخفية</p>
             </div>
           )}
         </CardContent>
@@ -1317,6 +1392,14 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
     },
     onError: (error) => toast.error(error.message),
   });
+  const updateMutation = trpc.testimonials.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث الرأي");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   const [newTestimonial, setNewTestimonial] = useState({ name: "", quote: "" });
 
@@ -1331,6 +1414,74 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
+
+  const visibleTestimonials = (testimonials ?? []).filter((t) => t.visible !== false);
+  const hiddenTestimonials = (testimonials ?? []).filter((t) => t.visible === false);
+
+  const toggleTestimonialVisibility = async (id: number, visible: boolean) => {
+    await updateMutation.mutateAsync({ id, visible });
+  };
+
+  const renderTestimonial = (testimonial: any) => {
+    const isVisible = testimonial.visible !== false;
+    if (compact) {
+      return (
+        <div key={testimonial.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm italic text-muted-foreground">"{testimonial.quote}"</p>
+              <p className="mt-2 text-sm font-semibold">- {testimonial.name}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => toggleTestimonialVisibility(testimonial.id, !isVisible)}
+              >
+                {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => deleteMutation.mutate({ id: testimonial.id })}
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Card key={testimonial.id}>
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+              <p className="text-lg italic mb-4">"{testimonial.quote}"</p>
+              <p className="font-semibold">- {testimonial.name}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => toggleTestimonialVisibility(testimonial.id, !isVisible)}
+              >
+                {isVisible ? "إخفاء" : "استعادة"}
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => deleteMutation.mutate({ id: testimonial.id })}
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const addForm = (
     <div className="space-y-4">
@@ -1377,51 +1528,26 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
       )}
 
       <div className={compact ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
-        {testimonials?.map((testimonial) => (
-          compact ? (
-            <div key={testimonial.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <p className="text-sm italic text-muted-foreground">"{testimonial.quote}"</p>
-                  <p className="mt-2 text-sm font-semibold">- {testimonial.name}</p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => deleteMutation.mutate({ id: testimonial.id })}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Card key={testimonial.id}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-lg italic mb-4">"{testimonial.quote}"</p>
-                    <p className="font-semibold">- {testimonial.name}</p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => deleteMutation.mutate({ id: testimonial.id })}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        ))}
+        {visibleTestimonials.map(renderTestimonial)}
       </div>
 
-      {(!testimonials || testimonials.length === 0) && (
+      {visibleTestimonials.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p>لا توجد آراء عملاء بعد</p>
         </div>
       )}
+
+      {hiddenTestimonials.length > 0 ? (
+        <div className={compact ? "flex items-center gap-2 text-xs text-muted-foreground" : "flex items-center gap-2 text-sm text-muted-foreground"}>
+          <EyeOff className="w-4 h-4" />
+          آراء مخفية (يمكن الاستعادة)
+        </div>
+      ) : null}
+
+      <div className={compact ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
+        {hiddenTestimonials.map(renderTestimonial)}
+      </div>
     </div>
   );
 }
