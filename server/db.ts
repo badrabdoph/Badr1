@@ -22,6 +22,15 @@ import {
   InsertContactInfo,
   InsertShareLink,
 } from "../drizzle/schema";
+import type {
+  SiteContent,
+  SiteImage,
+  PortfolioImage,
+  SiteSection,
+  Package,
+  Testimonial,
+  ContactInfo,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 import {
   createLocalShareLink,
@@ -30,7 +39,11 @@ import {
   revokeLocalShareLink,
   extendLocalShareLink,
 } from "./_core/shareLinkStore";
-import { queueAdminSnapshot, type AdminSnapshotData } from "./_core/adminSnapshot";
+import {
+  queueAdminSnapshot,
+  readAdminSnapshotFile,
+  type AdminSnapshotData,
+} from "./_core/adminSnapshot";
 import {
   getLocalSiteContentByKey,
   listLocalSiteContent,
@@ -184,13 +197,28 @@ export async function getUserByOpenId(openId: string) {
 
 export async function getAllSiteContent() {
   const db = await getDb();
-  if (!db) return await listLocalSiteContent();
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "site-content.json",
+      [] as SiteContent[]
+    );
+    if (snapshot.length) return snapshot;
+    return await listLocalSiteContent();
+  }
   return await db.select().from(siteContent);
 }
 
 export async function getSiteContentByKey(key: string) {
   const db = await getDb();
-  if (!db) return await getLocalSiteContentByKey(key);
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "site-content.json",
+      [] as SiteContent[]
+    );
+    const match = snapshot.find((item) => item.key === key);
+    if (match) return match;
+    return await getLocalSiteContentByKey(key);
+  }
   const result = await db.select().from(siteContent).where(eq(siteContent.key, key)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -222,13 +250,25 @@ export async function deleteSiteContent(key: string) {
 
 export async function getAllSiteImages() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "site-images.json",
+      [] as SiteImage[]
+    );
+  }
   return await db.select().from(siteImages).orderBy(asc(siteImages.sortOrder));
 }
 
 export async function getSiteImageByKey(key: string) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "site-images.json",
+      [] as SiteImage[]
+    );
+    const match = snapshot.find((item) => item.key === key);
+    return match ?? null;
+  }
   const result = await db.select().from(siteImages).where(eq(siteImages.key, key)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -334,13 +374,25 @@ export async function extendShareLink(code: string, hours: number): Promise<Shar
 
 export async function getAllPortfolioImages() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "portfolio-images.json",
+      [] as PortfolioImage[]
+    );
+  }
   return await db.select().from(portfolioImages).orderBy(asc(portfolioImages.sortOrder));
 }
 
 export async function getPortfolioImageById(id: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "portfolio-images.json",
+      [] as PortfolioImage[]
+    );
+    const match = snapshot.find((item) => item.id === id);
+    return match ?? null;
+  }
   const result = await db.select().from(portfolioImages).where(eq(portfolioImages.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -380,13 +432,25 @@ export async function deletePortfolioImage(id: number) {
 
 export async function getAllSiteSections() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "site-sections.json",
+      [] as SiteSection[]
+    );
+  }
   return await db.select().from(siteSections).orderBy(asc(siteSections.sortOrder));
 }
 
 export async function getSiteSectionByKey(key: string) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "site-sections.json",
+      [] as SiteSection[]
+    );
+    const match = snapshot.find((item) => item.key === key);
+    return match ?? null;
+  }
   const result = await db.select().from(siteSections).where(eq(siteSections.key, key)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -420,13 +484,25 @@ export async function updateSiteSectionVisibility(key: string, visible: boolean)
 
 export async function getAllPackages() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "packages.json",
+      [] as Package[]
+    );
+  }
   return await db.select().from(packages).orderBy(asc(packages.sortOrder));
 }
 
 export async function getPackageById(id: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "packages.json",
+      [] as Package[]
+    );
+    const match = snapshot.find((item) => item.id === id);
+    return match ?? null;
+  }
   const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -466,13 +542,25 @@ export async function deletePackage(id: number) {
 
 export async function getAllTestimonials() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "testimonials.json",
+      [] as Testimonial[]
+    );
+  }
   return await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
 }
 
 export async function getTestimonialById(id: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "testimonials.json",
+      [] as Testimonial[]
+    );
+    const match = snapshot.find((item) => item.id === id);
+    return match ?? null;
+  }
   const result = await db.select().from(testimonials).where(eq(testimonials.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -512,13 +600,25 @@ export async function deleteTestimonial(id: number) {
 
 export async function getAllContactInfo() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return await readAdminSnapshotFile(
+      "contact-info.json",
+      [] as ContactInfo[]
+    );
+  }
   return await db.select().from(contactInfo);
 }
 
 export async function getContactInfoByKey(key: string) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const snapshot = await readAdminSnapshotFile(
+      "contact-info.json",
+      [] as ContactInfo[]
+    );
+    const match = snapshot.find((item) => item.key === key);
+    return match ?? null;
+  }
   const result = await db.select().from(contactInfo).where(eq(contactInfo.key, key)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
