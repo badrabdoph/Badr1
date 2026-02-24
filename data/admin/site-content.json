@@ -7,5 +7,14 @@
     "label": "عنوان صفحة الخدمات",
     "createdAt": "2026-02-24T22:13:57.336Z",
     "updatedAt": "2026-02-24T22:13:57.336Z"
+  },
+  {
+    "id": 1771971614559,
+    "key": "services_sessions_title",
+    "value": "باقات الزفاف ",
+    "category": "services",
+    "label": "عنوان قسم السيشن",
+    "createdAt": "2026-02-24T22:20:13.633Z",
+    "updatedAt": "2026-02-24T22:20:13.633Z"
   }
 ]
