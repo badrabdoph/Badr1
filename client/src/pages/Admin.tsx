@@ -1535,6 +1535,31 @@ function PackagesManager({ onRefresh }: ManagerProps) {
                 />
               </div>
             </div>
+            <div className="md:col-span-2">
+              <PositionControls
+                value={{ offsetX: draft.offsetX, offsetY: draft.offsetY }}
+                onChange={(next) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [pkg.id]: { ...draft, offsetX: next.offsetX, offsetY: next.offsetY },
+                  }))
+                }
+                onSave={() =>
+                  requestConfirm({
+                    title: "تأكيد حفظ الموضع",
+                    description: `حفظ موضع الباقة "${draft.name}"؟`,
+                    onConfirm: async () => {
+                      await updateMutation.mutateAsync({
+                        id: pkg.id,
+                        offsetX: draft.offsetX,
+                        offsetY: draft.offsetY,
+                      });
+                    },
+                  })
+                }
+                disabled={updateMutation.isPending}
+              />
+            </div>
             <div className="md:col-span-2 flex flex-wrap gap-2">
               <Button
                 onClick={() => handleUpdate(pkg.id)}
@@ -1668,6 +1693,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
         </CardContent>
       </Card>
 
+      <ConfirmDialog />
     </div>
   );
 }
@@ -1677,6 +1703,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
 // ============================================
 function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: boolean }) {
   const { data: testimonials, refetch, isLoading } = trpc.testimonials.getAll.useQuery();
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
   const createMutation = trpc.testimonials.create.useMutation({
     onSuccess: () => {
       toast.success("تم إضافة الرأي");
@@ -1704,6 +1731,20 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
   });
 
   const [newTestimonial, setNewTestimonial] = useState({ name: "", quote: "" });
+  const [positionDrafts, setPositionDrafts] = useState<Record<number, PositionValue>>({});
+
+  useEffect(() => {
+    if (testimonials) {
+      const next: Record<number, PositionValue> = {};
+      testimonials.forEach((item: any) => {
+        next[item.id] = {
+          offsetX: toOffset(item.offsetX),
+          offsetY: toOffset(item.offsetY),
+        };
+      });
+      setPositionDrafts(next);
+    }
+  }, [testimonials]);
 
   const handleCreate = async () => {
     if (!newTestimonial.name || !newTestimonial.quote) {
@@ -1780,6 +1821,29 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
               </Button>
             </div>
           </div>
+          <div className="mt-4">
+            <PositionControls
+              value={positionDrafts[testimonial.id] ?? { offsetX: 0, offsetY: 0 }}
+              onChange={(next) =>
+                setPositionDrafts((prev) => ({ ...prev, [testimonial.id]: next }))
+              }
+              onSave={() =>
+                requestConfirm({
+                  title: "تأكيد حفظ الموضع",
+                  description: `حفظ موضع رأي "${testimonial.name}"؟`,
+                  onConfirm: async () => {
+                    const pos = positionDrafts[testimonial.id] ?? { offsetX: 0, offsetY: 0 };
+                    await updateMutation.mutateAsync({
+                      id: testimonial.id,
+                      offsetX: pos.offsetX,
+                      offsetY: pos.offsetY,
+                    });
+                  },
+                })
+              }
+              disabled={updateMutation.isPending}
+            />
+          </div>
         </CardContent>
       </Card>
     );
@@ -1850,6 +1914,8 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
       <div className={compact ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
         {hiddenTestimonials.map(renderTestimonial)}
       </div>
+
+      <ConfirmDialog />
     </div>
   );
 }
