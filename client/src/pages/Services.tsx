@@ -856,56 +856,58 @@ function MonthlyOfferCard({
           label="شارة عرض الشهر"
         />
       </div>
-      <div className="monthly-offer-header">
-        <span className="monthly-offer-kicker">
-          <EditableText
-            value={getValue("services_monthly_offer_kicker")}
-            fallback="عرض حصري"
-            fieldKey="services_monthly_offer_kicker"
-            category="services"
-            label="عنوان صغير عرض الشهر"
-          />
-        </span>
-        <h3 className="monthly-offer-title">
-          <EditableText
-            value={getValue("services_monthly_offer_title")}
-            fallback="العرض الحصري"
-            fieldKey="services_monthly_offer_title"
-            category="services"
-            label="عنوان عرض الشهر"
-          />
-        </h3>
-        <p className="monthly-offer-subtitle">
-          <EditableText
-            value={getValue("services_monthly_offer_subtitle")}
-            fallback="عرض حصري لفترة محدودة فقط"
-            fieldKey="services_monthly_offer_subtitle"
-            category="services"
-            label="وصف عرض الشهر"
-            multiline
-          />
-        </p>
-      </div>
+      <div className="monthly-offer-top">
+        <div className="monthly-offer-header">
+          <span className="monthly-offer-kicker">
+            <EditableText
+              value={getValue("services_monthly_offer_kicker")}
+              fallback="عرض حصري"
+              fieldKey="services_monthly_offer_kicker"
+              category="services"
+              label="عنوان صغير عرض الشهر"
+            />
+          </span>
+          <h3 className="monthly-offer-title">
+            <EditableText
+              value={getValue("services_monthly_offer_title")}
+              fallback="العرض الحصري"
+              fieldKey="services_monthly_offer_title"
+              category="services"
+              label="عنوان عرض الشهر"
+            />
+          </h3>
+          <p className="monthly-offer-subtitle">
+            <EditableText
+              value={getValue("services_monthly_offer_subtitle")}
+              fallback="عرض حصري لفترة محدودة فقط"
+              fieldKey="services_monthly_offer_subtitle"
+              category="services"
+              label="وصف عرض الشهر"
+              multiline
+            />
+          </p>
+        </div>
 
-      <div className="monthly-offer-price">
-        <span className="monthly-offer-price-label">
-          <EditableText
-            value={getValue("services_monthly_offer_price_label")}
-            fallback="السعر الخاص"
-            fieldKey="services_monthly_offer_price_label"
-            category="services"
-            label="عنوان سعر عرض الشهر"
-          />
-        </span>
-        <span className="monthly-offer-price-value">
-          <EditableText
-            value={getValue("services_monthly_offer_price")}
-            fallback="$4500"
-            fieldKey="services_monthly_offer_price"
-            category="services"
-            label="سعر عرض الشهر"
-          />
-        </span>
+        <div className="monthly-offer-price">
+          <span className="monthly-offer-price-label">
+            <EditableText
+              value={getValue("services_monthly_offer_price_label")}
+              fallback="السعر الخاص"
+              fieldKey="services_monthly_offer_price_label"
+              category="services"
+              label="عنوان سعر عرض الشهر"
+            />
+          </span>
+          <span className="monthly-offer-price-value">
+            <EditableText
+              value={getValue("services_monthly_offer_price")}
+              fallback="$4500"
+              fieldKey="services_monthly_offer_price"
+              category="services"
+              label="سعر عرض الشهر"
+            />
+          </span>
+        </div>
       </div>
 
       <div className="monthly-offer-features">
@@ -1432,20 +1434,20 @@ export default function Services() {
                       label="تلميح عرض الشهر"
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="monthly-offer-btn monthly-offer-btn--stamp"
-                    onClick={() => setShowMonthlyOffer((prev) => !prev)}
-                    aria-expanded={showMonthlyOffer}
-                  >
-                    <EditableText
-                      value={contentMap.services_monthly_offer_badge_small}
-                      fallback="خصم"
-                      fieldKey="services_monthly_offer_badge_small"
-                      category="services"
-                      label="زر خصم (عرض الشهر)"
-                    />
-                  </button>
+                    <button
+                      type="button"
+                      className="monthly-offer-btn monthly-offer-btn--stamp"
+                      onClick={() => setShowMonthlyOffer((prev) => !prev)}
+                      aria-expanded={showMonthlyOffer}
+                    >
+                      <EditableText
+                        value={contentMap.services_monthly_offer_button}
+                        fallback="خصم خاص"
+                        fieldKey="services_monthly_offer_button"
+                        category="services"
+                        label="زر خصم (عرض الشهر)"
+                      />
+                    </button>
 
                   {showMonthlyOffer ? (
                     <div className="monthly-offer-panel">
@@ -2155,22 +2157,22 @@ export default function Services() {
           border-radius: 30px;
           padding: 28px;
           background:
-            linear-gradient(140deg, rgba(14,24,55,0.95), rgba(5,45,52,0.92) 45%, rgba(87,34,12,0.9) 100%),
-            radial-gradient(circle at 15% 20%, rgba(255,216,130,0.25), transparent 55%);
-          border: 1px solid rgba(255,214,140,0.45);
+            linear-gradient(140deg, rgba(26,10,18,0.96), rgba(10,10,16,0.95) 55%, rgba(56,14,22,0.9) 100%),
+            radial-gradient(circle at 20% 15%, rgba(255,120,120,0.18), transparent 55%);
+          border: 1px solid rgba(255,120,120,0.35);
           box-shadow:
             0 24px 80px rgba(0,0,0,0.55),
-            0 0 35px rgba(255,170,90,0.35);
-          color: #fff7e9;
+            0 0 30px rgba(255,110,110,0.25);
+          color: #fff6f2;
         }
         .monthly-offer-card::before {
           content: "";
           position: absolute;
           inset: 0;
           background:
-            linear-gradient(120deg, rgba(255,255,255,0.1), transparent 35%),
-            repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 14px);
-          opacity: 0.35;
+            linear-gradient(120deg, rgba(255,255,255,0.08), transparent 35%),
+            repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 14px);
+          opacity: 0.3;
           pointer-events: none;
         }
         .monthly-offer-card::after {
@@ -2180,8 +2182,8 @@ export default function Services() {
           right: -40%;
           width: 70%;
           height: 140%;
-          background: radial-gradient(circle, rgba(255,180,90,0.35), transparent 70%);
-          opacity: 0.6;
+          background: radial-gradient(circle, rgba(255,110,110,0.35), transparent 70%);
+          opacity: 0.5;
           pointer-events: none;
         }
         .monthly-offer-sparkle {
@@ -2195,72 +2197,90 @@ export default function Services() {
         }
         .monthly-offer-stamp {
           position: absolute;
-          top: 18px;
-          left: 18px;
-          padding: 6px 14px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,214,140,0.9);
-          background: linear-gradient(120deg, rgba(255,190,90,0.9), rgba(255,255,255,0.2));
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.18em;
+          top: 14px;
+          right: 16px;
+          padding: 10px 18px;
+          border-radius: 14px;
+          border: 2px solid rgba(255,255,255,0.6);
+          background: linear-gradient(135deg, #ff4b4b, #ff8a5b);
+          font-size: 16px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: #2b1600;
-          box-shadow: 0 0 18px rgba(255,190,90,0.6);
+          color: #fff6f1;
+          box-shadow:
+            0 12px 28px rgba(0,0,0,0.45),
+            0 0 20px rgba(255,120,120,0.55);
+          transform: rotate(6deg);
+          z-index: 2;
+        }
+        .monthly-offer-stamp::after {
+          content: "";
+          position: absolute;
+          inset: 3px;
+          border-radius: 10px;
+          border: 1px dashed rgba(255,255,255,0.7);
+          pointer-events: none;
+        }
+        .monthly-offer-top {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          position: relative;
           z-index: 2;
         }
         .monthly-offer-header {
           position: relative;
           z-index: 2;
           text-align: right;
-          padding-left: 70px;
         }
         .monthly-offer-kicker {
           display: inline-flex;
           padding: 4px 12px;
           border-radius: 999px;
-          border: 1px dashed rgba(255,214,140,0.65);
+          border: 1px dashed rgba(255,160,160,0.6);
           font-size: 11px;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: rgba(255,240,210,0.95);
-          background: rgba(12,12,16,0.4);
+          color: rgba(255,235,230,0.95);
+          background: rgba(12,12,16,0.5);
         }
         .monthly-offer-title {
           font-size: 26px;
           font-weight: 800;
           margin-top: 10px;
-          text-shadow: 0 0 18px rgba(255,200,120,0.55);
+          text-shadow: 0 0 18px rgba(255,120,120,0.6);
         }
         .monthly-offer-subtitle {
           margin-top: 8px;
           font-size: 13px;
-          color: rgba(255,240,220,0.85);
+          color: rgba(255,225,220,0.9);
         }
         .monthly-offer-price {
           position: relative;
-          margin-top: 18px;
-          padding: 14px 16px;
-          border-radius: 18px;
-          border: 1px solid rgba(255,214,140,0.6);
-          background: linear-gradient(120deg, rgba(255,190,90,0.25), rgba(10,10,14,0.75));
+          padding: 10px 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,140,140,0.55);
+          background: linear-gradient(120deg, rgba(255,140,140,0.2), rgba(10,10,14,0.8));
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
           z-index: 2;
+          max-width: 220px;
+          align-self: flex-end;
         }
         .monthly-offer-price-label {
-          font-size: 12px;
+          font-size: 11px;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: rgba(255,235,200,0.9);
+          color: rgba(255,220,220,0.85);
         }
         .monthly-offer-price-value {
-          font-size: 26px;
+          font-size: 22px;
           font-weight: 800;
-          color: #ffe2ad;
-          text-shadow: 0 0 18px rgba(255,200,120,0.7);
+          color: #ffe4e0;
+          text-shadow: 0 0 18px rgba(255,120,120,0.7);
         }
         .monthly-offer-features {
           margin-top: 18px;
@@ -2274,15 +2294,15 @@ export default function Services() {
           grid-template-columns: 12px 1fr;
           gap: 10px;
           font-size: 13px;
-          color: rgba(255,245,230,0.92);
+          color: rgba(255,245,235,0.94);
         }
         .monthly-offer-bullet {
           width: 10px;
           height: 10px;
           margin-top: 6px;
           border-radius: 50%;
-          background: rgba(255,210,120,0.95);
-          box-shadow: 0 0 12px rgba(255,200,110,0.9);
+          background: rgba(255,120,120,0.95);
+          box-shadow: 0 0 12px rgba(255,110,110,0.9);
         }
         .monthly-offer-cta-row {
           margin-top: 20px;
@@ -2294,16 +2314,26 @@ export default function Services() {
           height: 52px;
           border-radius: 16px;
           border: none;
-          background: linear-gradient(120deg, #ffcf8a, #ff9f42 55%, #ff6b3d);
-          color: #2d1400;
+          background: linear-gradient(120deg, #ff4b4b, #ff7a59 55%, #ffb347);
+          color: #fff6f0;
           font-weight: 800;
           letter-spacing: 0.08em;
-          box-shadow: 0 12px 30px rgba(255,130,70,0.45);
+          box-shadow: 0 12px 30px rgba(255,80,70,0.45);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .monthly-offer-book:hover {
           transform: translateY(-1px);
-          box-shadow: 0 16px 40px rgba(255,130,70,0.55);
+          box-shadow: 0 16px 40px rgba(255,80,70,0.55);
+        }
+        @media (min-width: 768px) {
+          .monthly-offer-top {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+          }
+          .monthly-offer-features {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
         .custom-builder {
           margin-top: 10px;
