@@ -1442,22 +1442,23 @@ export default function Services() {
                       label="تلميح عرض الشهر"
                     />
                   </div>
-                  <button
+                  <Button
                     type="button"
-                    className="monthly-offer-btn monthly-offer-btn--stamp"
+                    variant="outline"
+                    className="monthly-offer-btn border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors rounded-none cta-glow cta-border-glow cta-size"
                     onClick={() => setShowMonthlyOffer((prev) => !prev)}
                     aria-expanded={showMonthlyOffer}
                   >
                     <span className="monthly-offer-btn-text">
                       <EditableText
-                        value={contentMap.services_monthly_offer_hint}
+                        value={contentMap.services_monthly_offer_button}
                         fallback="خصم🔥"
-                        fieldKey="services_monthly_offer_hint"
+                        fieldKey="services_monthly_offer_button"
                         category="services"
                         label="زر خصم (عرض الشهر)"
                       />
                     </span>
-                  </button>
+                  </Button>
 
                   {showMonthlyOffer ? (
                     <div className="monthly-offer-panel">
@@ -2103,63 +2104,20 @@ export default function Services() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 18px 45px rgba(0,0,0,0.45), 0 0 24px rgba(255,210,130,0.25);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-          overflow: hidden;
-        }
-        .monthly-offer-btn--stamp {
-          width: 130px;
-          height: 130px;
-          border-radius: 999px;
-          border: 2px solid rgba(255,210,160,0.9);
-          background:
-            radial-gradient(circle at 35% 30%, rgba(255,250,235,0.95), rgba(255,210,150,0.7) 45%, rgba(255,150,120,0.6) 100%),
-            linear-gradient(150deg, rgba(255,170,140,0.45), rgba(18,18,24,0.96) 70%);
-          color: #5a1f12;
-          font-size: 20px;
-          font-weight: 900;
-          letter-spacing: 0;
+          padding: 12px 32px;
+          min-width: 170px;
           text-transform: none;
-          text-shadow:
-            0 0 12px rgba(255,255,255,0.8),
-            0 0 20px rgba(255,160,120,0.6);
-          box-shadow:
-            0 18px 40px rgba(0,0,0,0.5),
-            inset 0 0 18px rgba(255,255,255,0.35),
-            0 0 25px rgba(255,150,120,0.55);
-          position: relative;
-          white-space: nowrap;
           line-height: 1;
         }
         .monthly-offer-btn-text {
-          color: #5a1f12;
-          text-shadow:
-            0 0 10px rgba(255,255,255,0.75),
-            0 0 18px rgba(255,160,120,0.55);
+          color: inherit;
+          font-weight: 700;
           white-space: nowrap;
-        }
-        .monthly-offer-btn--stamp::after {
-          content: "";
-          position: absolute;
-          inset: -140% -20%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 46%, transparent 70%);
-          transform: translateX(-120%);
-          animation: services-shine 4.8s ease-in-out infinite;
-          opacity: 0.55;
-          pointer-events: none;
-        }
-        .monthly-offer-btn--stamp:hover {
-          transform: translateY(-2px) scale(1.03);
-          border-color: rgba(255,210,120,1);
-          box-shadow:
-            0 26px 55px rgba(0,0,0,0.55),
-            inset 0 0 22px rgba(255,210,130,0.45),
-            0 0 40px rgba(255,210,130,0.45);
         }
         .monthly-offer-sticker {
           position: absolute;
           top: 16px;
-          right: 16px;
+          left: 16px;
           padding: 6px 14px;
           border-radius: 999px;
           border: 2px solid rgba(255,255,255,0.65);
