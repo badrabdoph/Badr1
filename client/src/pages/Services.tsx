@@ -52,6 +52,18 @@ type AddonPkg = {
   offsetY?: number;
 };
 
+const isCustomPackage = (pkg: any) => {
+  if (!pkg) return false;
+  const id = String(pkg?.id ?? "");
+  const name = String(pkg?.name ?? "").trim();
+  const price = String(pkg?.price ?? "");
+  const category = String(pkg?.category ?? "");
+  if (id === "special-montage-design") return true;
+  if (category === "prints" && /خصص/.test(name)) return true;
+  if (category === "prints" && /تحدد|تحدد السعر|أنت من تحدد/.test(price)) return true;
+  return false;
+};
+
 function CoupleIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -238,7 +250,7 @@ function PackageCard({
   const isWedding = kind === "wedding";
   const isAddon = kind === "addon";
   const vip = isWedding && isVipPlus(pkg);
-  const isCustom = pkg.id === "special-montage-design";
+  const isCustom = isCustomPackage(pkg);
   const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
   const popular = !!pkg.popular;
@@ -1022,17 +1034,7 @@ export default function Services() {
       ...weddingPackages,
       ...additionalServices,
     ];
-    const isCustom = (pkg: any) => {
-      const id = String(pkg?.id ?? "");
-      const name = String(pkg?.name ?? "").trim();
-      const price = String(pkg?.price ?? "");
-      const category = String(pkg?.category ?? "");
-      if (id === "special-montage-design") return true;
-      if (category === "prints" && /خصص/.test(name)) return true;
-      if (category === "prints" && /تحدد|تحدد السعر|أنت من تحدد/.test(price)) return true;
-      return false;
-    };
-    return all.find(isCustom);
+    return all.find(isCustomPackage);
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, additionalServices]);
   const addonsPackages = useMemo(
     () => additionalServices.filter((pkg) => pkg.id !== "special-montage-design"),
