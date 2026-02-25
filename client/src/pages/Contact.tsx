@@ -299,6 +299,7 @@ export default function Contact() {
   const contentMap = content.contentMap ?? {};
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [printsOpen, setPrintsOpen] = useState(false);
   const [printQuantities, setPrintQuantities] = useState<Record<string, number>>({});
   type PackageOption = {
     id: string;
@@ -1086,7 +1087,7 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Popover>
+                          <Popover open={printsOpen} onOpenChange={setPrintsOpen}>
                             <PopoverTrigger asChild>
                               <button
                                 type="button"
@@ -1201,7 +1202,11 @@ export default function Contact() {
                               align="start"
                               className="w-[min(92vw,360px)] border border-white/10 bg-background/95 backdrop-blur-md p-3"
                             >
-                              <div className="space-y-3">
+                              <div
+                                className="prints-popover-body space-y-3"
+                                onWheel={(event) => event.stopPropagation()}
+                                onTouchMove={(event) => event.stopPropagation()}
+                              >
                                 {printGroups.length ? (
                                   printGroups.map((group) => (
                                     <div key={group.id} className="space-y-2">
@@ -1285,6 +1290,17 @@ export default function Contact() {
                                 ) : (
                                   <div className="text-sm text-muted-foreground">لا توجد مطبوعات حالياً.</div>
                                 )}
+                              </div>
+                              <div className="prints-popover-footer">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => setPrintsOpen(false)}
+                                >
+                                  تم
+                                </Button>
                               </div>
                             </PopoverContent>
                           </Popover>
@@ -2152,6 +2168,25 @@ export default function Contact() {
             0 0 12px rgba(255,210,130,0.45),
             0 0 20px rgba(255,210,130,0.25);
           white-space: nowrap;
+        }
+        .prints-popover-body {
+          max-height: 60vh;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          padding-right: 4px;
+        }
+        .prints-popover-body::-webkit-scrollbar {
+          width: 6px;
+        }
+        .prints-popover-body::-webkit-scrollbar-thumb {
+          background: rgba(255,210,120,0.4);
+          border-radius: 999px;
+        }
+        .prints-popover-body::-webkit-scrollbar-track {
+          background: rgba(255,255,255,0.05);
+        }
+        .prints-popover-footer {
+          margin-top: 10px;
         }
         .print-option {
           display: flex;

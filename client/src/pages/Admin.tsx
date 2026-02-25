@@ -1261,6 +1261,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
 // ============================================
 function PackagesManager({ onRefresh }: ManagerProps) {
   const { data: packages, refetch, isLoading } = trpc.packages.getAll.useQuery();
+  const { data: content } = trpc.siteContent.getAll.useQuery();
   const { requestConfirm, ConfirmDialog } = useConfirmDialog();
   const createMutation = trpc.packages.create.useMutation({
     onSuccess: () => {
@@ -1423,11 +1424,15 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
 
+  const contentMap = (content ?? []).reduce<Record<string, string>>((acc, item: any) => {
+    acc[item.key] = item.value;
+    return acc;
+  }, {});
   const categoryLabel: Record<string, string> = {
-    session: "جلسات التصوير",
-    prints: "جلسات + مطبوعات",
-    wedding: "Full Day",
-    addon: "إضافات",
+    session: contentMap.services_sessions_title || "جلسات التصوير",
+    prints: contentMap.services_prints_title || "المطبوعات",
+    wedding: contentMap.services_wedding_title || "Full Day",
+    addon: contentMap.services_addons_title || "إضافات",
   };
   const visiblePackages = (packages ?? []).filter((pkg) => pkg.visible !== false);
   const hiddenPackages = (packages ?? []).filter((pkg) => pkg.visible === false);

@@ -965,10 +965,10 @@ function QuickNav({
   contentMap: Record<string, string>;
 }) {
   const items = [
-    { id: "sessions", labelKey: "services_nav_sessions", fallback: "سيشن" },
-    { id: "wedding", labelKey: "services_nav_wedding", fallback: "Full Day" },
-    { id: "addons", labelKey: "services_nav_addons", fallback: "إضافات" },
-    { id: "prints", labelKey: "services_nav_prints", fallback: "المطبوعات" },
+    { id: "sessions", labelKey: "services_sessions_title", fallback: pageTexts.services.sessionsTitle },
+    { id: "wedding", labelKey: "services_wedding_title", fallback: pageTexts.services.weddingTitle },
+    { id: "addons", labelKey: "services_addons_title", fallback: pageTexts.services.addonsTitle },
+    { id: "prints", labelKey: "services_prints_title", fallback: "المطبوعات" },
   ];
 
   return (
@@ -1022,7 +1022,17 @@ export default function Services() {
       ...weddingPackages,
       ...additionalServices,
     ];
-    return all.find((pkg) => pkg.id === "special-montage-design");
+    const isCustom = (pkg: any) => {
+      const id = String(pkg?.id ?? "");
+      const name = String(pkg?.name ?? "").trim();
+      const price = String(pkg?.price ?? "");
+      const category = String(pkg?.category ?? "");
+      if (id === "special-montage-design") return true;
+      if (category === "prints" && /خصص/.test(name)) return true;
+      if (category === "prints" && /تحدد|تحدد السعر|أنت من تحدد/.test(price)) return true;
+      return false;
+    };
+    return all.find(isCustom);
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, additionalServices]);
   const addonsPackages = useMemo(
     () => additionalServices.filter((pkg) => pkg.id !== "special-montage-design"),

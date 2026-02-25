@@ -69,6 +69,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
 const STORE_MODE = process.env.ADMIN_STORE_MODE ?? "file";
 const useFileStore = STORE_MODE === "file";
+let packagesSeeded = false;
 
 type Positionable = {
   offsetX?: number | null;
@@ -477,27 +478,62 @@ export async function updateSiteSectionVisibility(key: string, visible: boolean)
 export async function getAllPackages() {
   if (useFileStore) return await listFilePackages();
   const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(packages).orderBy(asc(packages.sortOrder));
+  if (!db) return await listFilePackages();
+  try {
+    const rows = await db.select().from(packages).orderBy(asc(packages.sortOrder));
+    if (rows.length === 0 && !packagesSeeded) {
+      packagesSeeded = true;
+      const filePackages = await listFilePackages();
+      if (filePackages.length) {
+        for (const pkg of filePackages) {
+          await db.insert(packages).values({
+            name: pkg.name,
+            price: pkg.price,
+            description: pkg.description ?? null,
+            features: pkg.features ?? null,
+            category: pkg.category,
+            popular: pkg.popular ?? false,
+            visible: pkg.visible ?? true,
+            sortOrder: pkg.sortOrder ?? 0,
+          });
+        }
+        return await db.select().from(packages).orderBy(asc(packages.sortOrder));
+      }
+    }
+    return rows;
+  } catch (error) {
+    console.warn("[Database] Failed to load packages, falling back to file store:", error);
+    return await listFilePackages();
+  }
 }
 
 export async function getPackageById(id: number) {
   if (useFileStore) return await getFilePackageById(id);
   const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  if (!db) return await getFilePackageById(id);
+  try {
+    const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load package, falling back to file store:", error);
+    return await getFilePackageById(id);
+  }
 }
 
 export async function createPackage(data: InsertPackage & Positionable) {
   if (useFileStore) return await createFilePackage(data);
   const db = await getDb();
-  if (!db) return null;
+  if (!db) return await createFilePackage(data);
 
-  const dbData = stripPositionFields(data);
-  const result = await db.insert(packages).values(dbData);
-  const insertId = result[0].insertId;
-  return await getPackageById(insertId);
+  try {
+    const dbData = stripPositionFields(data);
+    const result = await db.insert(packages).values(dbData);
+    const insertId = result[0].insertId;
+    return await getPackageById(insertId);
+  } catch (error) {
+    console.warn("[Database] Failed to create package, falling back to file store:", error);
+    return await createFilePackage(data);
+  }
 }
 
 export async function updatePackage(
@@ -506,19 +542,29 @@ export async function updatePackage(
 ) {
   if (useFileStore) return await updateFilePackage(id, data);
   const db = await getDb();
-  if (!db) return null;
+  if (!db) return await updateFilePackage(id, data);
 
-  const dbData = stripPositionFields(data);
-  await db.update(packages).set(dbData).where(eq(packages.id, id));
-  return await getPackageById(id);
+  try {
+    const dbData = stripPositionFields(data);
+    await db.update(packages).set(dbData).where(eq(packages.id, id));
+    return await getPackageById(id);
+  } catch (error) {
+    console.warn("[Database] Failed to update package, falling back to file store:", error);
+    return await updateFilePackage(id, data);
+  }
 }
 
 export async function deletePackage(id: number) {
   if (useFileStore) return await deleteFilePackage(id);
   const db = await getDb();
-  if (!db) return false;
-  await db.delete(packages).where(eq(packages.id, id));
-  return true;
+  if (!db) return await deleteFilePackage(id);
+  try {
+    await db.delete(packages).where(eq(packages.id, id));
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to delete package, falling back to file store:", error);
+    return await deleteFilePackage(id);
+  }
 }
 
 // ============================================
