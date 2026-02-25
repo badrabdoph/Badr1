@@ -51,6 +51,10 @@ import {
   Pencil,
   ShieldCheck,
   Phone,
+  Camera,
+  Heart,
+  Receipt,
+  PlusCircle,
   ArrowUp,
   ArrowDown,
   ArrowLeft,
@@ -799,6 +803,134 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        .admin-package-preview {
+          display: grid;
+          gap: 12px;
+        }
+        .admin-preview-card {
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: linear-gradient(140deg, rgba(20,20,26,0.92), rgba(10,10,14,0.98));
+          box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,80,0.08);
+          padding: 18px;
+          position: relative;
+          overflow: hidden;
+        }
+        .admin-preview-card::after {
+          content: "";
+          position: absolute;
+          inset: -40% -10%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.18) 46%, transparent 72%);
+          transform: translateX(-120%);
+          animation: admin-preview-shine 7s ease-in-out infinite;
+          opacity: 0.22;
+          pointer-events: none;
+        }
+        .admin-preview-header {
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          gap: 16px;
+          align-items: start;
+        }
+        .admin-preview-icon {
+          width: 46px;
+          height: 46px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .admin-preview-info {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .admin-preview-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .admin-preview-title {
+          font-size: 1.05rem;
+          font-weight: 700;
+          color: rgba(255,245,230,0.95);
+        }
+        .admin-preview-badge {
+          font-size: 0.65rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          padding: 2px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.55);
+          color: rgba(255,235,190,0.95);
+          background: rgba(255,210,120,0.12);
+        }
+        .admin-preview-desc {
+          font-size: 0.82rem;
+          color: rgba(255,255,255,0.6);
+          line-height: 1.6;
+        }
+        .admin-preview-price {
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .admin-preview-price-value {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: rgba(255,215,140,0.95);
+          text-shadow: 0 0 16px rgba(255,210,130,0.35);
+          white-space: nowrap;
+        }
+        .admin-preview-price-note {
+          font-size: 0.7rem;
+          color: rgba(255,255,255,0.5);
+        }
+        .admin-preview-body {
+          margin-top: 14px;
+        }
+        .admin-preview-features {
+          display: grid;
+          gap: 6px;
+          font-size: 0.82rem;
+          color: rgba(255,245,230,0.9);
+        }
+        .admin-preview-features li {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .admin-preview-features li::before {
+          content: "";
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255,210,120,0.85);
+          box-shadow: 0 0 8px rgba(255,210,130,0.55);
+        }
+        .admin-preview-empty {
+          font-size: 0.78rem;
+          color: rgba(255,255,255,0.5);
+        }
+        @keyframes admin-preview-shine {
+          0% { transform: translateX(-120%); }
+          70% { transform: translateX(120%); }
+          100% { transform: translateX(120%); }
+        }
+        @media (max-width: 640px) {
+          .admin-preview-header {
+            grid-template-columns: 1fr;
+          }
+          .admin-preview-price {
+            text-align: right;
+          }
+        }
+      `}</style>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1457,6 +1589,24 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     const draft = drafts[pkg.id];
     const isEditing = editingId === pkg.id;
     const isVisible = pkg.visible !== false;
+    const previewName = contentMap[`package_${pkg.id}_name`] ?? pkg.name;
+    const previewPrice = contentMap[`package_${pkg.id}_price`] ?? pkg.price;
+    const previewDescription = contentMap[`package_${pkg.id}_description`] ?? pkg.description;
+    const previewPriceNote = contentMap[`package_${pkg.id}_price_note`] ?? pkg.priceNote;
+    const rawFeatures = Array.isArray(pkg.features) ? pkg.features : [];
+    const previewFeatures = rawFeatures
+      .map((feature: string, index: number) =>
+        contentMap[`package_${pkg.id}_feature_${index + 1}`] ?? feature
+      )
+      .filter(Boolean);
+    const Icon =
+      pkg.category === "wedding"
+        ? Heart
+        : pkg.category === "prints"
+        ? Receipt
+        : pkg.category === "addon"
+        ? PlusCircle
+        : Camera;
     return (
       <div key={pkg.id} className="border border-white/10 rounded-lg p-4 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -1514,24 +1664,43 @@ function PackagesManager({ onRefresh }: ManagerProps) {
         </div>
 
         {!isEditing ? (
-          <div className="rounded-lg border border-white/10 bg-black/10 p-4 space-y-3">
-            {pkg.description ? (
-              <p className="text-sm text-muted-foreground">{pkg.description}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">لا يوجد وصف بعد.</p>
-            )}
-            {pkg.features && (pkg.features as string[]).length > 0 ? (
-              <ul className="text-sm space-y-1">
-                {(pkg.features as string[]).map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted-foreground">لا توجد مميزات مضافة.</p>
-            )}
+          <div className="admin-package-preview">
+            <div className="admin-preview-card">
+              <div className="admin-preview-header">
+                <div className="admin-preview-icon">
+                  <Icon className="w-6 h-6 text-primary" />
+                </div>
+                <div className="admin-preview-info">
+                  <div className="admin-preview-title-row">
+                    <h4 className="admin-preview-title">{previewName}</h4>
+                    {pkg.popular ? (
+                      <span className="admin-preview-badge">الأكثر طلباً</span>
+                    ) : null}
+                  </div>
+                  {previewDescription ? (
+                    <p className="admin-preview-desc">{previewDescription}</p>
+                  ) : null}
+                </div>
+                <div className="admin-preview-price">
+                  <div className="admin-preview-price-value">{previewPrice}</div>
+                  {previewPriceNote ? (
+                    <div className="admin-preview-price-note">{previewPriceNote}</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="admin-preview-body">
+                {previewFeatures.length ? (
+                  <ul className="admin-preview-features">
+                    {previewFeatures.map((feature: string, i: number) => (
+                      <li key={i}>{feature}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="admin-preview-empty">لا توجد مميزات مضافة.</div>
+                )}
+              </div>
+            </div>
           </div>
         ) : null}
 

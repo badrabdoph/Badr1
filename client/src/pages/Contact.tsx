@@ -329,22 +329,30 @@ export default function Contact() {
   });
 
   const packageOptions = useMemo(() => {
-    const map = (items: Array<{ id: string; name: string; price: string }>): PackageOption[] =>
-      items.map((p) => {
-        const baseKey = `package_${p.id}`;
-        return {
-          id: p.id,
-          label: getValue(`${baseKey}_name`, p.name),
-          price: getValue(`${baseKey}_price`, p.price),
-        };
-      });
+    const isCustomPackage = (pkg: any) => {
+      const id = String(pkg?.id ?? "");
+      const name = String(pkg?.name ?? "").trim();
+      const price = String(pkg?.price ?? "");
+      const category = String(pkg?.category ?? "");
+      if (id === "special-montage-design") return true;
+      if (category === "prints" && /خصص/.test(name)) return true;
+      if (category === "prints" && /تحدد|تحدد السعر|أنت من تحدد/.test(price)) return true;
+      return false;
+    };
+    const isLegacyName = (name?: string) =>
+      !!name && /سيشن\+مطبوعات|جلسات\s*التصوير\s*\+\s*المطبوعات/i.test(name);
+    const map = (items: Array<{ id: string; name: string; price: string; category?: string }>): PackageOption[] =>
+      items
+        .filter((p) => !isCustomPackage(p) && !isLegacyName(p.name))
+        .map((p) => {
+          const baseKey = `package_${p.id}`;
+          return {
+            id: p.id,
+            label: getValue(`${baseKey}_name`, p.name),
+            price: getValue(`${baseKey}_price`, p.price),
+          };
+        });
     const monthlyOfferPrice = getValue("services_monthly_offer_price", "$4500");
-    const sessionOnly = (sessionPackages as any).filter(
-      (pkg: any) => pkg?.id === "session-1" || pkg?.id === "session-2"
-    );
-    const printsPackages = (sessionPackagesWithPrints as any).filter(
-      (pkg: any) => !["special-montage-design", "prints-session-1", "prints-session-2"].includes(pkg?.id)
-    );
     const monthlyOfferOption: PackageOption = {
       id: "monthly-offer",
       label: getValue("services_monthly_offer_title", "العرض الحصري"),
@@ -352,12 +360,12 @@ export default function Contact() {
       badge: getValue("services_monthly_offer_badge", "خصم 🔥"),
       isDiscount: true,
     };
-    return [
-      monthlyOfferOption,
-      ...map(sessionOnly),
-      ...map(printsPackages as any),
+    const ordered = [
+      ...map(sessionPackages as any),
       ...map(weddingPackages as any),
+      ...map(sessionPackagesWithPrints as any),
     ];
+    return [monthlyOfferOption, ...ordered];
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, contentMap]);
 
   const addonOptions = useMemo(() => {
@@ -1087,7 +1095,7 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Popover open={printsOpen} onOpenChange={setPrintsOpen}>
+                          <Popover>
                             <PopoverTrigger asChild>
                               <button
                                 type="button"
@@ -1174,7 +1182,7 @@ export default function Contact() {
                           />
                         </FormLabel>
                         <FormControl>
-                          <Popover>
+                          <Popover open={printsOpen} onOpenChange={setPrintsOpen}>
                             <PopoverTrigger asChild>
                               <button
                                 type="button"
