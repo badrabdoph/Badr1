@@ -468,7 +468,7 @@ function PositionControls({
             variant="outline"
             type="button"
             disabled={disabled}
-            onClick={() => applyDelta(-step, 0)}
+            onClick={() => applyDelta(step, 0)}
           >
             <ArrowRight className="w-3 h-3" />
           </Button>
@@ -477,7 +477,7 @@ function PositionControls({
             variant="outline"
             type="button"
             disabled={disabled}
-            onClick={() => applyDelta(step, 0)}
+            onClick={() => applyDelta(-step, 0)}
           >
             <ArrowLeft className="w-3 h-3" />
           </Button>
@@ -1927,6 +1927,7 @@ function ContactManager({ onRefresh }: ManagerProps) {
   const { data: contactInfo, refetch, isLoading } = trpc.contactInfo.getAll.useQuery();
   const { data: content, refetch: refetchContent } = trpc.siteContent.getAll.useQuery();
   const contactInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
   const upsertContactMutation = trpc.contactInfo.upsert.useMutation({
     onSuccess: () => {
       toast.success("تم حفظ التغييرات");
@@ -1946,6 +1947,7 @@ function ContactManager({ onRefresh }: ManagerProps) {
 
   const [editingContact, setEditingContact] = useState<Record<string, string>>({});
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
+  const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
 
   useEffect(() => {
     if (contactInfo) {
@@ -1960,10 +1962,16 @@ function ContactManager({ onRefresh }: ManagerProps) {
   useEffect(() => {
     if (content) {
       const contentMap: Record<string, string> = {};
+      const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
         contentMap[item.key] = item.value;
+        positions[item.key] = {
+          offsetX: toOffset((item as any).offsetX),
+          offsetY: toOffset((item as any).offsetY),
+        };
       });
       setEditingContent(contentMap);
+      setEditingPositions(positions);
     }
   }, [content]);
 
@@ -1976,11 +1984,14 @@ function ContactManager({ onRefresh }: ManagerProps) {
   };
 
   const handleSaveContent = async (key: string, label: string) => {
+    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertContentMutation.mutateAsync({
       key,
       value: editingContent[key] || "",
       category: "contact",
       label,
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
     });
   };
 
@@ -2169,6 +2180,20 @@ function ContactManager({ onRefresh }: ManagerProps) {
                         <Save className="w-4 h-4" />
                       </Button>
                     </div>
+                    <PositionControls
+                      value={editingPositions[item.key] ?? { offsetX: 0, offsetY: 0 }}
+                      onChange={(next) =>
+                        setEditingPositions((prev) => ({ ...prev, [item.key]: next }))
+                      }
+                      onSave={() =>
+                        requestConfirm({
+                          title: "تأكيد حفظ الموضع",
+                          description: `حفظ موضع "${item.label}"؟`,
+                          onConfirm: () => handleSaveContent(item.key, item.label),
+                        })
+                      }
+                      disabled={upsertContentMutation.isPending}
+                    />
                   </div>
                 ))}
               </div>
@@ -2176,6 +2201,8 @@ function ContactManager({ onRefresh }: ManagerProps) {
           ))}
         </CardContent>
       </Card>
+
+      <ConfirmDialog />
     </div>
   );
 }

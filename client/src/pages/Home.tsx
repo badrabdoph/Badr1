@@ -149,7 +149,7 @@ function MosaicCard({
       }}
       style={{
         backgroundImage: `url('${img.src}')`,
-        ...(getOffsetStyle((img as any)?.offsetX, (img as any)?.offsetY) ?? {}),
+        ...(getOffsetStyle(img.offsetX, img.offsetY) ?? {}),
       }}
     >
       {enabled && imageKey ? (

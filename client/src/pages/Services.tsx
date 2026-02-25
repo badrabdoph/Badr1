@@ -37,6 +37,8 @@ type Pkg = {
   featured?: boolean;
   badge?: string;
   priceNote?: string;
+  offsetX?: number;
+  offsetY?: number;
 };
 type AddonPkg = {
   id: string;
@@ -46,6 +48,8 @@ type AddonPkg = {
   features: string[];
   emoji?: string;
   priceNote?: string;
+  offsetX?: number;
+  offsetY?: number;
 };
 
 function CoupleIcon({ className }: { className?: string }) {
@@ -342,7 +346,7 @@ function PackageCard({
       aria-expanded={isCollapsible ? isExpanded : undefined}
       onClickCapture={handleCardClickCapture}
       onKeyDown={handleCardKeyDown}
-      style={getOffsetStyle((pkg as any)?.offsetX, (pkg as any)?.offsetY)}
+      style={getOffsetStyle(pkg.offsetX, pkg.offsetY)}
       className={[
         "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
         isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
@@ -1096,7 +1100,7 @@ export default function Services() {
             {addonsPackages.map((service) => (
               <div
                 key={service.id}
-                style={getOffsetStyle((service as any)?.offsetX, (service as any)?.offsetY)}
+                style={getOffsetStyle(service.offsetX, service.offsetY)}
                 className="relative bg-card p-7 md:p-8 border border-white/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 premium-border group overflow-hidden services-addon-card"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,80,0.12),transparent_60%)]" />

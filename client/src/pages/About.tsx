@@ -129,6 +129,7 @@ export default function About() {
                 className="w-full h-[520px] md:h-[620px] object-cover shadow-[0_30px_120px_rgba(0,0,0,0.65)]"
                 priority={false}
                 sizes="(max-width: 1024px) 100vw, 50vw"
+                style={getOffsetStyle(imageMap.aboutImage?.offsetX, imageMap.aboutImage?.offsetY)}
               />
             </div>
 

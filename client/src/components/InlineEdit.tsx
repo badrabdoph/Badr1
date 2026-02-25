@@ -22,7 +22,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, Loader2, Pencil, X, Image as ImageIcon, Upload } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Pencil,
+  X,
+  Image as ImageIcon,
+  Upload,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Move,
+} from "lucide-react";
 import { pushEdit } from "@/lib/editHistory";
 
 type ConfirmState = {
@@ -204,6 +216,7 @@ export function EditableText({
   const utils = trpc.useUtils();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [offsetDraft, setOffsetDraft] = useState({ offsetX: 0, offsetY: 0 });
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
   const contentPositions = useContentPositions();
   const position = contentPositions[fieldKey];
@@ -221,7 +234,11 @@ export function EditableText({
   useEffect(() => {
     if (isEditing) return;
     setDraft(normalizedValue);
-  }, [normalizedValue, isEditing]);
+    setOffsetDraft({
+      offsetX: position?.offsetX ?? 0,
+      offsetY: position?.offsetY ?? 0,
+    });
+  }, [normalizedValue, position, isEditing]);
 
   const upsertMutation = trpc.siteContent.upsert.useMutation({
     onMutate: (input) => {
@@ -254,12 +271,20 @@ export function EditableText({
   const startEditing = () => {
     if (!enabled) return;
     setDraft(normalizedValue || fallback || "");
+    setOffsetDraft({
+      offsetX: position?.offsetX ?? 0,
+      offsetY: position?.offsetY ?? 0,
+    });
     setIsEditing(true);
   };
 
   const handleSave = () => {
     if (!enabled || upsertMutation.isPending) return;
-    if (draft === normalizedValue) {
+    const textChanged = draft !== normalizedValue;
+    const offsetChanged =
+      offsetDraft.offsetX !== (position?.offsetX ?? 0) ||
+      offsetDraft.offsetY !== (position?.offsetY ?? 0);
+    if (!textChanged && !offsetChanged) {
       setIsEditing(false);
       return;
     }
@@ -270,6 +295,8 @@ export function EditableText({
           value: draft,
           category,
           label,
+          offsetX: offsetDraft.offsetX,
+          offsetY: offsetDraft.offsetY,
         });
       },
     });
@@ -277,6 +304,10 @@ export function EditableText({
 
   const handleCancel = () => {
     setDraft(normalizedValue);
+    setOffsetDraft({
+      offsetX: position?.offsetX ?? 0,
+      offsetY: position?.offsetY ?? 0,
+    });
     setIsEditing(false);
   };
 
@@ -333,6 +364,106 @@ export function EditableText({
               <X className="w-4 h-4 ml-2" />
               إلغاء
             </Button>
+          </div>
+          <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Move className="w-3 h-3" />
+                الموضع (px)
+              </span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={offsetDraft.offsetX}
+                  onChange={(e) =>
+                    setOffsetDraft({
+                      offsetX: Number(e.target.value) || 0,
+                      offsetY: offsetDraft.offsetY,
+                    })
+                  }
+                  className="h-8 w-20 text-xs"
+                  dir="ltr"
+                  placeholder="X"
+                />
+                <Input
+                  type="number"
+                  value={offsetDraft.offsetY}
+                  onChange={(e) =>
+                    setOffsetDraft({
+                      offsetX: offsetDraft.offsetX,
+                      offsetY: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="h-8 w-20 text-xs"
+                  dir="ltr"
+                  placeholder="Y"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setOffsetDraft({
+                      offsetX: offsetDraft.offsetX,
+                      offsetY: offsetDraft.offsetY - 10,
+                    })
+                  }
+                >
+                  <ArrowUp className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setOffsetDraft({
+                      offsetX: offsetDraft.offsetX + 10,
+                      offsetY: offsetDraft.offsetY,
+                    })
+                  }
+                >
+                  <ArrowRight className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setOffsetDraft({
+                      offsetX: offsetDraft.offsetX - 10,
+                      offsetY: offsetDraft.offsetY,
+                    })
+                  }
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setOffsetDraft({
+                      offsetX: offsetDraft.offsetX,
+                      offsetY: offsetDraft.offsetY + 10,
+                    })
+                  }
+                >
+                  <ArrowDown className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                onClick={() => setOffsetDraft({ offsetX: 0, offsetY: 0 })}
+              >
+                تصفير الموضع
+              </Button>
+            </div>
           </div>
           {multiline && (
             <div className="text-xs text-muted-foreground">
@@ -774,11 +905,16 @@ export function EditableImage({
         transform: `translate(${position?.offsetX ?? 0}px, ${position?.offsetY ?? 0}px)`,
       }
     : undefined;
+  const [offsetDraft, setOffsetDraft] = useState({ offsetX: 0, offsetY: 0 });
 
   useEffect(() => {
     if (isEditing) return;
     setDraftUrl(src);
-  }, [src, isEditing]);
+    setOffsetDraft({
+      offsetX: position?.offsetX ?? 0,
+      offsetY: position?.offsetY ?? 0,
+    });
+  }, [src, position, isEditing]);
 
   const upsertMutation = trpc.siteImages.upsert.useMutation({
     onMutate: (input) => ({
@@ -826,7 +962,11 @@ export function EditableImage({
 
   const handleSaveUrl = () => {
     if (!enabled || upsertMutation.isPending) return;
-    if (draftUrl === src) {
+    const urlChanged = draftUrl !== src;
+    const offsetChanged =
+      offsetDraft.offsetX !== (position?.offsetX ?? 0) ||
+      offsetDraft.offsetY !== (position?.offsetY ?? 0);
+    if (!urlChanged && !offsetChanged) {
       setIsEditing(false);
       return;
     }
@@ -837,6 +977,8 @@ export function EditableImage({
           url: draftUrl,
           alt,
           category,
+          offsetX: offsetDraft.offsetX,
+          offsetY: offsetDraft.offsetY,
         });
       },
     });
@@ -862,6 +1004,8 @@ export function EditableImage({
             mimeType: file.type,
             alt,
             category,
+            offsetX: offsetDraft.offsetX,
+            offsetY: offsetDraft.offsetY,
           });
         };
         reader.readAsDataURL(file);
@@ -900,6 +1044,106 @@ export function EditableImage({
               placeholder="رابط الصورة"
               className="mb-3"
             />
+            <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Move className="w-3 h-3" />
+                  الموضع (px)
+                </span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={offsetDraft.offsetX}
+                    onChange={(e) =>
+                      setOffsetDraft({
+                        offsetX: Number(e.target.value) || 0,
+                        offsetY: offsetDraft.offsetY,
+                      })
+                    }
+                    className="h-8 w-20 text-xs"
+                    dir="ltr"
+                    placeholder="X"
+                  />
+                  <Input
+                    type="number"
+                    value={offsetDraft.offsetY}
+                    onChange={(e) =>
+                      setOffsetDraft({
+                        offsetX: offsetDraft.offsetX,
+                        offsetY: Number(e.target.value) || 0,
+                      })
+                    }
+                    className="h-8 w-20 text-xs"
+                    dir="ltr"
+                    placeholder="Y"
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    type="button"
+                    onClick={() =>
+                      setOffsetDraft({
+                        offsetX: offsetDraft.offsetX,
+                        offsetY: offsetDraft.offsetY - 10,
+                      })
+                    }
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    type="button"
+                    onClick={() =>
+                      setOffsetDraft({
+                        offsetX: offsetDraft.offsetX + 10,
+                        offsetY: offsetDraft.offsetY,
+                      })
+                    }
+                  >
+                    <ArrowRight className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    type="button"
+                    onClick={() =>
+                      setOffsetDraft({
+                        offsetX: offsetDraft.offsetX - 10,
+                        offsetY: offsetDraft.offsetY,
+                      })
+                    }
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    type="button"
+                    onClick={() =>
+                      setOffsetDraft({
+                        offsetX: offsetDraft.offsetX,
+                        offsetY: offsetDraft.offsetY + 10,
+                      })
+                    }
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setOffsetDraft({ offsetX: 0, offsetY: 0 })}
+                >
+                  تصفير الموضع
+                </Button>
+              </div>
+            </div>
             <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                 <Upload className="w-3 h-3" />

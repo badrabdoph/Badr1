@@ -335,6 +335,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
         mimeType: z.string(),
         alt: z.string().optional(),
         category: z.string(),
+        offsetX: z.number().nullable().optional(),
+        offsetY: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         // Convert base64 to buffer
@@ -351,6 +353,8 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
           url,
           alt: input.alt,
           category: input.category,
+          offsetX: input.offsetX,
+          offsetY: input.offsetY,
         });
       }),
     delete: adminProcedure
