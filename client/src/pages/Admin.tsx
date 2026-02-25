@@ -1150,25 +1150,36 @@ function ContentManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
+  const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
 
   useEffect(() => {
     if (content) {
       const contentMap: Record<string, string> = {};
+      const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
         contentMap[item.key] = item.value;
+        positions[item.key] = {
+          offsetX: toOffset((item as any).offsetX),
+          offsetY: toOffset((item as any).offsetY),
+        };
       });
       setEditingContent(contentMap);
+      setEditingPositions(positions);
     }
   }, [content]);
 
   const handleSave = async (key: string, category: string, label?: string) => {
+    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertMutation.mutateAsync({
       key,
       value: editingContent[key] || "",
       category,
       label,
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
     });
   };
 
@@ -1214,10 +1225,26 @@ function ContentManager({ onRefresh }: ManagerProps) {
                   <Save className="w-4 h-4" />
                 </Button>
               </div>
+              <PositionControls
+                value={editingPositions[item.key] ?? { offsetX: 0, offsetY: 0 }}
+                onChange={(next) =>
+                  setEditingPositions((prev) => ({ ...prev, [item.key]: next }))
+                }
+                onSave={() =>
+                  requestConfirm({
+                    title: "تأكيد حفظ الموضع",
+                    description: `حفظ موضع "${item.label}"؟`,
+                    onConfirm: () => handleSave(item.key, item.category, item.label),
+                  })
+                }
+                disabled={upsertMutation.isPending}
+              />
             </div>
           ))}
         </CardContent>
       </Card>
+
+      <ConfirmDialog />
     </div>
   );
 }
@@ -1227,6 +1254,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
 // ============================================
 function PackagesManager({ onRefresh }: ManagerProps) {
   const { data: packages, refetch, isLoading } = trpc.packages.getAll.useQuery();
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
   const createMutation = trpc.packages.create.useMutation({
     onSuccess: () => {
       toast.success("تم إضافة الباقة");
@@ -1273,6 +1301,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
         popular: boolean;
         visible: boolean;
         sortOrder: number;
+        offsetX: number;
+        offsetY: number;
       }
     >
   >({});
@@ -1304,6 +1334,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
         popular: Boolean(pkg.popular),
         visible: pkg.visible !== false,
         sortOrder: Number.isFinite(pkg.sortOrder) ? Number(pkg.sortOrder) : 0,
+        offsetX: toOffset(pkg.offsetX),
+        offsetY: toOffset(pkg.offsetY),
       },
     }));
   };
@@ -1329,6 +1361,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
       popular: draft.popular,
       visible: draft.visible,
       sortOrder: draft.sortOrder,
+      offsetX: draft.offsetX,
+      offsetY: draft.offsetY,
     });
     closeEdit();
   };
