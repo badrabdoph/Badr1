@@ -260,10 +260,7 @@ type ShareLinkRecord = {
   revokedAt: Date | null;
 };
 
-let shareLinksTableReady: boolean | null = null;
-
 async function ensureShareLinksTable(db: ReturnType<typeof drizzle>) {
-  if (shareLinksTableReady) return true;
   try {
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS share_links (
@@ -276,10 +273,8 @@ async function ensureShareLinksTable(db: ReturnType<typeof drizzle>) {
         updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
-    shareLinksTableReady = true;
     return true;
   } catch (error) {
-    shareLinksTableReady = false;
     console.warn("[ShareLinks] Failed to ensure DB table:", error);
     return false;
   }
@@ -296,7 +291,19 @@ async function withShareLinksDbFallback<T>(
   try {
     return await action(db);
   } catch (error) {
-    console.warn("[ShareLinks] DB error, falling back to file store:", error);
+    const message = (error as any)?.cause?.sqlMessage ?? (error as any)?.message ?? "";
+    if (message.includes("share_links") && message.includes("doesn't exist")) {
+      const retryOk = await ensureShareLinksTable(db);
+      if (retryOk) {
+        try {
+          return await action(db);
+        } catch (retryError) {
+          console.warn("[ShareLinks] DB error after retry, falling back:", retryError);
+        }
+      }
+    } else {
+      console.warn("[ShareLinks] DB error, falling back to file store:", error);
+    }
     return await fallback();
   }
 }
