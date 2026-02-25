@@ -1551,11 +1551,11 @@ export default function Services() {
         .services-card::after {
           content: "";
           position: absolute;
-          inset: -40% -10%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.28) 48%, transparent 72%);
-          transform: translateX(-120%);
+          inset: 0;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.22) 46%, transparent 70%);
+          transform: translateX(-100%);
           animation: services-shine 6s ease-in-out infinite;
-          opacity: 0.3;
+          opacity: 0.22;
           pointer-events: none;
         }
         .services-card .text-muted-foreground,
@@ -2092,14 +2092,7 @@ export default function Services() {
           overflow: visible;
         }
         .monthly-offer-hint::after {
-          content: "";
-          position: absolute;
-          inset: -120% -20%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.65) 46%, transparent 70%);
-          transform: translateX(-120%);
-          animation: services-shine 5.2s ease-in-out infinite;
-          opacity: 0.6;
-          pointer-events: none;
+          content: none;
         }
         .monthly-offer-btn {
           position: relative;
