@@ -908,6 +908,8 @@ function MonthlyOfferCard({
         </span>
       </div>
 
+      <div className="monthly-offer-divider" />
+
       <div className="monthly-offer-features">
         {featureList.map((feature) => (
           <div key={feature.key} className="monthly-offer-feature">
@@ -2181,118 +2183,131 @@ export default function Services() {
         .monthly-offer-card {
           position: relative;
           overflow: hidden;
-          border-radius: 30px;
-          padding: 28px;
+          border-radius: 26px;
+          padding: 26px;
           background:
-            linear-gradient(140deg, rgba(14,24,55,0.95), rgba(5,45,52,0.92) 45%, rgba(87,34,12,0.9) 100%),
-            radial-gradient(circle at 15% 20%, rgba(255,216,130,0.25), transparent 55%);
-          border: 1px solid rgba(255,214,140,0.45);
+            linear-gradient(135deg, rgba(150,10,30,0.98), rgba(40,8,12,0.95) 55%, rgba(255,90,60,0.9) 100%),
+            radial-gradient(circle at 85% 15%, rgba(255,210,150,0.28), transparent 55%);
+          border: 2px dashed rgba(255,170,150,0.7);
           box-shadow:
-            0 24px 80px rgba(0,0,0,0.55),
-            0 0 35px rgba(255,170,90,0.35);
-          color: #fff7e9;
+            0 26px 80px rgba(0,0,0,0.6),
+            0 0 40px rgba(255,90,70,0.4);
+          color: #fff4ec;
+          display: grid;
+          gap: 16px;
         }
         .monthly-offer-card::before {
           content: "";
           position: absolute;
-          inset: 0;
-          background:
-            linear-gradient(120deg, rgba(255,255,255,0.1), transparent 35%),
-            repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 14px);
-          opacity: 0.35;
+          top: 50%;
+          left: -18px;
+          width: 36px;
+          height: 36px;
+          margin-top: -18px;
+          border-radius: 50%;
+          background: rgba(8,8,10,0.95);
+          box-shadow: inset 0 0 0 2px rgba(255,160,140,0.55);
           pointer-events: none;
         }
         .monthly-offer-card::after {
           content: "";
           position: absolute;
-          top: -50%;
-          right: -40%;
-          width: 70%;
-          height: 140%;
-          background: radial-gradient(circle, rgba(255,180,90,0.35), transparent 70%);
-          opacity: 0.6;
+          top: 50%;
+          right: -18px;
+          width: 36px;
+          height: 36px;
+          margin-top: -18px;
+          border-radius: 50%;
+          background: rgba(8,8,10,0.95);
+          box-shadow: inset 0 0 0 2px rgba(255,160,140,0.55);
           pointer-events: none;
         }
         .monthly-offer-sparkle {
           position: absolute;
           inset: -120% -20%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.7) 46%, transparent 70%);
+          background:
+            linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.75) 46%, transparent 70%),
+            repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 2px, transparent 2px 16px);
           transform: translateX(-120%);
-          animation: services-shine 5.6s ease-in-out infinite;
-          opacity: 0.45;
+          animation: services-shine 5.2s ease-in-out infinite;
+          opacity: 0.35;
           pointer-events: none;
         }
         .monthly-offer-stamp {
           position: absolute;
-          top: 18px;
-          left: 18px;
-          padding: 6px 14px;
+          top: 14px;
+          right: 16px;
+          padding: 6px 16px;
           border-radius: 999px;
-          border: 1px solid rgba(255,214,140,0.9);
-          background: linear-gradient(120deg, rgba(255,190,90,0.9), rgba(255,255,255,0.2));
+          border: 1px solid rgba(255,220,200,0.9);
+          background: linear-gradient(120deg, rgba(255,235,220,0.95), rgba(255,210,190,0.3));
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: #2b1600;
-          box-shadow: 0 0 18px rgba(255,190,90,0.6);
+          color: #6b0b0b;
+          box-shadow: 0 0 20px rgba(255,180,160,0.6);
+          transform: rotate(-6deg);
           z-index: 2;
         }
         .monthly-offer-header {
           position: relative;
           z-index: 2;
           text-align: right;
-          padding-left: 70px;
         }
         .monthly-offer-kicker {
           display: inline-flex;
-          padding: 4px 12px;
+          padding: 4px 10px;
           border-radius: 999px;
-          border: 1px dashed rgba(255,214,140,0.65);
+          border: 1px dashed rgba(255,210,190,0.7);
           font-size: 11px;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: rgba(255,240,210,0.95);
-          background: rgba(12,12,16,0.4);
+          color: rgba(255,235,220,0.95);
+          background: rgba(20,10,12,0.35);
         }
         .monthly-offer-title {
-          font-size: 26px;
+          font-size: 28px;
           font-weight: 800;
-          margin-top: 10px;
-          text-shadow: 0 0 18px rgba(255,200,120,0.55);
+          margin-top: 8px;
+          text-shadow: 0 0 18px rgba(255,120,120,0.6);
         }
         .monthly-offer-subtitle {
-          margin-top: 8px;
+          margin-top: 6px;
           font-size: 13px;
-          color: rgba(255,240,220,0.85);
+          color: rgba(255,230,220,0.9);
         }
         .monthly-offer-price {
           position: relative;
-          margin-top: 18px;
-          padding: 14px 16px;
+          padding: 14px 18px;
           border-radius: 18px;
-          border: 1px solid rgba(255,214,140,0.6);
-          background: linear-gradient(120deg, rgba(255,190,90,0.25), rgba(10,10,14,0.75));
+          border: 1px solid rgba(255,210,190,0.7);
+          background: linear-gradient(130deg, rgba(255,220,200,0.35), rgba(90,10,16,0.85));
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
           z-index: 2;
+          clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%, 6% 50%);
         }
         .monthly-offer-price-label {
           font-size: 12px;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: rgba(255,235,200,0.9);
+          color: rgba(255,235,220,0.9);
         }
         .monthly-offer-price-value {
-          font-size: 26px;
+          font-size: 28px;
           font-weight: 800;
-          color: #ffe2ad;
-          text-shadow: 0 0 18px rgba(255,200,120,0.7);
+          color: #ffe8dc;
+          text-shadow: 0 0 18px rgba(255,120,120,0.8);
+        }
+        .monthly-offer-divider {
+          height: 1px;
+          border-top: 1px dashed rgba(255,210,190,0.6);
+          opacity: 0.8;
         }
         .monthly-offer-features {
-          margin-top: 18px;
           display: grid;
           gap: 8px;
           position: relative;
@@ -2303,36 +2318,40 @@ export default function Services() {
           grid-template-columns: 12px 1fr;
           gap: 10px;
           font-size: 13px;
-          color: rgba(255,245,230,0.92);
+          color: rgba(255,245,235,0.94);
         }
         .monthly-offer-bullet {
           width: 10px;
           height: 10px;
           margin-top: 6px;
           border-radius: 50%;
-          background: rgba(255,210,120,0.95);
-          box-shadow: 0 0 12px rgba(255,200,110,0.9);
+          background: rgba(255,130,120,0.95);
+          box-shadow: 0 0 12px rgba(255,120,110,0.9);
         }
         .monthly-offer-cta-row {
-          margin-top: 20px;
           position: relative;
           z-index: 2;
         }
         .monthly-offer-book {
           width: 100%;
           height: 52px;
-          border-radius: 16px;
+          border-radius: 14px;
           border: none;
-          background: linear-gradient(120deg, #ffcf8a, #ff9f42 55%, #ff6b3d);
-          color: #2d1400;
+          background: linear-gradient(120deg, #ff3b30, #ff6b3d 55%, #ffb347);
+          color: #fff7ef;
           font-weight: 800;
           letter-spacing: 0.08em;
-          box-shadow: 0 12px 30px rgba(255,130,70,0.45);
+          box-shadow: 0 12px 30px rgba(255,70,60,0.5);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .monthly-offer-book:hover {
           transform: translateY(-1px);
-          box-shadow: 0 16px 40px rgba(255,130,70,0.55);
+          box-shadow: 0 18px 45px rgba(255,70,60,0.6);
+        }
+        @media (min-width: 768px) {
+          .monthly-offer-features {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
         .custom-builder {
           margin-top: 10px;

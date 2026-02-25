@@ -260,36 +260,67 @@ type ShareLinkRecord = {
   revokedAt: Date | null;
 };
 
-export async function createShareLinkRecord(data: InsertShareLink): Promise<ShareLinkRecord | null> {
+async function withShareLinksDbFallback<T>(
+  action: (db: ReturnType<typeof drizzle>) => Promise<T>,
+  fallback: () => Promise<T>
+): Promise<T> {
   const db = await getDb();
-  if (!db) return await createLocalShareLink(data);
-  const existing = await getShareLinkByCode(data.code);
-  if (existing) return null;
+  if (!db) return await fallback();
+  try {
+    return await action(db);
+  } catch (error) {
+    console.warn("[ShareLinks] DB error, falling back to file store:", error);
+    return await fallback();
+  }
+}
 
-  await db.insert(shareLinks).values(data);
-
-  return await getShareLinkByCode(data.code);
+export async function createShareLinkRecord(data: InsertShareLink): Promise<ShareLinkRecord | null> {
+  return await withShareLinksDbFallback(
+    async (db) => {
+      const existing = await db
+        .select()
+        .from(shareLinks)
+        .where(eq(shareLinks.code, data.code))
+        .limit(1);
+      if (existing.length) return null;
+      await db.insert(shareLinks).values(data);
+      const result = await db
+        .select()
+        .from(shareLinks)
+        .where(eq(shareLinks.code, data.code))
+        .limit(1);
+      return result.length ? result[0] : null;
+    },
+    () => createLocalShareLink(data)
+  );
 }
 
 export async function getShareLinkByCode(code: string): Promise<ShareLinkRecord | null> {
-  const db = await getDb();
-  if (!db) return await getLocalShareLinkByCode(code);
-  const result = await db.select().from(shareLinks).where(eq(shareLinks.code, code)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  return await withShareLinksDbFallback(
+    async (db) => {
+      const result = await db.select().from(shareLinks).where(eq(shareLinks.code, code)).limit(1);
+      return result.length ? result[0] : null;
+    },
+    () => getLocalShareLinkByCode(code)
+  );
 }
 
 export async function listShareLinks(): Promise<ShareLinkRecord[]> {
-  const db = await getDb();
-  if (!db) return await listLocalShareLinks();
-  return await db.select().from(shareLinks).orderBy(desc(shareLinks.createdAt));
+  return await withShareLinksDbFallback(
+    (db) => db.select().from(shareLinks).orderBy(desc(shareLinks.createdAt)),
+    () => listLocalShareLinks()
+  );
 }
 
 export async function revokeShareLink(code: string) {
-  const db = await getDb();
-  if (!db) return await revokeLocalShareLink(code);
-  const now = new Date();
-  await db.update(shareLinks).set({ revokedAt: now }).where(eq(shareLinks.code, code));
-  return true;
+  return await withShareLinksDbFallback(
+    async (db) => {
+      const now = new Date();
+      await db.update(shareLinks).set({ revokedAt: now }).where(eq(shareLinks.code, code));
+      return true;
+    },
+    () => revokeLocalShareLink(code)
+  );
 }
 
 export async function extendShareLink(code: string, hours: number): Promise<ShareLinkRecord | null> {
@@ -302,14 +333,16 @@ export async function extendShareLink(code: string, hours: number): Promise<Shar
     : now;
   const newExpiresAt = new Date(base.getTime() + hours * 60 * 60 * 1000);
 
-  const db = await getDb();
-  if (!db) return await extendLocalShareLink(code, newExpiresAt);
-
-  await db.update(shareLinks).set({ expiresAt: newExpiresAt }).where(eq(shareLinks.code, code));
-  return {
-    ...record,
-    expiresAt: newExpiresAt,
-  };
+  return await withShareLinksDbFallback(
+    async (db) => {
+      await db.update(shareLinks).set({ expiresAt: newExpiresAt }).where(eq(shareLinks.code, code));
+      return {
+        ...record,
+        expiresAt: newExpiresAt,
+      };
+    },
+    () => extendLocalShareLink(code, newExpiresAt)
+  );
 }
 
 // ============================================
