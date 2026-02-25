@@ -299,12 +299,27 @@ export default function Contact() {
   const contentMap = content.contentMap ?? {};
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [printQuantities, setPrintQuantities] = useState<Record<string, number>>({});
   type PackageOption = {
     id: string;
     label: string;
     price: string;
     badge?: string;
     isDiscount?: boolean;
+  };
+  const clampPrintQty = (value: number) => Math.min(5, Math.max(1, value));
+  const getPrintQty = (id: string) => clampPrintQty(printQuantities[id] ?? 1);
+  const setPrintQty = (id: string, next: number) => {
+    const qty = clampPrintQty(next);
+    setPrintQuantities((prev) => ({ ...prev, [id]: qty }));
+  };
+  const clearPrintQty = (id: string) => {
+    setPrintQuantities((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -528,10 +543,20 @@ export default function Contact() {
     : getValue("contact_addons_placeholder", "اختر الإضافات أو اتركها فارغة");
 
   const printsText = selectedPrints.length
-    ? selectedPrints.map((p) => p.label).join("، ")
+    ? selectedPrints
+        .map((p) => {
+          const qty = getPrintQty(p.id);
+          return `${p.label}${qty > 1 ? ` ×${qty}` : ""}`;
+        })
+        .join("، ")
     : getValue("contact_prints_empty", "—");
   const printsPreview = selectedPrints.length
-    ? selectedPrints.map((p) => p.label).join("، ")
+    ? selectedPrints
+        .map((p) => {
+          const qty = getPrintQty(p.id);
+          return `${p.label}${qty > 1 ? ` ×${qty}` : ""}`;
+        })
+        .join("، ")
     : getValue("contact_prints_placeholder", "اختر المطبوعات أو اتركها فارغة كما تشاء");
 
 
@@ -542,7 +567,9 @@ export default function Contact() {
     }, 0);
     const printsTotal = selectedPrints.reduce((sum, item) => {
       const itemNumber = parsePriceValue(item.price);
-      return itemNumber === null ? sum : sum + itemNumber;
+      if (itemNumber === null) return sum;
+      const qty = getPrintQty(item.id);
+      return sum + itemNumber * qty;
     }, 0);
     const extrasTotal = addonsTotal + printsTotal;
     const packagePrice = selectedPackage?.price;
@@ -564,7 +591,7 @@ export default function Contact() {
     const total = packageNumber + extrasTotal;
     const totalText = formatPriceNumber(total);
     return unit ? `${totalText}${unit}` : totalText;
-  }, [selectedPackage, selectedAddons, selectedPrints]);
+  }, [selectedPackage, selectedAddons, selectedPrints, printQuantities]);
 
   const totalLine = useMemo(() => {
     const emptyValue = getValue("contact_receipt_empty", "—");
@@ -622,7 +649,12 @@ export default function Contact() {
     };
 
     const addonLines = formatListLines(selectedAddons, noneValue, "- ");
-    const printLines = formatListLines(selectedPrints, noneValue, "• ");
+    const printLines = selectedPrints.length
+      ? selectedPrints.map((item) => {
+          const qty = getPrintQty(item.id);
+          return `• ${item.label}${qty > 1 ? ` ×${qty}` : ""}`;
+        })
+      : [noneValue];
     const offerLines = monthlyOfferDetails.length
       ? [getValue("contact_receipt_offer_heading", "تفاصيل العرض الحصري"), ...monthlyOfferDetails.map((line) => `• ${line}`)]
       : [];
@@ -651,6 +683,7 @@ export default function Contact() {
     totalLine,
     monthlyOfferDetails,
     contentMap,
+    printQuantities,
   ]);
 
   const whatsappReceiptHref = useMemo(
@@ -713,6 +746,7 @@ export default function Contact() {
     form.setValue("packageId", "");
     form.setValue("addonIds", []);
     form.setValue("printIds", []);
+    setPrintQuantities({});
     try {
       sessionStorage.removeItem(PRINTS_STORAGE_KEY);
     } catch {
@@ -1147,11 +1181,15 @@ export default function Contact() {
                               >
                                 {selectedPrints.length ? (
                                   <ul className="flex-1 min-w-0 text-right list-disc list-inside space-y-1 text-foreground/90 leading-relaxed">
-                                    {selectedPrints.map((item) => (
-                                      <li key={item.id} className="whitespace-normal">
-                                        {item.label}
-                                      </li>
-                                    ))}
+                                    {selectedPrints.map((item) => {
+                                      const qty = getPrintQty(item.id);
+                                      return (
+                                        <li key={item.id} className="whitespace-normal flex items-center gap-2">
+                                          <span>{item.label}</span>
+                                          {qty > 1 ? <span className="print-qty-pill">×{qty}</span> : null}
+                                        </li>
+                                      );
+                                    })}
                                   </ul>
                                 ) : (
                                   <span className="text-muted-foreground">{printsPreview}</span>
@@ -1173,8 +1211,13 @@ export default function Contact() {
                                       <div className="space-y-2">
                                         {group.items.map((item) => {
                                           const checked = (field.value ?? []).includes(item.id);
+                                          const qty = getPrintQty(item.id);
+                                          const basePrice = parsePriceValue(item.price);
+                                          const unit = extractPriceUnit(item.price);
+                                          const computedPrice =
+                                            basePrice !== null ? `${formatPriceNumber(basePrice * qty)}${unit}` : item.price;
                                           return (
-                                            <label key={item.id} className="flex items-start gap-3 text-sm">
+                                            <label key={item.id} className="print-option">
                                               <Checkbox
                                                 checked={checked}
                                                 onCheckedChange={(value) => {
@@ -1182,15 +1225,56 @@ export default function Contact() {
                                                   const isChecked = value === true;
                                                   if (isChecked) {
                                                     next.add(item.id);
+                                                    if (!printQuantities[item.id]) {
+                                                      setPrintQty(item.id, 1);
+                                                    }
                                                   } else {
                                                     next.delete(item.id);
+                                                    clearPrintQty(item.id);
                                                   }
                                                   field.onChange(Array.from(next));
                                                 }}
                                               />
-                                              <div className="flex-1 flex items-start justify-between gap-3">
-                                                <span className="text-foreground/90">{item.label}</span>
-                                                <span className="text-xs text-muted-foreground tabular-nums">{item.price}</span>
+                                              <div className="print-option-body">
+                                                <div className="print-option-row">
+                                                  <span className="print-option-label">{item.label}</span>
+                                                  <span className="print-option-price tabular-nums">
+                                                    {checked && qty > 1 ? computedPrice : item.price}
+                                                  </span>
+                                                </div>
+                                                {checked ? (
+                                                  <div
+                                                    className="print-qty"
+                                                    onClick={(event) => {
+                                                      event.preventDefault();
+                                                      event.stopPropagation();
+                                                    }}
+                                                  >
+                                                    <span className="print-qty-label">
+                                                      <span className="print-qty-dot" />
+                                                      اختر العدد
+                                                    </span>
+                                                    <div className="print-qty-controls">
+                                                      <button
+                                                        type="button"
+                                                        className="print-qty-btn"
+                                                        onClick={() => setPrintQty(item.id, qty - 1)}
+                                                        disabled={qty <= 1}
+                                                      >
+                                                        -
+                                                      </button>
+                                                      <span className="print-qty-value">{qty}</span>
+                                                      <button
+                                                        type="button"
+                                                        className="print-qty-btn"
+                                                        onClick={() => setPrintQty(item.id, qty + 1)}
+                                                        disabled={qty >= 5}
+                                                      >
+                                                        +
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                ) : null}
                                               </div>
                                             </label>
                                           );
@@ -1334,9 +1418,15 @@ export default function Contact() {
                         </div>
                         {selectedPrints.length ? (
                           <ul className="receipt-tags">
-                            {selectedPrints.map((print) => (
-                              <li key={print.id}>{print.label}</li>
-                            ))}
+                            {selectedPrints.map((print) => {
+                              const qty = getPrintQty(print.id);
+                              return (
+                                <li key={print.id}>
+                                  {print.label}
+                                  {qty > 1 ? ` ×${qty}` : ""}
+                                </li>
+                              );
+                            })}
                           </ul>
                         ) : null}
                       </div>
@@ -2063,10 +2153,118 @@ export default function Contact() {
             0 0 20px rgba(255,210,130,0.25);
           white-space: nowrap;
         }
+        .print-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 0.95rem;
+          padding: 8px 6px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(10,10,14,0.45);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .print-option:hover {
+          border-color: rgba(255,210,120,0.35);
+          box-shadow: 0 0 18px rgba(255,210,130,0.2);
+        }
+        .print-option-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .print-option-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .print-option-label {
+          color: rgba(255,245,230,0.92);
+          font-size: 0.92rem;
+        }
+        .print-option-price {
+          font-size: 0.78rem;
+          color: rgba(255,235,200,0.85);
+        }
+        .print-qty {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 6px 8px;
+          border-radius: 10px;
+          border: 1px dashed rgba(255,210,120,0.45);
+          background: rgba(12,12,16,0.55);
+          box-shadow: inset 0 0 0 1px rgba(255,210,120,0.12);
+        }
+        .print-qty-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255,230,190,0.95);
+        }
+        .print-qty-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255,210,120,0.95);
+          box-shadow: 0 0 10px rgba(255,210,130,0.75);
+          animation: custom-dot-pulse 1.6s ease-in-out infinite;
+        }
+        .print-qty-controls {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .print-qty-btn {
+          width: 22px;
+          height: 22px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,210,120,0.6);
+          background: rgba(10,10,14,0.7);
+          color: rgba(255,245,220,0.95);
+          font-weight: 700;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .print-qty-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        .print-qty-btn:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 0 12px rgba(255,210,130,0.45);
+        }
+        .print-qty-value {
+          min-width: 20px;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(255,245,220,0.95);
+        }
+        .print-qty-pill {
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.55);
+          color: rgba(255,230,190,0.95);
+        }
         @keyframes contact-shine {
           0% { transform: translateX(-120%); }
           65% { transform: translateX(120%); }
           100% { transform: translateX(120%); }
+        }
+        @keyframes custom-dot-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(1.4); opacity: 1; }
         }
       `}</style>
 
