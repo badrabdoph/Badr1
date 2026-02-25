@@ -69,6 +69,8 @@ import {
   additionalServices,
 } from "@/config/siteConfig";
 import { useEditHistory, type EditAction } from "@/lib/editHistory";
+import { PackageCard } from "@/pages/Services";
+import { servicesStyles } from "@/styles/servicesStyles";
 
 export default function Admin() {
   const utils = trpc.useUtils();
