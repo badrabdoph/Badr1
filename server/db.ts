@@ -481,6 +481,42 @@ export async function getAllPackages() {
   if (!db) return await listFilePackages();
   try {
     const rows = await db.select().from(packages).orderBy(asc(packages.sortOrder));
+    const legacyMatchers = [/سيشن\+مطبوعات/i, /جلسات\s*التصوير\s*\+\s*المطبوعات/i];
+    const isLegacy = (name?: string | null) =>
+      !!name && legacyMatchers.some((re) => re.test(name));
+    const legacyRows = rows.filter((row) => isLegacy(row.name));
+    if (legacyRows.length) {
+      for (const row of legacyRows) {
+        await db.delete(packages).where(eq(packages.id, row.id));
+      }
+    }
+    const hasCustomPackage = rows.some(
+      (row) =>
+        row.category === "prints" &&
+        typeof row.name === "string" &&
+        row.name.includes("خصص")
+    );
+    if (!hasCustomPackage) {
+      const filePackages = await listFilePackages();
+      const custom = filePackages.find(
+        (pkg) =>
+          pkg.category === "prints" &&
+          typeof pkg.name === "string" &&
+          pkg.name.includes("خصص")
+      );
+      if (custom) {
+        await db.insert(packages).values({
+          name: custom.name,
+          price: custom.price,
+          description: custom.description ?? null,
+          features: custom.features ?? null,
+          category: custom.category,
+          popular: custom.popular ?? false,
+          visible: custom.visible ?? true,
+          sortOrder: custom.sortOrder ?? 0,
+        });
+      }
+    }
     if (rows.length === 0 && !packagesSeeded) {
       packagesSeeded = true;
       const filePackages = await listFilePackages();
@@ -500,7 +536,9 @@ export async function getAllPackages() {
         return await db.select().from(packages).orderBy(asc(packages.sortOrder));
       }
     }
-    return rows;
+    return legacyRows.length
+      ? await db.select().from(packages).orderBy(asc(packages.sortOrder))
+      : rows;
   } catch (error) {
     console.warn("[Database] Failed to load packages, falling back to file store:", error);
     return await listFilePackages();

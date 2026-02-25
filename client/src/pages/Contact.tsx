@@ -547,7 +547,7 @@ export default function Contact() {
     ? selectedPrints
         .map((p) => {
           const qty = getPrintQty(p.id);
-          return `${p.label}${qty > 1 ? ` ×${qty}` : ""}`;
+          return `${p.label}${qty > 1 ? ` (عدد ${qty})` : ""}`;
         })
         .join("، ")
     : getValue("contact_prints_empty", "—");
@@ -555,7 +555,7 @@ export default function Contact() {
     ? selectedPrints
         .map((p) => {
           const qty = getPrintQty(p.id);
-          return `${p.label}${qty > 1 ? ` ×${qty}` : ""}`;
+          return `${p.label}${qty > 1 ? ` (عدد ${qty})` : ""}`;
         })
         .join("، ")
     : getValue("contact_prints_placeholder", "اختر المطبوعات أو اتركها فارغة كما تشاء");
@@ -1187,7 +1187,7 @@ export default function Contact() {
                                       return (
                                         <li key={item.id} className="whitespace-normal flex items-center gap-2">
                                           <span>{item.label}</span>
-                                          {qty > 1 ? <span className="print-qty-pill">×{qty}</span> : null}
+                                          {qty > 1 ? <span className="print-qty-pill">(عدد {qty})</span> : null}
                                         </li>
                                       );
                                     })}
