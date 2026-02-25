@@ -322,6 +322,7 @@ export default function Contact() {
           price: getValue(`${baseKey}_price`, p.price),
         };
       });
+    const monthlyOfferPrice = getValue("services_monthly_offer_price", "$4500");
     const sessionOnly = (sessionPackages as any).filter(
       (pkg: any) => pkg?.id === "session-1" || pkg?.id === "session-2"
     );
@@ -331,7 +332,7 @@ export default function Contact() {
     const monthlyOfferOption: PackageOption = {
       id: "monthly-offer",
       label: getValue("services_monthly_offer_title", "العرض الحصري"),
-      price: getValue("services_monthly_offer_price", "—"),
+      price: monthlyOfferPrice,
       badge: getValue("services_monthly_offer_badge", "خصم 🔥"),
       isDiscount: true,
     };
@@ -489,7 +490,7 @@ export default function Contact() {
   const monthlyOfferDetails = useMemo(() => {
     if (!isMonthlyOfferSelected) return [] as string[];
     const title = getValue("services_monthly_offer_title", "العرض الحصري");
-    const price = getValue("services_monthly_offer_price", "—");
+    const price = getValue("services_monthly_offer_price", "$4500");
     const subtitle = getValue("services_monthly_offer_subtitle", "عرض حصري لفترة محدودة فقط");
     const features = [
       getValue("services_monthly_offer_feature_1", "ألبوم كبير مقاس 80x30 عدد من 20 ل 40 صورة"),
