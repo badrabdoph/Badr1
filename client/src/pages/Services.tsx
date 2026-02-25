@@ -2111,57 +2111,71 @@ export default function Services() {
         .monthly-offer-btn {
           position: relative;
           width: min(90%, 320px);
-          padding: 16px 18px;
-          border-radius: 18px;
-          border: 1px solid rgba(255,210,120,0.65);
+          padding: 18px 22px;
+          border-radius: 14px;
+          border: 2px dashed rgba(255,90,80,0.65);
           background:
-            linear-gradient(150deg, rgba(255,210,120,0.35), rgba(20,20,28,0.92) 60%),
-            radial-gradient(circle at 20% 15%, rgba(255,245,210,0.28), transparent 60%);
-          color: #fff3d4;
+            linear-gradient(135deg, rgba(255,245,240,0.98), rgba(255,226,214,0.95) 45%, rgba(255,205,190,0.9) 100%),
+            repeating-linear-gradient(120deg, rgba(255,255,255,0.55) 0 6px, transparent 6px 18px);
+          color: #5c120b;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 4px;
-          box-shadow: 0 18px 45px rgba(0,0,0,0.45), 0 0 24px rgba(255,210,130,0.25);
+          box-shadow:
+            0 18px 45px rgba(0,0,0,0.45),
+            0 0 20px rgba(255,120,90,0.35);
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
           overflow: hidden;
         }
+        .monthly-offer-btn::before,
         .monthly-offer-btn::after {
           content: "";
           position: absolute;
-          inset: -140% -20%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 46%, transparent 70%);
-          transform: translateX(-120%);
-          animation: services-shine 4.8s ease-in-out infinite;
-          opacity: 0.55;
+          top: 50%;
+          width: 34px;
+          height: 34px;
+          margin-top: -17px;
+          border-radius: 50%;
+          background: #0b0b0f;
+          box-shadow: inset 0 0 0 2px rgba(255,120,90,0.55);
           pointer-events: none;
+        }
+        .monthly-offer-btn::before {
+          left: -17px;
+        }
+        .monthly-offer-btn::after {
+          right: -17px;
+        }
+        .monthly-offer-btn::selection {
+          background: transparent;
         }
         .monthly-offer-btn:hover {
           transform: translateY(-2px) scale(1.02);
-          border-color: rgba(255,210,120,0.9);
-          box-shadow: 0 22px 50px rgba(0,0,0,0.55), 0 0 32px rgba(255,210,130,0.4);
+          border-color: rgba(255,80,70,0.9);
+          box-shadow: 0 22px 50px rgba(0,0,0,0.55), 0 0 32px rgba(255,90,70,0.45);
         }
         .monthly-offer-btn-badge {
           padding: 2px 10px;
           border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.6);
-          background: linear-gradient(120deg, rgba(255,210,120,0.55), rgba(255,255,255,0.08));
+          border: 1px solid rgba(255,90,80,0.65);
+          background: linear-gradient(120deg, rgba(255,90,80,0.85), rgba(255,180,160,0.4));
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: #fff7dc;
-          text-shadow: 0 0 10px rgba(255,210,130,0.6);
+          color: #fff6f0;
+          text-shadow: 0 0 10px rgba(255,90,80,0.6);
         }
         .monthly-offer-btn-title {
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 800;
           letter-spacing: 0.08em;
-          text-shadow: 0 0 16px rgba(255,210,130,0.6);
+          text-shadow: 0 0 12px rgba(255,120,90,0.35);
         }
         .monthly-offer-btn-sub {
           font-size: 11px;
-          color: rgba(255,235,200,0.9);
+          color: rgba(92,18,11,0.75);
           letter-spacing: 0.16em;
           text-transform: uppercase;
         }
