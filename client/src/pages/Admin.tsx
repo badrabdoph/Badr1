@@ -1380,9 +1380,21 @@ function PackagesManager({ onRefresh }: ManagerProps) {
   };
   const visiblePackages = (packages ?? []).filter((pkg) => pkg.visible !== false);
   const hiddenPackages = (packages ?? []).filter((pkg) => pkg.visible === false);
+  const sortedVisiblePackages = [...visiblePackages].sort(
+    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)
+  );
+  const sortedHiddenPackages = [...hiddenPackages].sort(
+    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)
+  );
 
   const togglePackageVisibility = async (pkgId: number, visible: boolean) => {
     await updateMutation.mutateAsync({ id: pkgId, visible });
+  };
+
+  const changePackageOrder = async (pkg: any, delta: number) => {
+    const current = Number.isFinite(pkg.sortOrder) ? Number(pkg.sortOrder) : 0;
+    const next = Math.max(0, current + delta);
+    await updateMutation.mutateAsync({ id: pkg.id, sortOrder: next });
   };
 
   const renderPackageCard = (pkg: any) => {
@@ -1395,10 +1407,28 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <div>
             <div className="text-lg font-bold">{pkg.name}</div>
             <div className="text-sm text-muted-foreground">
-              {pkg.price} • {categoryLabel[pkg.category ?? "session"]}
+              {pkg.price} • {categoryLabel[pkg.category ?? "session"]} • ترتيب #{pkg.sortOrder ?? 0}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => changePackageOrder(pkg, -1)}
+              disabled={updateMutation.isPending}
+              title="تقديم"
+            >
+              <ArrowUp className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => changePackageOrder(pkg, 1)}
+              disabled={updateMutation.isPending}
+              title="تأخير"
+            >
+              <ArrowDown className="w-4 h-4" />
+            </Button>
             <Badge variant={isVisible ? "secondary" : "outline"}>
               {isVisible ? "ظاهر" : "مخفي"}
             </Badge>
@@ -1426,6 +1456,28 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             </Button>
           </div>
         </div>
+
+        {!isEditing ? (
+          <div className="rounded-lg border border-white/10 bg-black/10 p-4 space-y-3">
+            {pkg.description ? (
+              <p className="text-sm text-muted-foreground">{pkg.description}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">لا يوجد وصف بعد.</p>
+            )}
+            {pkg.features && (pkg.features as string[]).length > 0 ? (
+              <ul className="text-sm space-y-1">
+                {(pkg.features as string[]).map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground">لا توجد مميزات مضافة.</p>
+            )}
+          </div>
+        ) : null}
 
         {isEditing && draft ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1599,23 +1651,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
               </Button>
             </div>
           </div>
-        ) : (
-          <>
-            {pkg.description ? (
-              <p className="text-sm text-muted-foreground">{pkg.description}</p>
-            ) : null}
-            {pkg.features && (
-              <ul className="text-sm space-y-1 mt-2">
-                {(pkg.features as string[]).map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
+        ) : null}
       </div>
     );
   };
@@ -1702,9 +1738,9 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <CardDescription>عدّل الباقات مباشرة، أو غيّر الترتيب والظهور.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {visiblePackages.map(renderPackageCard)}
+          {sortedVisiblePackages.map(renderPackageCard)}
 
-          {visiblePackages.length === 0 && (
+          {sortedVisiblePackages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد باقات بعد</p>
@@ -1722,8 +1758,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <CardDescription>يمكنك استعادة أي باقة مخفية بضغطة واحدة.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {hiddenPackages.length > 0 ? (
-            hiddenPackages.map(renderPackageCard)
+          {sortedHiddenPackages.length > 0 ? (
+            sortedHiddenPackages.map(renderPackageCard)
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
@@ -3014,27 +3050,6 @@ function LiveEditor() {
           </CardContent>
         </Card>
       ),
-    },
-    {
-      id: "content",
-      title: "النصوص العامة",
-      description: "تحرير سريع للنصوص الأساسية في الموقع.",
-      icon: Pencil,
-      render: () => <ContentManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "about",
-      title: "صفحة من أنا",
-      description: "النصوص والصور الخاصة بصفحة من أنا.",
-      icon: Sparkles,
-      render: () => <AboutManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "portfolio",
-      title: "معرض الأعمال",
-      description: "رفع الصور وإخفائها وترتيبها.",
-      icon: Image,
-      render: () => <PortfolioManager onRefresh={refreshPreview} />,
     },
     {
       id: "packages",
