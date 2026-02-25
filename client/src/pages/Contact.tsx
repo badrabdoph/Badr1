@@ -299,6 +299,13 @@ export default function Contact() {
   const contentMap = content.contentMap ?? {};
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const [calendarOpen, setCalendarOpen] = useState(false);
+  type PackageOption = {
+    id: string;
+    label: string;
+    price: string;
+    badge?: string;
+    isDiscount?: boolean;
+  };
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", phone: "", date: "", packageId: "", addonIds: [], printIds: [] },
@@ -306,7 +313,7 @@ export default function Contact() {
   });
 
   const packageOptions = useMemo(() => {
-    const map = (items: Array<{ id: string; name: string; price: string }>) =>
+    const map = (items: Array<{ id: string; name: string; price: string }>): PackageOption[] =>
       items.map((p) => {
         const baseKey = `package_${p.id}`;
         return {
@@ -321,7 +328,15 @@ export default function Contact() {
     const printsPackages = (sessionPackagesWithPrints as any).filter(
       (pkg: any) => !["special-montage-design", "prints-session-1", "prints-session-2"].includes(pkg?.id)
     );
+    const monthlyOfferOption: PackageOption = {
+      id: "monthly-offer",
+      label: getValue("services_monthly_offer_title", "العرض الحصري"),
+      price: getValue("services_monthly_offer_price", "—"),
+      badge: getValue("services_monthly_offer_badge", "خصم"),
+      isDiscount: true,
+    };
     return [
+      monthlyOfferOption,
       ...map(sessionOnly),
       ...map(printsPackages as any),
       ...map(weddingPackages as any),
@@ -944,6 +959,7 @@ export default function Contact() {
                               {packageOptions.map((opt, index) => {
                                 const isVip =
                                   /vip/i.test(opt.label) || /vip/i.test(String(opt.price ?? ""));
+                                const isDiscount = opt.id === "monthly-offer";
                                 return (
                                   <Fragment key={opt.id}>
                                     <SelectItem
@@ -953,7 +969,12 @@ export default function Contact() {
                                       <span className="package-option-row">
                                         <span className="package-option-label">{opt.label}</span>
                                         <span className="package-option-meta">
-                                          {isVip ? (
+                                          {isDiscount ? (
+                                            <span className="package-option-badge package-option-badge--discount">
+                                              <Sparkles className="package-option-badge-icon" />
+                                              <span>{opt.badge ?? "خصم"}</span>
+                                            </span>
+                                          ) : isVip ? (
                                             <span className="package-option-badge">VIP</span>
                                           ) : null}
                                           <span className="package-option-price">{opt.price}</span>
@@ -1942,6 +1963,20 @@ export default function Contact() {
           border: 1px solid rgba(255,210,120,0.55);
           background: linear-gradient(120deg, rgba(255,210,120,0.45), rgba(255,255,255,0.1));
           box-shadow: 0 0 14px rgba(255,200,80,0.45);
+        }
+        .package-option-badge--discount {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border-color: rgba(255,200,120,0.8);
+          background: linear-gradient(120deg, rgba(255,200,120,0.7), rgba(255,255,255,0.12));
+          box-shadow: 0 0 18px rgba(255,180,80,0.55);
+        }
+        .package-option-badge-icon {
+          width: 12px;
+          height: 12px;
+          color: rgba(255,255,255,0.95);
+          filter: drop-shadow(0 0 8px rgba(255,210,130,0.75));
         }
         .package-option-price {
           font-size: 0.95rem;

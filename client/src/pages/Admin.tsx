@@ -1508,6 +1508,27 @@ function PackagesManager({ onRefresh }: ManagerProps) {
                 }
                 rows={3}
               />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setDrafts((prev) => ({
+                      ...prev,
+                      [pkg.id]: {
+                        ...draft,
+                        features: draft.features ? `${draft.features}\n` : "",
+                      },
+                    }))
+                  }
+                >
+                  إضافة سطر
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  كل سطر يظهر كبند داخل الكارت بنفس التصميم.
+                </span>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between border rounded-md px-3 py-2">
@@ -1646,6 +1667,24 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             onChange={(e) => setNewPackage({ ...newPackage, features: e.target.value })}
             rows={4}
           />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() =>
+                setNewPackage((prev) => ({
+                  ...prev,
+                  features: prev.features ? `${prev.features}\n` : "",
+                }))
+              }
+            >
+              إضافة سطر
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              كل سطر يظهر كبند داخل الكارت بنفس التصميم.
+            </span>
+          </div>
           <Button onClick={handleCreate} disabled={createMutation.isPending}>
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Plus className="w-4 h-4 ml-2" />}
             إضافة الباقة

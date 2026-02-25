@@ -638,20 +638,11 @@ function PackageCard({
                   })}
                 </div>
               </div>
-            </div>
             ))}
             <div className="custom-total-row">
               <div className="custom-total">
                 📦 إجمالي السعر = {customTotal ? `${formatPriceNumber(customTotal)}ج` : "—"}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="custom-clear"
-                onClick={() => setSelectedCustomIds([])}
-              >
-                إلغاء الاختيارات
-              </Button>
             </div>
           </div>
         ) : null}
@@ -739,6 +730,123 @@ function PackageCard({
           </>
         ) : null}
       </div>
+      </div>
+    </div>
+  );
+}
+
+function MonthlyOfferCard({
+  contentMap,
+  onClose,
+  contactHref,
+}: {
+  contentMap: Record<string, string>;
+  onClose: () => void;
+  contactHref: string;
+}) {
+  const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
+  const featureList = [
+    { key: "services_monthly_offer_feature_1", fallback: "جلسة تصوير كاملة بلمسة سينمائية" },
+    { key: "services_monthly_offer_feature_2", fallback: "تسليم صور معدلة بألوان احترافية" },
+    { key: "services_monthly_offer_feature_3", fallback: "فيديو ريلز مميز للسوشيال" },
+    { key: "services_monthly_offer_feature_4", fallback: "ألبوم فاخر مختار بعناية" },
+    { key: "services_monthly_offer_feature_5", fallback: "موعد مرن حسب وقتك" },
+    { key: "services_monthly_offer_feature_6", fallback: "هدية مفاجأة داخل الباقة" },
+  ];
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-b from-black/60 via-black/85 to-black/95 p-8 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.6)]">
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(255,200,80,0.18),transparent_55%)]" />
+      <div className="absolute -top-10 -left-10 h-44 w-44 rounded-full bg-primary/15 blur-3xl" />
+
+      <div className="relative z-10 text-center space-y-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/15 px-4 py-1 text-xs font-semibold text-primary">
+          <EditableText
+            value={getValue("services_monthly_offer_badge")}
+            fallback="عرض الشهر"
+            fieldKey="services_monthly_offer_badge"
+            category="services"
+            label="شارة عرض الشهر"
+          />
+          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        </div>
+
+        <h3 className="text-2xl md:text-3xl font-bold text-white">
+          <EditableText
+            value={getValue("services_monthly_offer_title")}
+            fallback="الباقة الذهبية"
+            fieldKey="services_monthly_offer_title"
+            category="services"
+            label="عنوان عرض الشهر"
+          />
+        </h3>
+
+        <div className="text-4xl md:text-5xl font-extrabold text-primary">
+          <EditableText
+            value={getValue("services_monthly_offer_price")}
+            fallback="$4500"
+            fieldKey="services_monthly_offer_price"
+            category="services"
+            label="سعر عرض الشهر"
+          />
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          <EditableText
+            value={getValue("services_monthly_offer_subtitle")}
+            fallback="عرض حصري لمدة محدودة فقط"
+            fieldKey="services_monthly_offer_subtitle"
+            category="services"
+            label="وصف عرض الشهر"
+            multiline
+          />
+        </p>
+      </div>
+
+      <div className="relative z-10 mt-6 space-y-3">
+        {featureList.map((feature) => (
+          <div key={feature.key} className="flex items-start gap-3 text-sm text-foreground/90">
+            <Check size={16} className="text-primary mt-1" />
+            <EditableText
+              value={getValue(feature.key)}
+              fallback={feature.fallback}
+              fieldKey={feature.key}
+              category="services"
+              label={`ميزة عرض الشهر - ${feature.key}`}
+              multiline
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="relative z-10 mt-8 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Link href={contactHref} className="w-full">
+          <Button
+            variant="outline"
+            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-border-glow cta-size"
+          >
+            <EditableText
+              value={getValue("services_monthly_offer_cta")}
+              fallback="احجز الآن"
+              fieldKey="services_monthly_offer_cta"
+              category="services"
+              label="زر احجز الآن (عرض الشهر)"
+            />
+          </Button>
+        </Link>
+        <Button
+          type="button"
+          onClick={onClose}
+          className="w-full h-12 md:h-14 text-base md:text-lg font-bold rounded-none bg-primary/10 border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-[0_0_30px_rgba(255,200,80,0.35)] transition-all"
+        >
+          <EditableText
+            value={getValue("services_monthly_offer_back")}
+            fallback="العودة للقائمة السابقة"
+            fieldKey="services_monthly_offer_back"
+            category="services"
+            label="زر العودة للقائمة السابقة"
+          />
+        </Button>
       </div>
     </div>
   );
@@ -832,9 +940,11 @@ export default function Services() {
   const [prefillPrintIds, setPrefillPrintIds] = useState<string[]>(() => readStoredPrintIds());
   const [activeSection, setActiveSection] = useState("sessions");
   const [isNavStuck, setIsNavStuck] = useState(false);
+  const [showMonthlyOffer, setShowMonthlyOffer] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
   const navAnchorRef = useRef<HTMLDivElement | null>(null);
   const [navHeight, setNavHeight] = useState(0);
+  const monthlyContactHref = buildContactHref({});
 
   const ids = useMemo(() => ["sessions", "wedding", "addons", "prints"], []);
 
@@ -1212,14 +1322,72 @@ export default function Services() {
 
           <div className="grid grid-cols-1 gap-8 max-w-5xl mx-auto">
             {customPackage ? (
-              <PackageCard
-                pkg={customPackage as any}
-                kind="addon"
-                whatsappNumber={contactInfo.whatsappNumber}
-                contentMap={contentMap}
-                preselectedPrintIds={prefillPrintIds}
-                onPreselectedPrintIdsChange={setPrefillPrintIds}
-              />
+              <div className="flex flex-col items-center gap-6">
+                <PackageCard
+                  pkg={customPackage as any}
+                  kind="addon"
+                  whatsappNumber={contactInfo.whatsappNumber}
+                  contentMap={contentMap}
+                  preselectedPrintIds={prefillPrintIds}
+                  onPreselectedPrintIdsChange={setPrefillPrintIds}
+                />
+
+                <div className="monthly-offer-cta">
+                  <div className="monthly-offer-hint">
+                    <EditableText
+                      value={contentMap.services_monthly_offer_hint}
+                      fallback="اضغط هنا 👇"
+                      fieldKey="services_monthly_offer_hint"
+                      category="services"
+                      label="تلميح عرض الشهر"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="monthly-offer-btn"
+                    onClick={() => setShowMonthlyOffer(true)}
+                    aria-expanded={showMonthlyOffer}
+                  >
+                    <span className="monthly-offer-btn-badge">
+                      <EditableText
+                        value={contentMap.services_monthly_offer_badge_small}
+                        fallback="خصم محدود"
+                        fieldKey="services_monthly_offer_badge_small"
+                        category="services"
+                        label="شارة زر عرض الشهر"
+                      />
+                    </span>
+                    <span className="monthly-offer-btn-title">
+                      <EditableText
+                        value={contentMap.services_monthly_offer_button}
+                        fallback="عرض الشهر"
+                        fieldKey="services_monthly_offer_button"
+                        category="services"
+                        label="زر عرض الشهر"
+                      />
+                    </span>
+                    <span className="monthly-offer-btn-sub">
+                      <EditableText
+                        value={contentMap.services_monthly_offer_subline}
+                        fallback="عرض لفترة محدودة فقط"
+                        fieldKey="services_monthly_offer_subline"
+                        category="services"
+                        label="نص فرعي زر عرض الشهر"
+                      />
+                    </span>
+                  </button>
+
+                  {showMonthlyOffer ? (
+                    <div className="monthly-offer-panel">
+                      <MonthlyOfferCard
+                        contentMap={contentMap}
+                        contactHref={monthlyContactHref}
+                        onClose={() => setShowMonthlyOffer(false)}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             ) : null}
           </div>
         </div>
@@ -1818,6 +1986,109 @@ export default function Services() {
         .custom-cta-btn {
           max-width: 320px;
         }
+        .monthly-offer-cta {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          text-align: center;
+        }
+        .monthly-offer-hint {
+          position: relative;
+          padding: 4px 16px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.35);
+          background: linear-gradient(140deg, rgba(255,210,120,0.18), rgba(255,255,255,0.04));
+          color: rgba(255,240,210,0.98);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-shadow: 0 0 16px rgba(255,210,130,0.65);
+          overflow: hidden;
+        }
+        .monthly-offer-hint::after {
+          content: "";
+          position: absolute;
+          inset: -120% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.65) 46%, transparent 70%);
+          transform: translateX(-120%);
+          animation: services-shine 5.2s ease-in-out infinite;
+          opacity: 0.6;
+          pointer-events: none;
+        }
+        .monthly-offer-btn {
+          position: relative;
+          width: min(90%, 320px);
+          padding: 16px 18px;
+          border-radius: 18px;
+          border: 1px solid rgba(255,210,120,0.65);
+          background:
+            linear-gradient(150deg, rgba(255,210,120,0.35), rgba(20,20,28,0.92) 60%),
+            radial-gradient(circle at 20% 15%, rgba(255,245,210,0.28), transparent 60%);
+          color: #fff3d4;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          box-shadow: 0 18px 45px rgba(0,0,0,0.45), 0 0 24px rgba(255,210,130,0.25);
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+          overflow: hidden;
+        }
+        .monthly-offer-btn::after {
+          content: "";
+          position: absolute;
+          inset: -140% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 46%, transparent 70%);
+          transform: translateX(-120%);
+          animation: services-shine 4.8s ease-in-out infinite;
+          opacity: 0.55;
+          pointer-events: none;
+        }
+        .monthly-offer-btn:hover {
+          transform: translateY(-2px) scale(1.02);
+          border-color: rgba(255,210,120,0.9);
+          box-shadow: 0 22px 50px rgba(0,0,0,0.55), 0 0 32px rgba(255,210,130,0.4);
+        }
+        .monthly-offer-btn-badge {
+          padding: 2px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.6);
+          background: linear-gradient(120deg, rgba(255,210,120,0.55), rgba(255,255,255,0.08));
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: #fff7dc;
+          text-shadow: 0 0 10px rgba(255,210,130,0.6);
+        }
+        .monthly-offer-btn-title {
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-shadow: 0 0 16px rgba(255,210,130,0.6);
+        }
+        .monthly-offer-btn-sub {
+          font-size: 11px;
+          color: rgba(255,235,200,0.9);
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+        .monthly-offer-panel {
+          width: min(100%, 760px);
+          margin-top: 8px;
+          animation: monthly-offer-in 0.35s ease;
+        }
+        @keyframes monthly-offer-in {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .custom-builder {
           margin-top: 10px;
           display: flex;
@@ -1959,6 +2230,7 @@ export default function Services() {
           }
         }
         .custom-total {
+          width: 100%;
           padding: 8px 10px;
           border-radius: 14px;
           border: 1px solid rgba(255,210,120,0.35);
@@ -1970,10 +2242,7 @@ export default function Services() {
         }
         .custom-total-row {
           margin-top: 6px;
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 8px;
-          align-items: center;
+          display: block;
         }
         .custom-clear {
           border-color: rgba(255,210,120,0.45);
