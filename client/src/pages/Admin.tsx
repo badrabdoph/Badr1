@@ -2887,7 +2887,7 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
 // Live Editor Component
 // ============================================
 function LiveEditor() {
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState("preview");
   const [previewKey, setPreviewKey] = useState(0);
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
@@ -2979,96 +2979,13 @@ function LiveEditor() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">المعاينة المباشرة</h2>
-          <p className="text-sm text-muted-foreground">
-            عدّل من داخل المعاينة مباشرة، وروابط المعاينة المؤقتة موجودة في اللوحة الجانبية.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUndo}
-            disabled={!canUndo || historyBusy}
-          >
-            <Undo2 className="w-4 h-4 ml-2" />
-            رجوع
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRedo}
-            disabled={!canRedo || historyBusy}
-          >
-            <Redo2 className="w-4 h-4 ml-2" />
-            تقدم
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPanelOpen((open) => !open)}
-          >
-            {panelOpen ? "إخفاء الروابط المؤقتة" : "إظهار الروابط المؤقتة"}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={refreshPreview}>
-            <Monitor className="w-4 h-4 ml-2" />
-            تحديث المعاينة
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
-              فتح المعاينة كاملة
-            </a>
-          </Button>
-        </div>
-      </div>
-
-      <div
-        className={[
-          "grid gap-6",
-          panelOpen ? "lg:grid-cols-[0.95fr_1.35fr]" : "",
-        ].join(" ")}
-      >
-        {panelOpen && (
-          <div className="lg:sticky lg:top-24 h-fit">
-            <div className="space-y-6">
-              <Card className="overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Link2 className="w-5 h-5" />
-                    روابط مؤقتة
-                  </CardTitle>
-                  <CardDescription>
-                    أنشئ وادِر روابط المعاينة المؤقتة من هنا.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-2 lg:max-h-[60vh] lg:overflow-y-auto">
-                  <ShareLinksManager onRefresh={refreshPreview} />
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5" />
-                    آراء وتعليقات العملاء
-                  </CardTitle>
-                  <CardDescription>
-                    أضف واحذف آراء وتعليقات العملاء التي تظهر بالموقع.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-2 lg:max-h-[70vh] lg:overflow-y-auto">
-                  <TestimonialsManager onRefresh={refreshPreview} compact />
-                </CardContent>
-              </Card>
-
-            </div>
-          </div>
-        )}
-
+  const sections = [
+    {
+      id: "preview",
+      title: "المعاينة",
+      description: "عدّل وشاهد الموقع مباشرة مع معاينة مدمجة.",
+      icon: Monitor,
+      render: () => (
         <Card className="overflow-hidden">
           <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
@@ -3077,8 +2994,7 @@ function LiveEditor() {
                 معاينة الموقع
               </CardTitle>
               <CardDescription>
-                اضغط على أي نص داخل المعاينة للتعديل المباشر. ولو التعديلات ما
-                ظهرتش فوراً، اضغط تحديث المعاينة.
+                اضغط على أي نص داخل المعاينة للتعديل المباشر، ثم احفظ من لوحة التحرير.
               </CardDescription>
             </div>
             <Badge variant="secondary" className="w-fit">
@@ -3096,6 +3012,146 @@ function LiveEditor() {
             </div>
           </CardContent>
         </Card>
+      ),
+    },
+    {
+      id: "content",
+      title: "النصوص العامة",
+      description: "تحرير سريع للنصوص الأساسية في الموقع.",
+      icon: Pencil,
+      render: () => <ContentManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "about",
+      title: "صفحة من أنا",
+      description: "النصوص والصور الخاصة بصفحة من أنا.",
+      icon: Sparkles,
+      render: () => <AboutManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "portfolio",
+      title: "معرض الأعمال",
+      description: "رفع الصور وإخفائها وترتيبها.",
+      icon: Image,
+      render: () => <PortfolioManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "packages",
+      title: "الباقات",
+      description: "إضافة الباقات وتعديل تفاصيلها وترتيبها.",
+      icon: Package,
+      render: () => <PackagesManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "contact",
+      title: "بيانات التواصل",
+      description: "أرقام التواصل وروابط السوشيال.",
+      icon: Phone,
+      render: () => <ContactManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "sections",
+      title: "إدارة الأقسام",
+      description: "إظهار أو إخفاء أقسام الصفحة الرئيسية.",
+      icon: Move,
+      render: () => <SectionsManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "testimonials",
+      title: "آراء العملاء",
+      description: "إضافة وحذف الآراء والتحكم في ظهورها.",
+      icon: MessageSquare,
+      render: () => <TestimonialsManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "links",
+      title: "الروابط المؤقتة",
+      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
+      icon: Link2,
+      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
+    },
+  ];
+
+  const active = sections.find((section) => section.id === activeSection) ?? sections[0];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">{active.title}</h2>
+          <p className="text-sm text-muted-foreground">{active.description}</p>
+        </div>
+        {active.id === "preview" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUndo}
+              disabled={!canUndo || historyBusy}
+            >
+              <Undo2 className="w-4 h-4 ml-2" />
+              رجوع
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRedo}
+              disabled={!canRedo || historyBusy}
+            >
+              <Redo2 className="w-4 h-4 ml-2" />
+              تقدم
+            </Button>
+            <Button variant="secondary" size="sm" onClick={refreshPreview}>
+              <Monitor className="w-4 h-4 ml-2" />
+              تحديث المعاينة
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
+                صفحه التعديلا
+              </a>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={refreshPreview}>
+              <Monitor className="w-4 h-4 ml-2" />
+              تحديث المعاينة
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <Card className="h-fit lg:sticky lg:top-24">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Home className="w-5 h-5" />
+              القوائم
+            </CardTitle>
+            <CardDescription>اختر القسم الذي تريد تعديله.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sections.map((section) => {
+              const Icon = section.icon;
+              const isActive = section.id === active.id;
+              return (
+                <Button
+                  key={section.id}
+                  variant={isActive ? "secondary" : "ghost"}
+                  className="w-full justify-start gap-2"
+                  onClick={() => setActiveSection(section.id)}
+                >
+                  <Icon className="w-4 h-4" />
+                  {section.title}
+                </Button>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          {active.render()}
+        </div>
       </div>
     </div>
   );
