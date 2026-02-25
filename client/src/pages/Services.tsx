@@ -2105,7 +2105,6 @@ export default function Services() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          display: flex;
           box-shadow: 0 18px 45px rgba(0,0,0,0.45), 0 0 24px rgba(255,210,130,0.25);
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
           overflow: hidden;
@@ -2114,20 +2113,20 @@ export default function Services() {
           width: 140px;
           height: 140px;
           border-radius: 999px;
-          border: 2px dashed rgba(255,160,140,0.85);
+          border: 2px dashed rgba(255,120,110,0.85);
           background:
-            radial-gradient(circle at 30% 30%, rgba(255,215,200,0.5), rgba(255,160,140,0.18) 55%),
-            linear-gradient(150deg, rgba(255,130,120,0.35), rgba(18,18,24,0.95) 65%);
+            radial-gradient(circle at 30% 30%, rgba(255,225,210,0.65), rgba(255,150,130,0.25) 55%),
+            linear-gradient(150deg, rgba(255,120,110,0.45), rgba(18,18,24,0.96) 65%);
           color: #fff8f1;
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 900;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          text-shadow: 0 0 18px rgba(255,130,120,0.7);
+          letter-spacing: 0;
+          text-transform: none;
+          text-shadow: 0 0 18px rgba(255,140,120,0.75);
           box-shadow:
             0 20px 45px rgba(0,0,0,0.45),
-            inset 0 0 18px rgba(255,140,120,0.35),
-            0 0 30px rgba(255,140,120,0.35);
+            inset 0 0 18px rgba(255,150,130,0.35),
+            0 0 30px rgba(255,150,130,0.45);
           position: relative;
           white-space: nowrap;
           line-height: 1;
@@ -2140,6 +2139,7 @@ export default function Services() {
           text-shadow:
             0 0 10px rgba(255,160,140,0.75),
             0 0 20px rgba(255,120,100,0.45);
+          white-space: nowrap;
         }
         .monthly-offer-btn--stamp::after {
           content: "";
