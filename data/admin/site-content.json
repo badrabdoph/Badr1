@@ -25,5 +25,16 @@
     "label": "وصف قسم المطبوعات",
     "createdAt": "2026-02-24T22:37:31.343Z",
     "updatedAt": "2026-02-24T22:37:31.343Z"
+  },
+  {
+    "id": 1772058676266,
+    "key": "services_addons_title",
+    "value": "خدمات إضافية ",
+    "category": "services",
+    "label": "عنوان قسم الإضافات",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-25T22:31:15.468Z",
+    "updatedAt": "2026-02-25T22:31:15.468Z"
   }
 ]
