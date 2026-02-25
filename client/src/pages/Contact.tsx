@@ -485,6 +485,29 @@ export default function Contact() {
     () => packageOptions.find((p) => p.id === watchedPackageId),
     [packageOptions, watchedPackageId]
   );
+  const isMonthlyOfferSelected = selectedPackage?.id === "monthly-offer";
+  const monthlyOfferDetails = useMemo(() => {
+    if (!isMonthlyOfferSelected) return [] as string[];
+    const title = getValue("services_monthly_offer_title", "العرض الحصري");
+    const price = getValue("services_monthly_offer_price", "—");
+    const subtitle = getValue("services_monthly_offer_subtitle", "عرض حصري لفترة محدودة فقط");
+    const features = [
+      getValue("services_monthly_offer_feature_1", "ألبوم كبير مقاس 80x30 عدد من 20 ل 40 صورة"),
+      getValue("services_monthly_offer_feature_2", "تابلوه أنيميشن كبير 70x50 جودة عالية مع طبقة حماية"),
+      getValue("services_monthly_offer_feature_3", "ألبوم آخر مصغر أنيق او كروت صغيرة لصور السيشن"),
+      getValue("services_monthly_offer_feature_4", "ساعة حائط كبيرة مصممة بصوركم الخاصة"),
+      getValue("services_monthly_offer_feature_5", "REELS & TIKTOK"),
+      getValue("services_monthly_offer_feature_6", "عدد غير محدود من الصور"),
+      getValue("services_monthly_offer_feature_7", "وقت مفتوح"),
+    ];
+    const lines = [
+      title,
+      `${getValue("contact_receipt_offer_price_label", "السعر")}: ${price}`,
+      subtitle,
+      ...features,
+    ];
+    return lines.filter((line) => line && line.trim().length);
+  }, [isMonthlyOfferSelected, contentMap]);
 
   const selectedAddons = useMemo(
     () => addonOptions.filter((a) => watchedAddonIds.includes(a.id)),
@@ -599,6 +622,9 @@ export default function Contact() {
 
     const addonLines = formatListLines(selectedAddons, noneValue, "- ");
     const printLines = formatListLines(selectedPrints, noneValue, "• ");
+    const offerLines = monthlyOfferDetails.length
+      ? [getValue("contact_receipt_offer_heading", "تفاصيل العرض الحصري"), ...monthlyOfferDetails.map((line) => `• ${line}`)]
+      : [];
 
     const lines = [
       getValue("contact_receipt_title", "إيصال حجز ❤️"),
@@ -606,6 +632,7 @@ export default function Contact() {
       `${getValue("contact_receipt_label_phone", "الهاتف")}: ${watchedPhone || emptyValue}`,
       `${getValue("contact_receipt_label_date", "التاريخ")}: ${watchedDate || emptyValue}`,
       `${getValue("contact_receipt_label_package", "الباقة")}: ${selectedPackage?.label || emptyValue}`,
+      ...offerLines,
       `${getValue("contact_receipt_label_addons", "الإضافات")}:`,
       ...addonLines,
       `${getValue("contact_receipt_label_prints", "المطبوعات")}:`,
@@ -621,6 +648,7 @@ export default function Contact() {
     selectedAddons,
     selectedPrints,
     totalLine,
+    monthlyOfferDetails,
     contentMap,
   ]);
 
@@ -951,9 +979,22 @@ export default function Contact() {
                               className={`w-full ${fieldClass} ${form.formState.errors.packageId ? "field-error" : ""}`}
                               data-field="packageId"
                             >
-                              <SelectValue
-                                placeholder={getValue("contact_placeholder_package", "اختر الباقة المناسبة")}
-                              />
+                              {selectedPackage?.id === "monthly-offer" ? (
+                                <div className="package-option-row package-option-row--trigger">
+                                  <span className="package-option-label">{selectedPackage.label}</span>
+                                  <span className="package-option-meta">
+                                    <span className="package-option-badge package-option-badge--discount">
+                                      <Sparkles className="package-option-badge-icon" />
+                                      <span>{selectedPackage.badge ?? "خصم 🔥"}</span>
+                                    </span>
+                                    <span className="package-option-price">{selectedPackage.price}</span>
+                                  </span>
+                                </div>
+                              ) : (
+                                <SelectValue
+                                  placeholder={getValue("contact_placeholder_package", "اختر الباقة المناسبة")}
+                                />
+                              )}
                             </SelectTrigger>
                             <SelectContent className="border-white/10 bg-background/95 backdrop-blur-md">
                               {packageOptions.map((opt, index) => {
@@ -1240,6 +1281,24 @@ export default function Contact() {
                           </div>
                         ))}
                       </div>
+
+                      {isMonthlyOfferSelected && monthlyOfferDetails.length ? (
+                        <div className="receipt-section">
+                          <div className="receipt-section-header">
+                            <span className="receipt-label">
+                              {getValue("contact_receipt_offer_heading", "تفاصيل العرض الحصري")}
+                            </span>
+                            <span className="receipt-pill receipt-pill--active">
+                              {getValue("contact_receipt_offer_tag", "عرض")}
+                            </span>
+                          </div>
+                          <ul className="receipt-bullets">
+                            {monthlyOfferDetails.map((line, index) => (
+                              <li key={`${line}-${index}`}>{line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
 
                       <div className="receipt-section">
                         <div className="receipt-section-header">
@@ -1921,6 +1980,19 @@ export default function Contact() {
           font-size: 0.88rem;
           color: rgba(255,245,230,0.92);
         }
+        .receipt-bullets {
+          margin: 10px 0 0;
+          padding: 0 18px 0 0;
+          list-style: disc;
+          display: grid;
+          gap: 6px;
+          color: rgba(255,245,230,0.92);
+          font-size: 0.9rem;
+          line-height: 1.7;
+        }
+        .receipt-bullets li::marker {
+          color: rgba(255,210,130,0.85);
+        }
         .receipt-muted {
           font-size: 0.9rem;
           color: rgba(255,255,255,0.55);
@@ -1940,6 +2012,9 @@ export default function Contact() {
           align-items: center;
           gap: 12px;
           width: 100%;
+        }
+        .package-option-row--trigger {
+          align-items: center;
         }
         .package-option-label {
           color: rgba(255,245,230,0.92);

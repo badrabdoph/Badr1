@@ -837,12 +837,13 @@ function MonthlyOfferCard({
 }) {
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const featureList = [
-    { key: "services_monthly_offer_feature_1", fallback: "جلسة تصوير كاملة بلمسة سينمائية" },
-    { key: "services_monthly_offer_feature_2", fallback: "تسليم صور معدلة بألوان احترافية" },
-    { key: "services_monthly_offer_feature_3", fallback: "فيديو ريلز مميز للسوشيال" },
-    { key: "services_monthly_offer_feature_4", fallback: "ألبوم فاخر مختار بعناية" },
-    { key: "services_monthly_offer_feature_5", fallback: "موعد مرن حسب وقتك" },
-    { key: "services_monthly_offer_feature_6", fallback: "هدية مفاجأة داخل الباقة" },
+    { key: "services_monthly_offer_feature_1", fallback: "ألبوم كبير مقاس 80x30 عدد من 20 ل 40 صورة" },
+    { key: "services_monthly_offer_feature_2", fallback: "تابلوه أنيميشن كبير 70x50 جودة عالية مع طبقة حماية" },
+    { key: "services_monthly_offer_feature_3", fallback: "ألبوم آخر مصغر أنيق او كروت صغيرة لصور السيشن" },
+    { key: "services_monthly_offer_feature_4", fallback: "ساعة حائط كبيرة مصممة بصوركم الخاصة" },
+    { key: "services_monthly_offer_feature_5", fallback: "REELS & TIKTOK" },
+    { key: "services_monthly_offer_feature_6", fallback: "عدد غير محدود من الصور" },
+    { key: "services_monthly_offer_feature_7", fallback: "وقت مفتوح" },
   ];
 
   return (
