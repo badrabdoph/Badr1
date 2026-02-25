@@ -1434,37 +1434,17 @@ export default function Services() {
                   </div>
                   <button
                     type="button"
-                    className="monthly-offer-btn"
+                    className="monthly-offer-btn monthly-offer-btn--stamp"
                     onClick={() => setShowMonthlyOffer((prev) => !prev)}
                     aria-expanded={showMonthlyOffer}
                   >
-                    <span className="monthly-offer-btn-badge">
-                      <EditableText
-                        value={contentMap.services_monthly_offer_badge_small}
-                        fallback="خصم 🔥"
-                        fieldKey="services_monthly_offer_badge_small"
-                        category="services"
-                        label="شارة زر عرض الشهر"
-                      />
-                    </span>
-                    <span className="monthly-offer-btn-title">
-                      <EditableText
-                        value={contentMap.services_monthly_offer_button}
-                        fallback="العرض الحصري"
-                        fieldKey="services_monthly_offer_button"
-                        category="services"
-                        label="زر عرض الشهر"
-                      />
-                    </span>
-                    <span className="monthly-offer-btn-sub">
-                      <EditableText
-                        value={contentMap.services_monthly_offer_subline}
-                        fallback="عرض لفترة محدودة فقط"
-                        fieldKey="services_monthly_offer_subline"
-                        category="services"
-                        label="نص فرعي زر عرض الشهر"
-                      />
-                    </span>
+                    <EditableText
+                      value={contentMap.services_monthly_offer_badge_small}
+                      fallback="خصم"
+                      fieldKey="services_monthly_offer_badge_small"
+                      category="services"
+                      label="زر خصم (عرض الشهر)"
+                    />
                   </button>
 
                   {showMonthlyOffer ? (
@@ -2108,23 +2088,35 @@ export default function Services() {
         }
         .monthly-offer-btn {
           position: relative;
-          width: min(90%, 320px);
-          padding: 16px 18px;
-          border-radius: 18px;
-          border: 1px solid rgba(255,210,120,0.65);
-          background:
-            linear-gradient(150deg, rgba(255,210,120,0.35), rgba(20,20,28,0.92) 60%),
-            radial-gradient(circle at 20% 15%, rgba(255,245,210,0.28), transparent 60%);
-          color: #fff3d4;
-          display: flex;
-          flex-direction: column;
+          display: inline-flex;
           align-items: center;
-          gap: 4px;
+          justify-content: center;
+          display: flex;
           box-shadow: 0 18px 45px rgba(0,0,0,0.45), 0 0 24px rgba(255,210,130,0.25);
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
           overflow: hidden;
         }
-        .monthly-offer-btn::after {
+        .monthly-offer-btn--stamp {
+          width: 140px;
+          height: 140px;
+          border-radius: 999px;
+          border: 2px dashed rgba(255,210,120,0.85);
+          background:
+            radial-gradient(circle at 30% 30%, rgba(255,245,210,0.55), rgba(255,210,120,0.18) 55%),
+            linear-gradient(150deg, rgba(255,210,120,0.35), rgba(20,20,28,0.95) 65%);
+          color: #fff8e6;
+          font-size: 22px;
+          font-weight: 900;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          text-shadow: 0 0 16px rgba(255,210,130,0.7);
+          box-shadow:
+            0 20px 45px rgba(0,0,0,0.45),
+            inset 0 0 18px rgba(255,210,130,0.35),
+            0 0 30px rgba(255,210,130,0.35);
+          position: relative;
+        }
+        .monthly-offer-btn--stamp::after {
           content: "";
           position: absolute;
           inset: -140% -20%;
@@ -2134,34 +2126,13 @@ export default function Services() {
           opacity: 0.55;
           pointer-events: none;
         }
-        .monthly-offer-btn:hover {
-          transform: translateY(-2px) scale(1.02);
-          border-color: rgba(255,210,120,0.9);
-          box-shadow: 0 22px 50px rgba(0,0,0,0.55), 0 0 32px rgba(255,210,130,0.4);
-        }
-        .monthly-offer-btn-badge {
-          padding: 2px 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.6);
-          background: linear-gradient(120deg, rgba(255,210,120,0.55), rgba(255,255,255,0.08));
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: #fff7dc;
-          text-shadow: 0 0 10px rgba(255,210,130,0.6);
-        }
-        .monthly-offer-btn-title {
-          font-size: 18px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-shadow: 0 0 16px rgba(255,210,130,0.6);
-        }
-        .monthly-offer-btn-sub {
-          font-size: 11px;
-          color: rgba(255,235,200,0.9);
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
+        .monthly-offer-btn--stamp:hover {
+          transform: translateY(-2px) scale(1.03);
+          border-color: rgba(255,210,120,1);
+          box-shadow:
+            0 26px 55px rgba(0,0,0,0.55),
+            inset 0 0 22px rgba(255,210,130,0.45),
+            0 0 40px rgba(255,210,130,0.45);
         }
         .monthly-offer-panel {
           width: min(100%, 760px);
