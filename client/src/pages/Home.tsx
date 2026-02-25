@@ -131,27 +131,27 @@ function MosaicCard({
   };
 
   return (
-    <div
-      className={[
-        "mosaic-card premium-border border border-white/10 overflow-hidden group",
-        loaded ? "is-loaded" : "",
-        className ?? "",
-      ].join(" ")}
-      onClick={handleClick}
-      aria-label="Open external portfolio"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          trigger();
-        }
-      }}
-      style={{
-        backgroundImage: `url('${img.src}')`,
-        ...(getOffsetStyle(img.offsetX, img.offsetY) ?? {}),
-      }}
-    >
+    <div style={getOffsetStyle(img.offsetX, img.offsetY)}>
+      <div
+        className={[
+          "mosaic-card premium-border border border-white/10 overflow-hidden group",
+          loaded ? "is-loaded" : "",
+          className ?? "",
+        ].join(" ")}
+        onClick={handleClick}
+        aria-label="Open external portfolio"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            trigger();
+          }
+        }}
+        style={{
+          backgroundImage: `url('${img.src}')`,
+        }}
+      >
       {enabled && imageKey ? (
         <div className="absolute top-3 right-3 z-20">
           <EditableImage
@@ -183,6 +183,7 @@ function MosaicCard({
       <div className="absolute bottom-3 left-3 right-3 flex items-center justify-center">
         <span className="camera-badge">📸</span>
       </div>
+      </div>
     </div>
   );
 }
@@ -202,6 +203,8 @@ export default function Home() {
   const heroImageMobile =
     imageMap.heroImageMobile?.url ?? siteImages.heroImageMobile ?? heroImage;
   const aboutImage = imageMap.aboutImage?.url ?? siteImages.aboutImage;
+  const heroOffsetX = imageMap.heroImage?.offsetX ?? 0;
+  const heroOffsetY = imageMap.heroImage?.offsetY ?? 0;
   const getValue = (key: string, fallback: string = "") =>
     (contentMap[key] as string | undefined) ?? fallback;
   const handleAboutStoryClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -223,7 +226,7 @@ export default function Home() {
       raf = requestAnimationFrame(() => {
         if (heroRef.current) {
           const scrolled = window.scrollY;
-          heroRef.current.style.transform = `translate3d(0, ${scrolled * 0.35}px, 0)`;
+          heroRef.current.style.transform = `translate3d(${heroOffsetX}px, ${heroOffsetY + scrolled * 0.35}px, 0)`;
         }
       });
     };
@@ -234,7 +237,7 @@ export default function Home() {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [heroOffsetX, heroOffsetY]);
 
   const heroFallbackNode = useMemo(() => {
     const h = homeHero?.headlineAr;
@@ -337,7 +340,6 @@ export default function Home() {
             "--hero-image": `url('${heroImage}')`,
             "--hero-image-mobile": `url('${heroImageMobile}')`,
             filter: "brightness(0.36)",
-            ...(getOffsetStyle(imageMap.heroImage?.offsetX, imageMap.heroImage?.offsetY) ?? {}),
           }}
         />
 

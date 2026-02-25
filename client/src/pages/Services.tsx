@@ -340,25 +340,25 @@ function PackageCard({
   };
 
   return (
-    <div
-      role={isCollapsible ? "button" : undefined}
-      tabIndex={isCollapsible ? 0 : undefined}
-      aria-expanded={isCollapsible ? isExpanded : undefined}
-      onClickCapture={handleCardClickCapture}
-      onKeyDown={handleCardKeyDown}
-      style={getOffsetStyle(pkg.offsetX, pkg.offsetY)}
-      className={[
-        "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
-        isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
-        isCustom ? "custom-package md:col-span-2" : "",
-        isCollapsible && !isExpanded ? "full-day-collapsed" : "",
-        weddingTone
-          ? "border-primary/45 shadow-[0_0_70px_rgba(255,200,80,0.12)] hover:shadow-[0_0_95px_rgba(255,200,80,0.18)] hover:-translate-y-2"
-          : popular || isPro
-          ? "border-primary/30 shadow-lg shadow-primary/15 hover:-translate-y-2"
-          : "border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
-      ].join(" ")}
-    >
+    <div style={getOffsetStyle(pkg.offsetX, pkg.offsetY)}>
+      <div
+        role={isCollapsible ? "button" : undefined}
+        tabIndex={isCollapsible ? 0 : undefined}
+        aria-expanded={isCollapsible ? isExpanded : undefined}
+        onClickCapture={handleCardClickCapture}
+        onKeyDown={handleCardKeyDown}
+        className={[
+          "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
+          isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
+          isCustom ? "custom-package md:col-span-2" : "",
+          isCollapsible && !isExpanded ? "full-day-collapsed" : "",
+          weddingTone
+            ? "border-primary/45 shadow-[0_0_70px_rgba(255,200,80,0.12)] hover:shadow-[0_0_95px_rgba(255,200,80,0.18)] hover:-translate-y-2"
+            : popular || isPro
+            ? "border-primary/30 shadow-lg shadow-primary/15 hover:-translate-y-2"
+            : "border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
+        ].join(" ")}
+      >
       {isSessionCard ? (
         <div className="price-corner">
           <EditableText
@@ -635,6 +635,7 @@ function PackageCard({
                   })}
                 </div>
               </div>
+            </div>
             ))}
             <div className="custom-total-row">
               <div className="custom-total">
@@ -734,6 +735,7 @@ function PackageCard({
             )}
           </>
         ) : null}
+      </div>
       </div>
     </div>
   );
@@ -1098,11 +1100,8 @@ export default function Services() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {addonsPackages.map((service) => (
-              <div
-                key={service.id}
-                style={getOffsetStyle(service.offsetX, service.offsetY)}
-                className="relative bg-card p-7 md:p-8 border border-white/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 premium-border group overflow-hidden services-addon-card"
-              >
+              <div key={service.id} style={getOffsetStyle(service.offsetX, service.offsetY)}>
+                <div className="relative bg-card p-7 md:p-8 border border-white/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 premium-border group overflow-hidden services-addon-card">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,80,0.12),transparent_60%)]" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-4">

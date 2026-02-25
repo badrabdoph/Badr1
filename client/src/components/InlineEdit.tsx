@@ -216,6 +216,7 @@ export function EditableText({
   const utils = trpc.useUtils();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [textTouched, setTextTouched] = useState(false);
   const [offsetDraft, setOffsetDraft] = useState({ offsetX: 0, offsetY: 0 });
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
   const contentPositions = useContentPositions();
@@ -271,6 +272,7 @@ export function EditableText({
   const startEditing = () => {
     if (!enabled) return;
     setDraft(normalizedValue || fallback || "");
+    setTextTouched(false);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
       offsetY: position?.offsetY ?? 0,
@@ -280,7 +282,7 @@ export function EditableText({
 
   const handleSave = () => {
     if (!enabled || upsertMutation.isPending) return;
-    const textChanged = draft !== normalizedValue;
+    const textChanged = textTouched && draft !== normalizedValue;
     const offsetChanged =
       offsetDraft.offsetX !== (position?.offsetX ?? 0) ||
       offsetDraft.offsetY !== (position?.offsetY ?? 0);
@@ -292,7 +294,7 @@ export function EditableText({
       onConfirm: () => {
         upsertMutation.mutate({
           key: fieldKey,
-          value: draft,
+          value: textChanged ? draft : normalizedValue,
           category,
           label,
           offsetX: offsetDraft.offsetX,
@@ -304,6 +306,7 @@ export function EditableText({
 
   const handleCancel = () => {
     setDraft(normalizedValue);
+    setTextTouched(false);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
       offsetY: position?.offsetY ?? 0,
@@ -337,7 +340,10 @@ export function EditableText({
           {multiline ? (
             <Textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                setTextTouched(true);
+              }}
               onKeyDown={handleKeyDown}
               className={cn("min-h-[110px]", editorClassName)}
               autoFocus
@@ -345,7 +351,10 @@ export function EditableText({
           ) : (
             <Input
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                setTextTouched(true);
+              }}
               onKeyDown={handleKeyDown}
               className={editorClassName}
               autoFocus
@@ -1014,8 +1023,8 @@ export function EditableImage({
   };
 
   return (
-    <div className={cn("relative group", className)}>
-      <img src={src} alt={alt} className={imgClassName} style={positionStyle} />
+    <div className={cn("relative group", className)} style={positionStyle}>
+      <img src={src} alt={alt} className={imgClassName} />
       {enabled && (
         <button
           type="button"
