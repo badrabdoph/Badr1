@@ -50,6 +50,7 @@ import {
   Redo2,
   Pencil,
   ShieldCheck,
+  Phone,
   ArrowUp,
   ArrowDown,
   ArrowLeft,
