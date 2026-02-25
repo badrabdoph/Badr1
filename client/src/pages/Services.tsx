@@ -844,100 +844,110 @@ function MonthlyOfferCard({
     { key: "services_monthly_offer_feature_7", fallback: "وقت مفتوح" },
   ];
 
+  const badgeText = (getValue("services_monthly_offer_badge", "خصم 🔥") ?? "").trim();
+
   return (
-    <div className="monthly-offer-card">
-      <div className="monthly-offer-sparkle" />
-      <div className="monthly-offer-stamp">
-        <EditableText
-          value={getValue("services_monthly_offer_badge")}
-          fallback="خصم 🔥"
-          fieldKey="services_monthly_offer_badge"
-          category="services"
-          label="شارة عرض الشهر"
-        />
-      </div>
-      <div className="monthly-offer-top">
-        <div className="monthly-offer-header">
-          <span className="monthly-offer-kicker">
-            <EditableText
-              value={getValue("services_monthly_offer_kicker")}
-              fallback="عرض حصري"
-              fieldKey="services_monthly_offer_kicker"
-              category="services"
-              label="عنوان صغير عرض الشهر"
-            />
-          </span>
-          <h3 className="monthly-offer-title">
-            <EditableText
-              value={getValue("services_monthly_offer_title")}
-              fallback="العرض الحصري"
-              fieldKey="services_monthly_offer_title"
-              category="services"
-              label="عنوان عرض الشهر"
-            />
-          </h3>
-          <p className="monthly-offer-subtitle">
-            <EditableText
-              value={getValue("services_monthly_offer_subtitle")}
-              fallback="عرض حصري لفترة محدودة فقط"
-              fieldKey="services_monthly_offer_subtitle"
-              category="services"
-              label="وصف عرض الشهر"
-              multiline
-            />
-          </p>
-        </div>
+    <div className="relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card p-7 md:p-8 border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
+      <div className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-0 group-hover:opacity-100 bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,80,0.14),transparent_60%)]" />
 
-        <div className="monthly-offer-price">
-          <span className="monthly-offer-price-label">
-            <EditableText
-              value={getValue("services_monthly_offer_price_label")}
-              fallback="السعر الخاص"
-              fieldKey="services_monthly_offer_price_label"
-              category="services"
-              label="عنوان سعر عرض الشهر"
-            />
-          </span>
-          <span className="monthly-offer-price-value">
-            <EditableText
-              value={getValue("services_monthly_offer_price")}
-              fallback="$4500"
-              fieldKey="services_monthly_offer_price"
-              category="services"
-              label="سعر عرض الشهر"
-            />
-          </span>
-        </div>
-      </div>
-
-      <div className="monthly-offer-features">
-        {featureList.map((feature) => (
-          <div key={feature.key} className="monthly-offer-feature">
-            <span className="monthly-offer-bullet" />
-            <EditableText
-              value={getValue(feature.key)}
-              fallback={feature.fallback}
-              fieldKey={feature.key}
-              category="services"
-              label={`ميزة عرض الشهر - ${feature.key}`}
-              multiline
-            />
+      <div className="relative z-10">
+        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 border border-white/10 bg-black/15 backdrop-blur-md flex items-center justify-center">
+              <Gift className="w-9 h-9 text-primary" />
+            </div>
+            <div className="text-right">
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-xl md:text-2xl font-bold leading-tight">
+                  <EditableText
+                    value={getValue("services_monthly_offer_title")}
+                    fallback="العرض الحصري"
+                    fieldKey="services_monthly_offer_title"
+                    category="services"
+                    label="عنوان عرض الشهر"
+                  />
+                </h3>
+                {badgeText ? (
+                  <span className="pro-badge">
+                    <EditableText
+                      value={getValue("services_monthly_offer_badge")}
+                      fallback="خصم 🔥"
+                      fieldKey="services_monthly_offer_badge"
+                      category="services"
+                      label="شارة عرض الشهر"
+                    />
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                <EditableText
+                  value={getValue("services_monthly_offer_subtitle")}
+                  fallback="عرض حصري لفترة محدودة فقط"
+                  fieldKey="services_monthly_offer_subtitle"
+                  category="services"
+                  label="وصف عرض الشهر"
+                  multiline
+                />
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="monthly-offer-cta-row">
-        <Link href={contactHref} className="w-full">
-          <Button className="monthly-offer-book">
-            <EditableText
-              value={getValue("services_monthly_offer_cta")}
-              fallback="احجز الآن"
-              fieldKey="services_monthly_offer_cta"
-              category="services"
-              label="زر احجز الآن (عرض الشهر)"
-            />
-          </Button>
-        </Link>
+          <div className="text-right sm:text-left">
+            <div className="text-primary font-bold text-2xl md:text-3xl leading-none">
+              <EditableText
+                value={getValue("services_monthly_offer_price")}
+                fallback="$4500"
+                fieldKey="services_monthly_offer_price"
+                category="services"
+                label="سعر عرض الشهر"
+              />
+            </div>
+            <div className="text-xs mt-2 text-muted-foreground">
+              <EditableText
+                value={getValue("services_monthly_offer_price_label")}
+                fallback="السعر الخاص"
+                fieldKey="services_monthly_offer_price_label"
+                category="services"
+                label="عنوان سعر عرض الشهر"
+              />
+            </div>
+          </div>
+        </div>
+
+        <ul className="space-y-3 mb-6 md:mb-7">
+          {featureList.map((feature) => (
+            <li key={feature.key} className="flex items-start text-sm">
+              <Check size={16} className="text-primary ml-2 mt-1 flex-shrink-0" />
+              <span className="text-foreground/90 leading-relaxed font-medium">
+                <EditableText
+                  value={getValue(feature.key)}
+                  fallback={feature.fallback}
+                  fieldKey={feature.key}
+                  category="services"
+                  label={`ميزة عرض الشهر - ${feature.key}`}
+                  multiline
+                />
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="grid grid-cols-1">
+          <Link href={contactHref}>
+            <Button
+              variant="outline"
+              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-border-glow cta-size"
+            >
+              <EditableText
+                value={getValue("services_monthly_offer_cta")}
+                fallback="احجز الآن"
+                fieldKey="services_monthly_offer_cta"
+                category="services"
+                label="زر احجز الآن (عرض الشهر)"
+              />
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
