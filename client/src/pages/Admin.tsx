@@ -58,6 +58,12 @@ import {
   Move,
 } from "lucide-react";
 import { Link } from "wouter";
+import {
+  sessionPackages,
+  sessionPackagesWithPrints,
+  weddingPackages,
+  additionalServices,
+} from "@/config/siteConfig";
 import { useEditHistory, type EditAction } from "@/lib/editHistory";
 
 export default function Admin() {
