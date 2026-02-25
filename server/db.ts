@@ -261,7 +261,6 @@ type ShareLinkRecord = {
 };
 
 export async function createShareLinkRecord(data: InsertShareLink): Promise<ShareLinkRecord | null> {
-  if (useFileStore) return await createLocalShareLink(data);
   const db = await getDb();
   if (!db) return await createLocalShareLink(data);
   const existing = await getShareLinkByCode(data.code);
@@ -273,7 +272,6 @@ export async function createShareLinkRecord(data: InsertShareLink): Promise<Shar
 }
 
 export async function getShareLinkByCode(code: string): Promise<ShareLinkRecord | null> {
-  if (useFileStore) return await getLocalShareLinkByCode(code);
   const db = await getDb();
   if (!db) return await getLocalShareLinkByCode(code);
   const result = await db.select().from(shareLinks).where(eq(shareLinks.code, code)).limit(1);
@@ -281,14 +279,12 @@ export async function getShareLinkByCode(code: string): Promise<ShareLinkRecord 
 }
 
 export async function listShareLinks(): Promise<ShareLinkRecord[]> {
-  if (useFileStore) return await listLocalShareLinks();
   const db = await getDb();
   if (!db) return await listLocalShareLinks();
   return await db.select().from(shareLinks).orderBy(desc(shareLinks.createdAt));
 }
 
 export async function revokeShareLink(code: string) {
-  if (useFileStore) return await revokeLocalShareLink(code);
   const db = await getDb();
   if (!db) return await revokeLocalShareLink(code);
   const now = new Date();
@@ -306,7 +302,6 @@ export async function extendShareLink(code: string, hours: number): Promise<Shar
     : now;
   const newExpiresAt = new Date(base.getTime() + hours * 60 * 60 * 1000);
 
-  if (useFileStore) return await extendLocalShareLink(code, newExpiresAt);
   const db = await getDb();
   if (!db) return await extendLocalShareLink(code, newExpiresAt);
 

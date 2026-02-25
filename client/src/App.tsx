@@ -111,56 +111,6 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    const root = document.documentElement;
-    let shieldTimeout: number | null = null;
-
-    const setShield = (active: boolean) => {
-      root.classList.toggle("privacy-shield", active);
-    };
-
-    const pulseShield = (durationMs = 1500) => {
-      setShield(true);
-      if (shieldTimeout) window.clearTimeout(shieldTimeout);
-      shieldTimeout = window.setTimeout(() => {
-        if (!document.hidden && document.hasFocus()) {
-          setShield(false);
-        }
-      }, durationMs);
-    };
-
-    const handleVisibility = () => setShield(document.hidden);
-    const handleBlur = () => setShield(true);
-    const handleFocus = () => setShield(false);
-    const handleKeydown = (event: KeyboardEvent) => {
-      const key = event.key?.toLowerCase?.() ?? "";
-      const isPrintScreen = event.key === "PrintScreen" || event.code === "PrintScreen";
-      const isWindowsSnip = event.metaKey && event.shiftKey && key === "s";
-      const isMacShot = event.metaKey && event.shiftKey && ["3", "4", "5"].includes(event.key);
-
-      if (isPrintScreen || isWindowsSnip || isMacShot) {
-        pulseShield(1600);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("blur", handleBlur);
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("keydown", handleKeydown, true);
-
-    handleVisibility();
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("blur", handleBlur);
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("keydown", handleKeydown, true);
-      if (shieldTimeout) window.clearTimeout(shieldTimeout);
-      root.classList.remove("privacy-shield");
-    };
-  }, []);
-
-
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
