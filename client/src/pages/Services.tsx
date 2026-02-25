@@ -828,11 +828,9 @@ function PackageCard({
 
 function MonthlyOfferCard({
   contentMap,
-  onClose,
   contactHref,
 }: {
   contentMap: Record<string, string>;
-  onClose: () => void;
   contactHref: string;
 }) {
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
@@ -847,23 +845,28 @@ function MonthlyOfferCard({
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-b from-black/60 via-black/85 to-black/95 p-8 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.6)]">
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(255,200,80,0.18),transparent_55%)]" />
-      <div className="absolute -top-10 -left-10 h-44 w-44 rounded-full bg-primary/15 blur-3xl" />
-
-      <div className="relative z-10 text-center space-y-4">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/15 px-4 py-1 text-xs font-semibold text-primary">
+    <div className="monthly-offer-card">
+      <div className="monthly-offer-sparkle" />
+      <div className="monthly-offer-stamp">
+        <EditableText
+          value={getValue("services_monthly_offer_badge")}
+          fallback="خصم 🔥"
+          fieldKey="services_monthly_offer_badge"
+          category="services"
+          label="شارة عرض الشهر"
+        />
+      </div>
+      <div className="monthly-offer-header">
+        <span className="monthly-offer-kicker">
           <EditableText
-            value={getValue("services_monthly_offer_badge")}
-            fallback="خصم 🔥"
-            fieldKey="services_monthly_offer_badge"
+            value={getValue("services_monthly_offer_kicker")}
+            fallback="عرض حصري"
+            fieldKey="services_monthly_offer_kicker"
             category="services"
-            label="شارة عرض الشهر"
+            label="عنوان صغير عرض الشهر"
           />
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-        </div>
-
-        <h3 className="text-2xl md:text-3xl font-bold text-white">
+        </span>
+        <h3 className="monthly-offer-title">
           <EditableText
             value={getValue("services_monthly_offer_title")}
             fallback="العرض الحصري"
@@ -872,18 +875,7 @@ function MonthlyOfferCard({
             label="عنوان عرض الشهر"
           />
         </h3>
-
-        <div className="text-4xl md:text-5xl font-extrabold text-primary">
-          <EditableText
-            value={getValue("services_monthly_offer_price")}
-            fallback="$4500"
-            fieldKey="services_monthly_offer_price"
-            category="services"
-            label="سعر عرض الشهر"
-          />
-        </div>
-
-        <p className="text-sm text-muted-foreground">
+        <p className="monthly-offer-subtitle">
           <EditableText
             value={getValue("services_monthly_offer_subtitle")}
             fallback="عرض حصري لفترة محدودة فقط"
@@ -895,10 +887,31 @@ function MonthlyOfferCard({
         </p>
       </div>
 
-      <div className="relative z-10 mt-6 space-y-3">
+      <div className="monthly-offer-price">
+        <span className="monthly-offer-price-label">
+          <EditableText
+            value={getValue("services_monthly_offer_price_label")}
+            fallback="السعر الخاص"
+            fieldKey="services_monthly_offer_price_label"
+            category="services"
+            label="عنوان سعر عرض الشهر"
+          />
+        </span>
+        <span className="monthly-offer-price-value">
+          <EditableText
+            value={getValue("services_monthly_offer_price")}
+            fallback="$4500"
+            fieldKey="services_monthly_offer_price"
+            category="services"
+            label="سعر عرض الشهر"
+          />
+        </span>
+      </div>
+
+      <div className="monthly-offer-features">
         {featureList.map((feature) => (
-          <div key={feature.key} className="flex items-start gap-3 text-sm text-foreground/90">
-            <Check size={16} className="text-primary mt-1" />
+          <div key={feature.key} className="monthly-offer-feature">
+            <span className="monthly-offer-bullet" />
             <EditableText
               value={getValue(feature.key)}
               fallback={feature.fallback}
@@ -911,12 +924,9 @@ function MonthlyOfferCard({
         ))}
       </div>
 
-      <div className="relative z-10 mt-8 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="monthly-offer-cta-row">
         <Link href={contactHref} className="w-full">
-          <Button
-            variant="outline"
-            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-border-glow cta-size"
-          >
+          <Button className="monthly-offer-book">
             <EditableText
               value={getValue("services_monthly_offer_cta")}
               fallback="احجز الآن"
@@ -926,19 +936,6 @@ function MonthlyOfferCard({
             />
           </Button>
         </Link>
-        <Button
-          type="button"
-          onClick={onClose}
-          className="w-full h-12 md:h-14 text-base md:text-lg font-bold rounded-none bg-primary/10 border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground shadow-[0_0_30px_rgba(255,200,80,0.35)] transition-all"
-        >
-          <EditableText
-            value={getValue("services_monthly_offer_back")}
-            fallback="العودة للقائمة السابقة"
-            fieldKey="services_monthly_offer_back"
-            category="services"
-            label="زر العودة للقائمة السابقة"
-          />
-        </Button>
       </div>
     </div>
   );
