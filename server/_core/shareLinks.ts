@@ -11,7 +11,7 @@ const SHARE_CODE_SIGNATURE_LENGTH = 6;
 const SHARE_CODE_ALPHABET = "23456789abcdefghijkmnpqrstuvwxyz";
 const SHARE_CODE_MIN_LENGTH = 3;
 const SHARE_CODE_MAX_LENGTH = 8;
-const SHARE_CODE_DEFAULT_LENGTH = 6;
+const SHARE_CODE_DEFAULT_LENGTH = 4;
 const SHARE_CODE_LENGTH = Math.min(
   Math.max(
     Number.parseInt(
