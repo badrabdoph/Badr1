@@ -1451,7 +1451,7 @@ export default function Services() {
                     <span className="monthly-offer-btn-text">
                       <EditableText
                         value={contentMap.services_monthly_offer_hint}
-                        fallback="اضغط هنا"
+                        fallback="خصم🔥"
                         fieldKey="services_monthly_offer_hint"
                         category="services"
                         label="زر خصم (عرض الشهر)"
