@@ -1,4 +1,4 @@
-import { eq, asc, desc } from "drizzle-orm";
+import { eq, asc, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
 import type { Pool } from "mysql2";
@@ -260,12 +260,39 @@ type ShareLinkRecord = {
   revokedAt: Date | null;
 };
 
+let shareLinksTableReady: boolean | null = null;
+
+async function ensureShareLinksTable(db: ReturnType<typeof drizzle>) {
+  if (shareLinksTableReady) return true;
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS share_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(120) NOT NULL UNIQUE,
+        note TEXT,
+        expiresAt TIMESTAMP NULL,
+        revokedAt TIMESTAMP NULL,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    shareLinksTableReady = true;
+    return true;
+  } catch (error) {
+    shareLinksTableReady = false;
+    console.warn("[ShareLinks] Failed to ensure DB table:", error);
+    return false;
+  }
+}
+
 async function withShareLinksDbFallback<T>(
   action: (db: ReturnType<typeof drizzle>) => Promise<T>,
   fallback: () => Promise<T>
 ): Promise<T> {
   const db = await getDb();
   if (!db) return await fallback();
+  const ok = await ensureShareLinksTable(db);
+  if (!ok) return await fallback();
   try {
     return await action(db);
   } catch (error) {
