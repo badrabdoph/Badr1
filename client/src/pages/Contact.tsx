@@ -332,7 +332,7 @@ export default function Contact() {
       id: "monthly-offer",
       label: getValue("services_monthly_offer_title", "العرض الحصري"),
       price: getValue("services_monthly_offer_price", "—"),
-      badge: getValue("services_monthly_offer_badge", "خصم"),
+      badge: getValue("services_monthly_offer_badge", "خصم 🔥"),
       isDiscount: true,
     };
     return [

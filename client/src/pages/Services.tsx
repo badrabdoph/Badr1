@@ -134,6 +134,11 @@ function formatPriceNumber(value: number) {
   return Number.isInteger(rounded) ? String(rounded) : String(rounded);
 }
 
+function extractPriceUnit(raw?: string) {
+  if (!raw) return "";
+  return raw.replace(/[0-9.,\s]/g, "").trim();
+}
+
 const customPrintItems = customPrintGroups.flatMap((group) => group.items);
 const customPrintIdSet = new Set(customPrintItems.map((item) => item.id));
 const PRINTS_STORAGE_KEY = "prefill_print_ids";
@@ -244,6 +249,7 @@ function PackageCard({
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
   const [localCustomIds, setLocalCustomIds] = useState<string[]>([]);
+  const [customQuantities, setCustomQuantities] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(!isCollapsible);
   const sharedPrintIds = useMemo(
     () => (preselectedPrintIds ?? []).filter((id) => customPrintIdSet.has(id)),
@@ -261,13 +267,29 @@ function PackageCard({
     persistPrintIds(safeNext);
   };
   const effectiveCustomIds = isCustom ? (preselectedPrintIds ? selectedCustomIds : localCustomIds) : [];
+  const clampQuantity = (value: number) => Math.min(5, Math.max(1, value));
+  const getQuantity = (id: string) => clampQuantity(customQuantities[id] ?? 1);
+  const setQuantity = (id: string, next: number) => {
+    const qty = clampQuantity(next);
+    setCustomQuantities((prev) => ({ ...prev, [id]: qty }));
+  };
+  const clearQuantity = (id: string) => {
+    setCustomQuantities((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
   const customTotal = useMemo(() => {
     return effectiveCustomIds.reduce((sum, id) => {
       const item = customPrintItems.find((entry) => entry.id === id);
       const price = parsePriceValue(item?.price);
-      return price ? sum + price : sum;
+      if (!price) return sum;
+      const qty = getQuantity(id);
+      return sum + price * qty;
     }, 0);
-  }, [effectiveCustomIds]);
+  }, [effectiveCustomIds, customQuantities]);
   const proNoteText = isPro
     ? getValue("services_pro_note_text", "MEDIA COVERAGE REELS & TIKTOK").trim()
     : "";
@@ -615,25 +637,94 @@ function PackageCard({
                 <div className="custom-group-items">
                   {group.items.map((item) => {
                     const checked = effectiveCustomIds.includes(item.id);
+                    const quantity = getQuantity(item.id);
+                    const basePrice = parsePriceValue(item.price);
+                    const unit = extractPriceUnit(item.price);
+                    const computedPrice =
+                      basePrice !== null ? `${formatPriceNumber(basePrice * quantity)}${unit}` : item.price;
+                    const toggleItem = (force?: boolean) => {
+                      const next = new Set(effectiveCustomIds);
+                      const shouldSelect = force ?? !next.has(item.id);
+                      if (shouldSelect) {
+                        next.add(item.id);
+                        if (!customQuantities[item.id]) {
+                          setQuantity(item.id, 1);
+                        }
+                      } else {
+                        next.delete(item.id);
+                        clearQuantity(item.id);
+                      }
+                      setSelectedCustomIds(Array.from(next));
+                    };
                     return (
-                      <label key={item.id} className="custom-item">
+                      <div key={item.id} className="custom-item">
                         <Checkbox
                           checked={checked}
                           className="custom-checkbox"
                           onCheckedChange={(value) => {
-                            const next = new Set(effectiveCustomIds);
                             const isChecked = value === true;
-                            if (isChecked) {
-                              next.add(item.id);
-                            } else {
-                              next.delete(item.id);
-                            }
-                            setSelectedCustomIds(Array.from(next));
+                            toggleItem(isChecked);
                           }}
                         />
-                        <span className="custom-item-label">{item.label}</span>
-                        <span className="custom-item-price tabular-nums">{item.price}</span>
-                      </label>
+                        <div
+                          className="custom-item-label"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleItem()}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              toggleItem();
+                            }
+                          }}
+                        >
+                          <div className="custom-item-title">{item.label}</div>
+                          {checked ? (
+                            <div className="custom-qty" onClick={(event) => event.stopPropagation()}>
+                              <span className="custom-qty-label">
+                                <span className="custom-qty-dot" />
+                                اختر العدد
+                              </span>
+                              <div className="custom-qty-controls">
+                                <button
+                                  type="button"
+                                  className="custom-qty-btn"
+                                  onClick={() => setQuantity(item.id, quantity - 1)}
+                                  disabled={quantity <= 1}
+                                >
+                                  -
+                                </button>
+                                <span className="custom-qty-value">{quantity}</span>
+                                <button
+                                  type="button"
+                                  className="custom-qty-btn"
+                                  onClick={() => setQuantity(item.id, quantity + 1)}
+                                  disabled={quantity >= 5}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                        <div
+                          className="custom-item-price tabular-nums"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleItem()}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              toggleItem();
+                            }
+                          }}
+                        >
+                          <span>{checked && quantity > 1 ? computedPrice : item.price}</span>
+                          {checked && quantity > 1 ? (
+                            <span className="custom-item-mult">x{quantity}</span>
+                          ) : null}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -763,7 +854,7 @@ function MonthlyOfferCard({
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/15 px-4 py-1 text-xs font-semibold text-primary">
           <EditableText
             value={getValue("services_monthly_offer_badge")}
-            fallback="عرض الشهر"
+            fallback="خصم 🔥"
             fieldKey="services_monthly_offer_badge"
             category="services"
             label="شارة عرض الشهر"
@@ -774,7 +865,7 @@ function MonthlyOfferCard({
         <h3 className="text-2xl md:text-3xl font-bold text-white">
           <EditableText
             value={getValue("services_monthly_offer_title")}
-            fallback="الباقة الذهبية"
+            fallback="العرض الحصري"
             fieldKey="services_monthly_offer_title"
             category="services"
             label="عنوان عرض الشهر"
@@ -794,7 +885,7 @@ function MonthlyOfferCard({
         <p className="text-sm text-muted-foreground">
           <EditableText
             value={getValue("services_monthly_offer_subtitle")}
-            fallback="عرض حصري لمدة محدودة فقط"
+            fallback="عرض حصري لفترة محدودة فقط"
             fieldKey="services_monthly_offer_subtitle"
             category="services"
             label="وصف عرض الشهر"
@@ -1352,7 +1443,7 @@ export default function Services() {
                     <span className="monthly-offer-btn-badge">
                       <EditableText
                         value={contentMap.services_monthly_offer_badge_small}
-                        fallback="خصم محدود"
+                        fallback="خصم 🔥"
                         fieldKey="services_monthly_offer_badge_small"
                         category="services"
                         label="شارة زر عرض الشهر"
@@ -1361,7 +1452,7 @@ export default function Services() {
                     <span className="monthly-offer-btn-title">
                       <EditableText
                         value={contentMap.services_monthly_offer_button}
-                        fallback="عرض الشهر"
+                        fallback="العرض الحصري"
                         fieldKey="services_monthly_offer_button"
                         category="services"
                         label="زر عرض الشهر"
@@ -2193,12 +2284,93 @@ export default function Services() {
         .custom-item-label {
           line-height: 1.6;
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          cursor: pointer;
+        }
+        .custom-item-title {
+          color: rgba(255,255,255,0.92);
         }
         .custom-item-price {
           font-size: 13px;
           color: rgba(255,220,150,0.95);
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
           font-variant-numeric: tabular-nums;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .custom-item-mult {
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255,230,190,0.8);
+        }
+        .custom-qty {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 6px 8px;
+          border-radius: 12px;
+          border: 1px dashed rgba(255,210,120,0.45);
+          background: rgba(12,12,16,0.55);
+          box-shadow: inset 0 0 0 1px rgba(255,210,120,0.12);
+        }
+        .custom-qty-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255,230,190,0.95);
+        }
+        .custom-qty-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255,210,120,0.95);
+          box-shadow: 0 0 10px rgba(255,210,130,0.75);
+          animation: custom-dot-pulse 1.6s ease-in-out infinite;
+        }
+        .custom-qty-controls {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .custom-qty-btn {
+          width: 22px;
+          height: 22px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,210,120,0.6);
+          background: rgba(10,10,14,0.7);
+          color: rgba(255,245,220,0.95);
+          font-weight: 700;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .custom-qty-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        .custom-qty-btn:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 0 12px rgba(255,210,130,0.45);
+        }
+        .custom-qty-value {
+          min-width: 20px;
+          text-align: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: rgba(255,245,220,0.95);
         }
         .custom-checkbox {
           width: 18px;
@@ -2230,16 +2402,39 @@ export default function Services() {
               0 0 12px rgba(255,210,120,0.45);
           }
         }
+        @keyframes custom-dot-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(1.4); opacity: 1; }
+        }
         .custom-total {
           width: 100%;
           padding: 8px 10px;
           border-radius: 14px;
-          border: 1px solid rgba(255,210,120,0.35);
-          background: rgba(12,12,16,0.55);
-          color: rgba(255,245,220,0.98);
+          border: 1px solid rgba(255,210,120,0.65);
+          background:
+            linear-gradient(120deg, rgba(255,210,120,0.28), rgba(12,12,16,0.75) 55%),
+            radial-gradient(circle at 20% 20%, rgba(255,240,200,0.25), transparent 60%);
+          color: rgba(255,250,230,0.98);
           font-weight: 700;
           text-align: center;
-          box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+          text-shadow:
+            0 0 12px rgba(255,210,130,0.55),
+            0 0 22px rgba(255,210,130,0.35);
+          box-shadow:
+            0 12px 30px rgba(0,0,0,0.4),
+            0 0 28px rgba(255,210,130,0.35);
+          position: relative;
+          overflow: hidden;
+        }
+        .custom-total::after {
+          content: "";
+          position: absolute;
+          inset: -140% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 46%, transparent 70%);
+          transform: translateX(-120%);
+          animation: services-shine 4.8s ease-in-out infinite;
+          opacity: 0.55;
+          pointer-events: none;
         }
         .custom-total-row {
           margin-top: 6px;

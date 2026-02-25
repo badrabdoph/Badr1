@@ -287,24 +287,6 @@ export const weddingPackages = [
     popular: true,
     featured: true,
   },
-  {
-    id: "full-day-basic",
-    name: "FULL DAY BASIC",
-    price: "8500",
-    priceNote: "قد ينقص السعر أو يزيد حسب تفاصيل اليوم ومكان الفرح",
-    description: "تغطية كاملة لليوم بشكل عملي وبسعر مناسب",
-    features: [
-      "تصوير فوتوغرافي احترافي من التجهيزات حتى نهاية الفرح",
-      "عدد غير محدود من الصور",
-      "فيديو Highlight سينمائي (2–4 دقائق) يلخص أجمل لحظات اليوم",
-      "Media Coverage (Reels / TikTok)",
-      "سيشن كاجوال + سيشن الزفاف",
-      "Basic Edit للصور",
-      "تواجد طوال اليوم",
-      "أولوية تسليم سريع",
-    ],
-    popular: false,
-  },
 ];
 
 export const additionalServices = [
