@@ -1434,19 +1434,21 @@ export default function Services() {
                       label="تلميح عرض الشهر"
                     />
                   </div>
-                    <button
-                      type="button"
-                      className="monthly-offer-btn monthly-offer-btn--stamp"
-                      onClick={() => setShowMonthlyOffer((prev) => !prev)}
-                      aria-expanded={showMonthlyOffer}
-                    >
+                  <button
+                    type="button"
+                    className="monthly-offer-btn monthly-offer-btn--stamp"
+                    onClick={() => setShowMonthlyOffer((prev) => !prev)}
+                    aria-expanded={showMonthlyOffer}
+                  >
+                    <span className="monthly-offer-btn-text">
                       <EditableText
                         value={contentMap.services_monthly_offer_button}
-                        fallback="خصم خاص"
+                        fallback="خصم🔥"
                         fieldKey="services_monthly_offer_button"
                         category="services"
                         label="زر خصم (عرض الشهر)"
                       />
+                    </span>
                     </button>
 
                   {showMonthlyOffer ? (
@@ -2102,21 +2104,32 @@ export default function Services() {
           width: 140px;
           height: 140px;
           border-radius: 999px;
-          border: 2px dashed rgba(255,210,120,0.85);
+          border: 2px dashed rgba(255,160,140,0.85);
           background:
-            radial-gradient(circle at 30% 30%, rgba(255,245,210,0.55), rgba(255,210,120,0.18) 55%),
-            linear-gradient(150deg, rgba(255,210,120,0.35), rgba(20,20,28,0.95) 65%);
-          color: #fff8e6;
+            radial-gradient(circle at 30% 30%, rgba(255,215,200,0.5), rgba(255,160,140,0.18) 55%),
+            linear-gradient(150deg, rgba(255,130,120,0.35), rgba(18,18,24,0.95) 65%);
+          color: #fff8f1;
           font-size: 22px;
           font-weight: 900;
-          letter-spacing: 0.25em;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          text-shadow: 0 0 16px rgba(255,210,130,0.7);
+          text-shadow: 0 0 18px rgba(255,130,120,0.7);
           box-shadow:
             0 20px 45px rgba(0,0,0,0.45),
-            inset 0 0 18px rgba(255,210,130,0.35),
-            0 0 30px rgba(255,210,130,0.35);
+            inset 0 0 18px rgba(255,140,120,0.35),
+            0 0 30px rgba(255,140,120,0.35);
           position: relative;
+          white-space: nowrap;
+          line-height: 1;
+        }
+        .monthly-offer-btn-text {
+          background: linear-gradient(120deg, #ffe7dc, #ffb8a1 60%, #ffd7c8);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          text-shadow:
+            0 0 10px rgba(255,160,140,0.75),
+            0 0 20px rgba(255,120,100,0.45);
         }
         .monthly-offer-btn--stamp::after {
           content: "";
@@ -2157,22 +2170,22 @@ export default function Services() {
           border-radius: 30px;
           padding: 28px;
           background:
-            linear-gradient(140deg, rgba(26,10,18,0.96), rgba(10,10,16,0.95) 55%, rgba(56,14,22,0.9) 100%),
-            radial-gradient(circle at 20% 15%, rgba(255,120,120,0.18), transparent 55%);
-          border: 1px solid rgba(255,120,120,0.35);
+            linear-gradient(140deg, rgba(18,18,24,0.95), rgba(10,10,14,0.98)),
+            radial-gradient(circle at 15% 20%, rgba(255,140,120,0.14), transparent 55%);
+          border: 1px solid rgba(255,255,255,0.12);
           box-shadow:
-            0 24px 80px rgba(0,0,0,0.55),
-            0 0 30px rgba(255,110,110,0.25);
-          color: #fff6f2;
+            0 24px 70px rgba(0,0,0,0.5),
+            0 0 24px rgba(255,120,100,0.18);
+          color: #fff6f0;
         }
         .monthly-offer-card::before {
           content: "";
           position: absolute;
           inset: 0;
           background:
-            linear-gradient(120deg, rgba(255,255,255,0.08), transparent 35%),
-            repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 14px);
-          opacity: 0.3;
+            linear-gradient(120deg, rgba(255,255,255,0.05), transparent 40%),
+            repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 16px);
+          opacity: 0.25;
           pointer-events: none;
         }
         .monthly-offer-card::after {
@@ -2182,8 +2195,8 @@ export default function Services() {
           right: -40%;
           width: 70%;
           height: 140%;
-          background: radial-gradient(circle, rgba(255,110,110,0.35), transparent 70%);
-          opacity: 0.5;
+          background: radial-gradient(circle, rgba(255,130,110,0.25), transparent 70%);
+          opacity: 0.45;
           pointer-events: none;
         }
         .monthly-offer-sparkle {
@@ -2197,20 +2210,20 @@ export default function Services() {
         }
         .monthly-offer-stamp {
           position: absolute;
-          top: 14px;
+          top: 16px;
           right: 16px;
-          padding: 10px 18px;
-          border-radius: 14px;
-          border: 2px solid rgba(255,255,255,0.6);
-          background: linear-gradient(135deg, #ff4b4b, #ff8a5b);
-          font-size: 16px;
+          padding: 8px 16px;
+          border-radius: 12px;
+          border: 2px solid rgba(255,255,255,0.55);
+          background: linear-gradient(135deg, #ff5858, #ff9f6e);
+          font-size: 14px;
           font-weight: 900;
           letter-spacing: 0.16em;
           text-transform: uppercase;
           color: #fff6f1;
           box-shadow:
             0 12px 28px rgba(0,0,0,0.45),
-            0 0 20px rgba(255,120,120,0.55);
+            0 0 18px rgba(255,120,120,0.5);
           transform: rotate(6deg);
           z-index: 2;
         }
@@ -2222,12 +2235,23 @@ export default function Services() {
           border: 1px dashed rgba(255,255,255,0.7);
           pointer-events: none;
         }
+        .monthly-offer-stamp::before {
+          content: "";
+          position: absolute;
+          inset: -120% -20%;
+          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.75) 46%, transparent 70%);
+          transform: translateX(-120%);
+          animation: services-shine 6s ease-in-out infinite;
+          opacity: 0.55;
+          pointer-events: none;
+        }
         .monthly-offer-top {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 16px;
           position: relative;
           z-index: 2;
+          align-items: start;
         }
         .monthly-offer-header {
           position: relative;
@@ -2238,7 +2262,7 @@ export default function Services() {
           display: inline-flex;
           padding: 4px 12px;
           border-radius: 999px;
-          border: 1px dashed rgba(255,160,160,0.6);
+          border: 1px dashed rgba(255,180,170,0.5);
           font-size: 11px;
           letter-spacing: 0.22em;
           text-transform: uppercase;
@@ -2249,7 +2273,7 @@ export default function Services() {
           font-size: 26px;
           font-weight: 800;
           margin-top: 10px;
-          text-shadow: 0 0 18px rgba(255,120,120,0.6);
+          text-shadow: 0 0 18px rgba(255,140,120,0.55);
         }
         .monthly-offer-subtitle {
           margin-top: 8px;
@@ -2260,8 +2284,8 @@ export default function Services() {
           position: relative;
           padding: 10px 12px;
           border-radius: 14px;
-          border: 1px solid rgba(255,140,140,0.55);
-          background: linear-gradient(120deg, rgba(255,140,140,0.2), rgba(10,10,14,0.8));
+          border: 1px solid rgba(255,160,140,0.45);
+          background: linear-gradient(120deg, rgba(255,160,140,0.18), rgba(10,10,14,0.82));
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -2301,8 +2325,8 @@ export default function Services() {
           height: 10px;
           margin-top: 6px;
           border-radius: 50%;
-          background: rgba(255,120,120,0.95);
-          box-shadow: 0 0 12px rgba(255,110,110,0.9);
+          background: rgba(255,140,120,0.95);
+          box-shadow: 0 0 12px rgba(255,130,110,0.9);
         }
         .monthly-offer-cta-row {
           margin-top: 20px;
@@ -2314,7 +2338,7 @@ export default function Services() {
           height: 52px;
           border-radius: 16px;
           border: none;
-          background: linear-gradient(120deg, #ff4b4b, #ff7a59 55%, #ffb347);
+          background: linear-gradient(120deg, #ff6b5e, #ff8a5b 55%, #ffc06d);
           color: #fff6f0;
           font-weight: 800;
           letter-spacing: 0.08em;
@@ -2325,12 +2349,15 @@ export default function Services() {
           transform: translateY(-1px);
           box-shadow: 0 16px 40px rgba(255,80,70,0.55);
         }
-        @media (min-width: 768px) {
+        @media (max-width: 640px) {
           .monthly-offer-top {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
+            grid-template-columns: 1fr;
           }
+          .monthly-offer-price {
+            max-width: 100%;
+          }
+        }
+        @media (min-width: 768px) {
           .monthly-offer-features {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
