@@ -2078,16 +2078,18 @@ export default function Services() {
         }
         .monthly-offer-hint {
           position: relative;
-          padding: 4px 16px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.35);
-          background: linear-gradient(140deg, rgba(255,210,120,0.18), rgba(255,255,255,0.04));
+          padding: 0;
+          border-radius: 0;
+          border: none;
+          background: transparent;
           color: rgba(255,240,210,0.98);
           font-size: 12px;
           font-weight: 700;
           letter-spacing: 0.08em;
-          text-shadow: 0 0 16px rgba(255,210,130,0.65);
-          overflow: hidden;
+          text-shadow:
+            0 0 12px rgba(255,215,160,0.8),
+            0 0 22px rgba(255,180,120,0.55);
+          overflow: visible;
         }
         .monthly-offer-hint::after {
           content: "";
