@@ -2120,18 +2120,19 @@ export default function Services() {
           position: absolute;
           top: 16px;
           left: 16px;
-          padding: 6px 14px;
+          padding: 10px 18px;
           border-radius: 999px;
-          border: 2px solid rgba(255,255,255,0.65);
-          background: linear-gradient(135deg, #ff6b6b, #ffb36b);
+          border: 2px solid rgba(255,255,255,0.75);
+          background: radial-gradient(circle at 35% 30%, #ffd2b8, #ff7a7a 55%, #ff5b5b 100%);
           color: #fff6f0;
-          font-size: 12px;
+          font-size: 15px;
           font-weight: 900;
-          letter-spacing: 0.16em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           box-shadow:
-            0 10px 24px rgba(0,0,0,0.35),
-            0 0 18px rgba(255,120,90,0.55);
+            0 12px 26px rgba(0,0,0,0.4),
+            0 0 26px rgba(255,120,90,0.85),
+            0 0 40px rgba(255,160,140,0.6);
           transform: rotate(6deg);
           z-index: 2;
         }
