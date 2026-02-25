@@ -652,7 +652,7 @@ export default function Contact() {
     const printLines = selectedPrints.length
       ? selectedPrints.map((item) => {
           const qty = getPrintQty(item.id);
-          return `• ${item.label}${qty > 1 ? ` (*${qty})` : ""}`;
+          return `• ${item.label}${qty > 1 ? ` (عدد ${qty})` : ""}`;
         })
       : [noneValue];
     const offerLines = monthlyOfferDetails.length
@@ -1423,7 +1423,7 @@ export default function Contact() {
                               return (
                                 <li key={print.id}>
                                   {print.label}
-                                  {qty > 1 ? ` (*${qty})` : ""}
+                                  {qty > 1 ? ` (عدد ${qty})` : ""}
                                 </li>
                               );
                             })}
