@@ -340,7 +340,10 @@ function PackageCard({
   };
 
   return (
-    <div style={getOffsetStyle(pkg.offsetX, pkg.offsetY)}>
+    <div
+      style={getOffsetStyle(pkg.offsetX, pkg.offsetY)}
+      className={isCustom ? "md:col-span-2" : undefined}
+    >
       <div
         role={isCollapsible ? "button" : undefined}
         tabIndex={isCollapsible ? 0 : undefined}
@@ -350,7 +353,7 @@ function PackageCard({
         className={[
           "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
           isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
-          isCustom ? "custom-package md:col-span-2" : "",
+          isCustom ? "custom-package" : "",
           isCollapsible && !isExpanded ? "full-day-collapsed" : "",
           weddingTone
             ? "border-primary/45 shadow-[0_0_70px_rgba(255,200,80,0.12)] hover:shadow-[0_0_95px_rgba(255,200,80,0.18)] hover:-translate-y-2"
