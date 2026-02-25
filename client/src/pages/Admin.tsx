@@ -1295,6 +1295,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     category: "session",
     features: "",
   });
+  const [seedBusy, setSeedBusy] = useState(false);
+  const seedAttempted = useRef(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<
     Record<
@@ -1327,6 +1329,49 @@ function PackagesManager({ onRefresh }: ManagerProps) {
       features: newPackage.features.split("\n").filter(Boolean),
     });
   };
+
+  const seedDefaults = async () => {
+    if (seedBusy) return;
+    setSeedBusy(true);
+    try {
+      const defaults = [
+        ...sessionPackages.map((p) => ({ ...p, category: "session" })),
+        ...sessionPackagesWithPrints.map((p) => ({ ...p, category: "prints" })),
+        ...weddingPackages.map((p) => ({ ...p, category: "wedding" })),
+        ...additionalServices.map((p) => ({ ...p, category: "addon" })),
+      ];
+      let order = 1;
+      for (const pkg of defaults) {
+        await createMutation.mutateAsync({
+          name: pkg.name,
+          price: String(pkg.price ?? ""),
+          description: pkg.description ?? "",
+          features: Array.isArray(pkg.features) ? pkg.features : [],
+          category: pkg.category as string,
+          popular: Boolean(pkg.popular),
+          visible: true,
+          sortOrder: order,
+        });
+        order += 1;
+      }
+      toast.success("تم تجهيز الباقات الافتراضية");
+      refetch();
+      onRefresh?.();
+    } catch (error: any) {
+      toast.error(error?.message ?? "تعذر تجهيز الباقات");
+    } finally {
+      setSeedBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (seedAttempted.current) return;
+    if ((packages ?? []).length === 0) {
+      seedAttempted.current = true;
+      seedDefaults();
+    }
+  }, [isLoading, packages]);
 
   const openEdit = (pkg: any) => {
     setEditingId(pkg.id);
@@ -1728,6 +1773,21 @@ function PackagesManager({ onRefresh }: ManagerProps) {
               كل سطر يظهر كبند داخل الكارت بنفس التصميم.
             </span>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={seedDefaults}
+              disabled={seedBusy}
+            >
+              {seedBusy ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Package className="w-4 h-4 ml-2" />}
+              تجهيز الباقات الافتراضية
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              لو القائمة فاضية، الزر ده يضيف الباقات الافتراضية تلقائياً.
+            </span>
+          </div>
           <Button onClick={handleCreate} disabled={createMutation.isPending}>
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Plus className="w-4 h-4 ml-2" />}
             إضافة الباقة
@@ -1750,6 +1810,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             <div className="text-center py-12 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد باقات بعد</p>
+              <p className="text-xs mt-2">سيتم تجهيز الباقات الافتراضية تلقائياً.</p>
             </div>
           )}
         </CardContent>
@@ -2930,7 +2991,7 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
 // Live Editor Component
 // ============================================
 function LiveEditor() {
-  const [activeSection, setActiveSection] = useState("preview");
+  const [activeSection, setActiveSection] = useState("links");
   const [previewKey, setPreviewKey] = useState(0);
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
@@ -3024,6 +3085,41 @@ function LiveEditor() {
 
   const sections = [
     {
+      id: "links",
+      title: "الروابط المؤقتة",
+      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
+      icon: Link2,
+      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "packages",
+      title: "الباقات",
+      description: "إضافة الباقات وتعديل تفاصيلها وترتيبها.",
+      icon: Package,
+      render: () => <PackagesManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "contact",
+      title: "بيانات التواصل",
+      description: "أرقام التواصل وروابط السوشيال.",
+      icon: Phone,
+      render: () => <ContactManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "sections",
+      title: "إدارة الأقسام",
+      description: "إظهار أو إخفاء أقسام الصفحة الرئيسية.",
+      icon: Move,
+      render: () => <SectionsManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "testimonials",
+      title: "آراء العملاء",
+      description: "إضافة وحذف الآراء والتحكم في ظهورها.",
+      icon: MessageSquare,
+      render: () => <TestimonialsManager onRefresh={refreshPreview} />,
+    },
+    {
       id: "preview",
       title: "المعاينة",
       description: "عدّل وشاهد الموقع مباشرة مع معاينة مدمجة.",
@@ -3056,41 +3152,6 @@ function LiveEditor() {
           </CardContent>
         </Card>
       ),
-    },
-    {
-      id: "packages",
-      title: "الباقات",
-      description: "إضافة الباقات وتعديل تفاصيلها وترتيبها.",
-      icon: Package,
-      render: () => <PackagesManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "contact",
-      title: "بيانات التواصل",
-      description: "أرقام التواصل وروابط السوشيال.",
-      icon: Phone,
-      render: () => <ContactManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "sections",
-      title: "إدارة الأقسام",
-      description: "إظهار أو إخفاء أقسام الصفحة الرئيسية.",
-      icon: Move,
-      render: () => <SectionsManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "testimonials",
-      title: "آراء العملاء",
-      description: "إضافة وحذف الآراء والتحكم في ظهورها.",
-      icon: MessageSquare,
-      render: () => <TestimonialsManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "links",
-      title: "الروابط المؤقتة",
-      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
-      icon: Link2,
-      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
     },
   ];
 
