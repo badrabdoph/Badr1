@@ -92,6 +92,124 @@ function shouldDisableDbForError(error: unknown) {
   return code === "ER_NO_SUCH_TABLE" || message.includes("doesn't exist");
 }
 
+async function ensureAdminSchema(db: ReturnType<typeof drizzle>) {
+  if (dbDisabled) return false;
+  if (process.env.ADMIN_AUTO_SCHEMA === "false") return false;
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        openId VARCHAR(64) NOT NULL UNIQUE,
+        name TEXT,
+        email VARCHAR(320),
+        loginMethod VARCHAR(64),
+        role ENUM('user','admin') NOT NULL DEFAULT 'user',
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        lastSignedIn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS site_content (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        \`key\` VARCHAR(100) NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        label VARCHAR(200),
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS site_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        \`key\` VARCHAR(100) NOT NULL UNIQUE,
+        url TEXT NOT NULL,
+        alt VARCHAR(200),
+        category VARCHAR(50) NOT NULL,
+        sortOrder INT DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS portfolio_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        url TEXT NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        visible TINYINT(1) NOT NULL DEFAULT 1,
+        sortOrder INT DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS site_sections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        \`key\` VARCHAR(100) NOT NULL UNIQUE,
+        name VARCHAR(200) NOT NULL,
+        visible TINYINT(1) NOT NULL DEFAULT 1,
+        sortOrder INT DEFAULT 0,
+        page VARCHAR(50) NOT NULL,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS packages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        price VARCHAR(50) NOT NULL,
+        description TEXT,
+        features JSON,
+        category VARCHAR(50) NOT NULL,
+        popular TINYINT(1) DEFAULT 0,
+        visible TINYINT(1) NOT NULL DEFAULT 1,
+        sortOrder INT DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS testimonials (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        quote TEXT NOT NULL,
+        visible TINYINT(1) NOT NULL DEFAULT 1,
+        sortOrder INT DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS contact_info (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        \`key\` VARCHAR(100) NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        label VARCHAR(200),
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS share_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(120) NOT NULL UNIQUE,
+        note TEXT,
+        expiresAt TIMESTAMP NULL,
+        revokedAt TIMESTAMP NULL,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to auto-create schema:", error);
+    return false;
+  }
+}
+
 async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
   if (adminTablesReady || dbDisabled) return adminTablesReady;
   try {
@@ -99,7 +217,18 @@ async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
     adminTablesReady = true;
     return true;
   } catch (error) {
-    if (shouldDisableDbForError(error)) {
+    const missing = shouldDisableDbForError(error);
+    if (missing) {
+      const created = await ensureAdminSchema(db);
+      if (created) {
+        try {
+          await db.select({ id: packages.id }).from(packages).limit(1);
+          adminTablesReady = true;
+          return true;
+        } catch (retryError) {
+          console.warn("[Database] Schema created but verify failed:", retryError);
+        }
+      }
       console.warn("[Database] Missing admin tables, falling back to file store:", error);
     } else {
       console.warn("[Database] Failed to verify admin tables, falling back to file store:", error);
