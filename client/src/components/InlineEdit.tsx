@@ -228,17 +228,9 @@ export function EditableText({
       }
     : undefined;
 
-<<<<<<< ours
-  const hasValue = value !== undefined && value !== null;
-  const normalizedValue = hasValue ? value : "";
-  const displayValue = hasValue ? normalizedValue : fallback || "";
-  const showPlaceholder = !hasValue && !displayValue && !!placeholder;
-  const isEmptyValue = displayValue === "";
-=======
   const normalizedValue = value ?? "";
   const displayValue = normalizedValue || fallback || "";
   const showPlaceholder = !normalizedValue && !!placeholder;
->>>>>>> theirs
 
   useEffect(() => {
     if (isEditing) return;
@@ -489,80 +481,6 @@ export function EditableText({
           )}
         </div>
       ) : (
-<<<<<<< ours
-        <>
-          <span
-            className={cn(
-              showPlaceholder ? "text-muted-foreground" : "text-inherit",
-              displayClassName
-            )}
-          >
-            {normalizedValue ? (
-              <span className="whitespace-pre-line">{normalizedValue}</span>
-            ) : fallbackNode ? (
-              fallbackNode
-            ) : displayValue ? (
-              <span className="whitespace-pre-line">{displayValue}</span>
-            ) : (
-              placeholder ?? ""
-            )}
-          </span>
-          {enabled && (
-            <div className="absolute -top-7 right-0 z-20 flex items-center gap-1 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  startEditing();
-                }}
-                title="تعديل"
-                aria-label={`تعديل ${label}`}
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  startEditing();
-                }}
-                title="تحريك"
-                aria-label={`تحريك ${label}`}
-              >
-                <Move className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleHide();
-                }}
-                title="إخفاء"
-                aria-label={`إخفاء ${label}`}
-              >
-                <EyeOff className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleReset();
-                }}
-                title="حذف التعديل"
-                aria-label={`حذف تعديل ${label}`}
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-=======
         <span
           className={cn(
             "inline-block",
@@ -589,7 +507,6 @@ export function EditableText({
             <span className="whitespace-pre-line">{displayValue}</span>
           ) : (
             placeholder ?? ""
->>>>>>> theirs
           )}
           {enabled && (
             <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
@@ -738,17 +655,6 @@ export function EditableContactText({
           </div>
         </div>
       ) : (
-<<<<<<< ours
-        <>
-          <span
-            className={cn(
-              showPlaceholder ? "text-muted-foreground" : "text-inherit",
-              displayClassName
-            )}
-          >
-            {displayValue || placeholder || ""}
-          </span>
-=======
         <span
           className={cn(
             "inline-flex items-center gap-2",
@@ -767,7 +673,6 @@ export function EditableContactText({
           }}
         >
           {displayValue || placeholder || ""}
->>>>>>> theirs
           {enabled && (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
               <Pencil className="w-3 h-3" />
