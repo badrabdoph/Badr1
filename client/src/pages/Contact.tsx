@@ -339,11 +339,9 @@ export default function Contact() {
       if (category === "prints" && /تحدد|تحدد السعر|أنت من تحدد/.test(price)) return true;
       return false;
     };
-    const isLegacyName = (name?: string) =>
-      !!name && /سيشن\+مطبوعات|جلسات\s*التصوير\s*\+\s*المطبوعات/i.test(name);
     const map = (items: Array<{ id: string; name: string; price: string; category?: string }>): PackageOption[] =>
       items
-        .filter((p) => !isCustomPackage(p) && !isLegacyName(p.name))
+        .filter((p) => !isCustomPackage(p))
         .map((p) => {
           const baseKey = `package_${p.id}`;
           return {
@@ -363,7 +361,6 @@ export default function Contact() {
     const ordered = [
       ...map(sessionPackages as any),
       ...map(weddingPackages as any),
-      ...map(sessionPackagesWithPrints as any),
     ];
     return [monthlyOfferOption, ...ordered];
   }, [sessionPackages, sessionPackagesWithPrints, weddingPackages, contentMap]);

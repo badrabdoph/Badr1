@@ -371,7 +371,6 @@ export const pageTexts = {
     title: "اختر باقتك ✨",
     subtitle: "",
     sessionsTitle: "فوتوسيشن",
-    sessionsWithPrintsTitle: "جلسات التصوير شامل المطبوعات",
     weddingTitle: "Full Day",
     addonsTitle: "خدمات إضافية (اختياري)",
   },

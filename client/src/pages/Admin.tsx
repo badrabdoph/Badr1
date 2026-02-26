@@ -1578,7 +1578,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
                 className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
               >
                 <option value="session">جلسات التصوير</option>
-                <option value="prints">جلسات + مطبوعات</option>
+                <option value="prints">المطبوعات</option>
                 <option value="wedding">Full Day</option>
                 <option value="addon">إضافات</option>
               </select>
@@ -1747,7 +1747,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
                 className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
               >
                 <option value="session">جلسات التصوير</option>
-                <option value="prints">جلسات + مطبوعات</option>
+                <option value="prints">المطبوعات</option>
                 <option value="wedding">Full Day</option>
                 <option value="addon">إضافات</option>
               </select>
