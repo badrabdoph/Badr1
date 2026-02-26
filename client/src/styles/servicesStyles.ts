@@ -6,6 +6,12 @@ export const servicesStyles = `
           mix-blend-mode: overlay;
         }
 
+        .services-card,
+        .services-addon-card,
+        .custom-package,
+        .monthly-offer-panel {
+          border-radius: var(--surface-radius);
+        }
         .services-card::after {
           content: "";
           position: absolute;
@@ -18,7 +24,56 @@ export const servicesStyles = `
         }
         .services-card .text-muted-foreground,
         .services-addon-card .text-muted-foreground {
-          color: rgba(255,240,220,0.78);
+          color: rgba(255,245,225,0.86);
+        }
+        .package-icon {
+          width: 32px;
+          height: 32px;
+        }
+        .section-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          color: inherit;
+        }
+        .section-icon svg {
+          width: 18px;
+          height: 18px;
+        }
+        .popular-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.55);
+          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.08));
+          color: rgba(255,245,220,0.95);
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-shadow: 0 0 12px rgba(255,210,130,0.55);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.32);
+        }
+        .package-price {
+          font-variant-numeric: tabular-nums;
+          letter-spacing: 0.02em;
+        }
+        .custom-step-tag {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 3px 10px;
+          border-radius: 999px;
+          border: 1px dashed rgba(255,210,120,0.55);
+          color: rgba(255,240,210,0.95);
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          background: rgba(12,12,16,0.55);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.35);
         }
         .cta-border-glow {
           position: relative;
@@ -242,9 +297,11 @@ export const servicesStyles = `
           position: fixed;
           left: 0;
           right: 0;
-          background: transparent;
+          background: rgba(8,8,12,0.68);
           border: none;
-          box-shadow: none;
+          box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           transform: translateY(0);
           animation: nav-float 3.6s ease-in-out infinite;
           margin-top: 0;
@@ -506,7 +563,7 @@ export const servicesStyles = `
           border-style: dashed;
           border-color: rgba(255,210,120,0.45);
           box-shadow: 0 22px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,210,120,0.25);
-          border-radius: 28px;
+          border-radius: var(--surface-radius);
           aspect-ratio: auto;
           max-width: 520px;
           min-height: 320px;
@@ -623,7 +680,7 @@ export const servicesStyles = `
         .monthly-offer-card {
           position: relative;
           overflow: hidden;
-          border-radius: 30px;
+          border-radius: var(--surface-radius);
           padding: 28px;
           background:
             linear-gradient(140deg, rgba(18,18,24,0.95), rgba(10,10,14,0.98)),
@@ -1085,7 +1142,7 @@ export const servicesStyles = `
         }
         @media (max-width: 640px) {
           .custom-package {
-            border-radius: 22px;
+            border-radius: var(--surface-radius);
             max-width: 100%;
             min-height: 0;
           }

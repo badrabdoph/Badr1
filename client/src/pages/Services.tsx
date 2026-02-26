@@ -206,7 +206,7 @@ function SectionHeader({
     <div className="text-center mb-7 md:mb-9">
       <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{title}</h2>
       <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 bg-black/20 backdrop-blur-md mt-2 mb-0 rounded-full">
-        {icon}
+        {icon ? <span className="section-icon">{icon}</span> : null}
         <span className={["text-xs md:text-sm text-foreground/80", subtitleClassName ?? ""].join(" ")}>
           {subtitle ?? "تفاصيل واضحة • جودة ثابتة • ستايل فاخر"}
         </span>
@@ -251,15 +251,17 @@ export function PackageCard({
   const isWedding = kind === "wedding";
   const isAddon = kind === "addon";
   const vip = isWedding && isVipPlus(pkg);
+  const forcePopular = ["full-day-vip-plus", "media-coverage", "session-2"].includes(pkg.id);
   const isCustom = isCustomPackage(pkg);
   const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
-  const popular = !!pkg.popular;
+  const popular = !!pkg.popular || forcePopular;
   const isPro = pkg.id === "session-2";
   const featureList = pkg.features ?? [];
   const isCollapsible = (isWedding && featureList.length > 6) || (isAddon && featureList.length > 2);
   const baseKey = `package_${pkg.id}`;
   const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
+  const badgeValue = (contentMap[`${baseKey}_badge`] ?? pkg.badge) as string | undefined;
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
   const [localCustomIds, setLocalCustomIds] = useState<string[]>([]);
   const [customQuantities, setCustomQuantities] = useState<Record<string, number>>({});
@@ -349,13 +351,13 @@ export function PackageCard({
 
   const Icon =
     isCustom ? (
-      <Receipt className="w-9 h-9 text-primary" />
+      <Receipt className="package-icon text-primary" />
     ) : kind === "wedding" || kind === "prints" ? (
-      <CoupleIcon className="w-9 h-9 text-primary" />
+      <CoupleIcon className="package-icon text-primary" />
     ) : kind === "addon" ? (
-      <PlusCircle className="w-9 h-9 text-primary" />
+      <PlusCircle className="package-icon text-primary" />
     ) : (
-      <Camera className="w-9 h-9 text-primary" />
+      <Camera className="package-icon text-primary" />
     );
 
   const waInquiryText = getValue("services_whatsapp_inquiry_text", "حابب استفسر ❤️");
@@ -398,7 +400,7 @@ export function PackageCard({
         ].join(" ")}
       >
       {isSessionCard ? (
-        <div className="price-corner">
+        <div className="price-corner package-price">
           <EditableText
             value={contentMap[`${baseKey}_price`]}
             fallback={pkg.price}
@@ -468,7 +470,7 @@ export function PackageCard({
                         fieldKey={`${baseKey}_price`}
                         category="services"
                         label={`سعر الباقة ${pkg.name}`}
-                        className="custom-note-text"
+                        className="custom-note-text package-price"
                       />
                     </div>
                   ) : null}
@@ -497,19 +499,19 @@ export function PackageCard({
                     />
                   </span>
                 )}
-                {(contentMap[`${baseKey}_badge`] ?? pkg.badge) && !vip ? (
+                {badgeValue && !vip ? (
                   <span className="pro-badge">
                     <EditableText
                       value={contentMap[`${baseKey}_badge`]}
-                      fallback={pkg.badge ?? ""}
+                      fallback={badgeValue ?? ""}
                       fieldKey={`${baseKey}_badge`}
                       category="services"
                       label={`شارة الباقة ${pkg.name}`}
                     />
                   </span>
                 ) : null}
-                {popular && !vip && !(contentMap[`${baseKey}_badge`] ?? pkg.badge) ? (
-                  <span className="inline-flex items-center justify-center px-2.5 py-1 text-[10px] md:text-xs font-semibold rounded-full border border-white/15 text-foreground/90 bg-white/5 shadow-[0_10px_24px_rgba(0,0,0,0.25)] backdrop-blur-sm relative md:-translate-y-[1px]">
+                {popular ? (
+                  <span className="popular-badge">
                     <EditableText
                       value={contentMap[`${baseKey}_popular_label`]}
                       fallback="الأكثر طلباً"
@@ -559,7 +561,7 @@ export function PackageCard({
               </div>
             ) : !isSessionCard ? (
               <>
-                <div className="text-primary font-bold text-2xl md:text-3xl leading-none">
+                <div className="text-primary font-bold text-2xl md:text-3xl leading-none package-price">
                   <EditableText
                     value={contentMap[`${baseKey}_price`]}
                     fallback={pkg.price}
@@ -639,9 +641,10 @@ export function PackageCard({
             <div className="custom-hint">
               علّم على الأيقونة بجانب اختيارك والسعر هيتجمعلك تحت تلقائي
             </div>
-            {customPrintGroups.map((group) => (
+            {customPrintGroups.map((group, index) => (
               <div key={group.id} className="custom-group">
                 <div className="custom-group-title">
+                  <span className="custom-step-tag">الخطوة {index + 1}</span>
                   {group.title}
                   {group.id === "vip-bags" ? (
                     <span className="custom-vip-tag">VIP</span>
@@ -721,7 +724,7 @@ export function PackageCard({
                           ) : null}
                         </div>
                         <div
-                          className="custom-item-price tabular-nums"
+                          className="custom-item-price tabular-nums package-price"
                           role="button"
                           tabIndex={0}
                           onClick={() => toggleItem()}
@@ -878,7 +881,7 @@ function MonthlyOfferCard({
         <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 border border-white/10 bg-black/15 backdrop-blur-md flex items-center justify-center">
-              <Gift className="w-9 h-9 text-primary" />
+              <Gift className="package-icon text-primary" />
             </div>
             <div className="text-right">
               <h3 className="text-xl md:text-2xl font-bold leading-tight">
@@ -904,7 +907,7 @@ function MonthlyOfferCard({
           </div>
 
           <div className="text-right sm:text-left">
-            <div className="text-primary font-bold text-2xl md:text-3xl leading-none">
+            <div className="text-primary font-bold text-2xl md:text-3xl leading-none package-price">
               <EditableText
                 value={getValue("services_monthly_offer_price")}
                 fallback="$4500"

@@ -2004,6 +2004,11 @@ export default function Contact() {
           gap: 16px;
           font-size: 0.95rem;
           color: rgba(255,245,230,0.9);
+          padding: 14px;
+          border-radius: var(--surface-radius);
+          border: 1px solid rgba(255,210,120,0.22);
+          background: linear-gradient(145deg, rgba(14,14,20,0.7), rgba(8,8,12,0.45));
+          box-shadow: 0 16px 40px rgba(0,0,0,0.35);
         }
         .receipt-grid {
           display: grid;
@@ -2020,14 +2025,14 @@ export default function Contact() {
           flex-direction: column;
           gap: 6px;
           padding: 10px 12px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(10,10,14,0.3);
+          border-radius: var(--surface-radius);
+          border: 1px solid rgba(255,210,120,0.18);
+          background: rgba(18,18,24,0.55);
         }
         .receipt-label {
           font-size: 0.72rem;
           letter-spacing: 0.04em;
-          color: rgba(255,245,220,0.7);
+          color: rgba(255,235,210,0.82);
           white-space: nowrap;
         }
         .receipt-value {
@@ -2114,9 +2119,10 @@ export default function Contact() {
           justify-content: space-between;
           align-items: center;
           padding: 12px 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,210,120,0.3);
-          background: linear-gradient(135deg, rgba(255,210,120,0.08), rgba(10,10,14,0.35));
+          border-radius: var(--surface-radius);
+          border: 1px solid rgba(255,210,120,0.45);
+          background: linear-gradient(135deg, rgba(255,210,120,0.18), rgba(10,10,14,0.5));
+          box-shadow: 0 12px 30px rgba(0,0,0,0.35);
         }
         .package-option-row {
           display: grid;

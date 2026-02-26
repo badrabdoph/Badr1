@@ -108,8 +108,8 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div className="relative z-10 container mx-auto px-4 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="text-center md:text-right">
             <div className="text-2xl font-bold tracking-wider">
               <span className="text-foreground">
@@ -132,6 +132,16 @@ export default function Footer() {
                 fieldKey="footer_brand_desc"
                 category="footer"
                 label="وصف البراند في الفوتر"
+                multiline
+              />
+            </p>
+            <p className="text-xs text-muted-foreground/80 mt-2">
+              <EditableText
+                value={contentMap.footer_brand_line}
+                fallback="حكاية زفافك تستحق لقطة سينمائية — نشتغل بأعلى جودة وتسليم مرتب."
+                fieldKey="footer_brand_line"
+                category="footer"
+                label="سطر هوية البراند"
                 multiline
               />
             </p>
