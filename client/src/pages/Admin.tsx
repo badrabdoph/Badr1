@@ -72,6 +72,8 @@ import { useEditHistory, type EditAction } from "@/lib/editHistory";
 import { PackageCard } from "@/pages/Services";
 import { servicesStyles } from "@/styles/servicesStyles";
 import { parseContentValue, serializeContentValue } from "@/lib/contentMeta";
+import { buildContentCatalog } from "@/lib/contentCatalog";
+import { useTestimonialsData } from "@/hooks/useSiteData";
 
 export default function Admin() {
   const utils = trpc.useUtils();
@@ -1166,6 +1168,8 @@ function AboutManager({ onRefresh }: ManagerProps) {
 // ============================================
 function ContentManager({ onRefresh }: ManagerProps) {
   const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
+  const { data: packagesData } = trpc.packages.getAll.useQuery();
+  const testimonials = useTestimonialsData();
   const upsertMutation = trpc.siteContent.upsert.useMutation({
     onSuccess: () => {
       toast.success("تم حفظ التغييرات");
@@ -1179,6 +1183,26 @@ function ContentManager({ onRefresh }: ManagerProps) {
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
   const [editingMeta, setEditingMeta] = useState<Record<string, { hidden?: boolean; scale?: number }>>({});
   const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
+
+  const fallbackPackages = useMemo(
+    () => [
+      ...sessionPackages.map((pkg) => ({ ...pkg, category: "session" })),
+      ...sessionPackagesWithPrints.map((pkg) => ({ ...pkg, category: "prints" })),
+      ...weddingPackages.map((pkg) => ({ ...pkg, category: "wedding" })),
+      ...additionalServices.map((pkg) => ({ ...pkg, category: "addon" })),
+    ],
+    []
+  );
+
+  const packageList = useMemo(() => {
+    if (packagesData && packagesData.length) return packagesData as any[];
+    return fallbackPackages;
+  }, [packagesData, fallbackPackages]);
+
+  const catalog = useMemo(
+    () => buildContentCatalog({ packages: packageList, testimonials }),
+    [packageList, testimonials]
+  );
 
   useEffect(() => {
     if (content) {
@@ -1194,11 +1218,12 @@ function ContentManager({ onRefresh }: ManagerProps) {
           offsetY: toOffset((item as any).offsetY),
         };
       });
-      setEditingContent(contentMap);
+      const mergedContent = { ...catalog.fallbackMap, ...contentMap };
+      setEditingContent(mergedContent);
       setEditingMeta(meta);
       setEditingPositions(positions);
     }
-  }, [content]);
+  }, [content, catalog.fallbackMap]);
 
   const handleSave = async (key: string, category: string, label?: string) => {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
@@ -1224,6 +1249,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
     "about",
     "contact",
     "portfolio",
+    "share",
     "cta",
     "nav",
     "footer",
@@ -1235,6 +1261,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
     about: "صفحة من أنا",
     contact: "صفحة التواصل",
     portfolio: "صفحة الأعمال",
+    share: "صفحة المشاركة",
     cta: "الدعوة للتواصل",
     nav: "القائمة العلوية",
     footer: "التذييل",
@@ -1242,12 +1269,31 @@ function ContentManager({ onRefresh }: ManagerProps) {
   };
 
   const items = useMemo(() => {
-    return (content ?? []).map((item: any) => ({
-      key: item.key,
-      label: item.label ?? item.key,
-      category: item.category ?? "shared",
-    }));
-  }, [content]);
+    const contentList = content ?? [];
+    const metaByKey = new Map<string, { label?: string; category?: string }>();
+    contentList.forEach((item: any) => {
+      metaByKey.set(item.key, { label: item.label, category: item.category });
+    });
+
+    const catalogItems = catalog.items;
+    const catalogKeys = new Set(catalogItems.map((item) => item.key));
+    const extraItems = contentList
+      .filter((item: any) => !catalogKeys.has(item.key))
+      .map((item: any) => ({
+        key: item.key,
+        label: item.label ?? item.key,
+        category: item.category ?? "shared",
+      }));
+
+    return [...catalogItems, ...extraItems].map((item) => {
+      const meta = metaByKey.get(item.key);
+      return {
+        key: item.key,
+        label: meta?.label ?? item.label ?? item.key,
+        category: meta?.category ?? item.category ?? "shared",
+      };
+    });
+  }, [content, catalog.items]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredItems = items.filter((item) => {

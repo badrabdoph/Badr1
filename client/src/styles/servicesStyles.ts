@@ -57,6 +57,16 @@ export const servicesStyles = `
           text-shadow: 0 0 12px rgba(255,210,130,0.55);
           box-shadow: 0 10px 28px rgba(0,0,0,0.32);
         }
+        .popular-badge--top {
+          position: absolute;
+          top: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 6px 14px;
+          z-index: 3;
+          background: linear-gradient(120deg, rgba(255,210,120,0.4), rgba(255,255,255,0.1));
+          box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 0 18px rgba(255,210,130,0.25);
+        }
         .package-price {
           font-variant-numeric: tabular-nums;
           letter-spacing: 0.02em;

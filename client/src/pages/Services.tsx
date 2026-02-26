@@ -267,6 +267,7 @@ export function PackageCard({
   const isAddon = kind === "addon";
   const vip = isWedding && isVipPlus(pkg);
   const forcePopular = ["full-day-vip-plus", "media-coverage", "session-2"].includes(pkg.id);
+  const popularTopCenter = ["full-day-vip-plus", "session-2"].includes(pkg.id);
   const isCustom = isCustomPackage(pkg);
   const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
@@ -426,6 +427,18 @@ export function PackageCard({
             : "border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
         ].join(" ")}
       >
+      {popularTopCenter && !vip ? (
+        <div className="popular-badge popular-badge--top">
+          <EditableText
+            value={contentMap[`${baseKey}_popular_label`]}
+            fallback="الأكثر طلباً"
+            fieldKey={`${baseKey}_popular_label`}
+            category="services"
+            label={`شارة الأكثر طلباً - ${pkg.name}`}
+          />
+        </div>
+      ) : null}
+
       {isSessionCard ? (
         <div className="price-corner package-price">
           <EditableText
@@ -537,7 +550,7 @@ export function PackageCard({
                     />
                   </span>
                 ) : null}
-                {popular ? (
+                {popular && !popularTopCenter ? (
                   <span className="popular-badge">
                     <EditableText
                       value={contentMap[`${baseKey}_popular_label`]}

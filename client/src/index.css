@@ -64,7 +64,7 @@
   --secondary-foreground: oklch(0.95 0 0);
 
   --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.78 0 0);
+  --muted-foreground: oklch(0.82 0 0);
 
   --accent: oklch(0.2 0 0);
   --accent-foreground: oklch(0.95 0 0);
@@ -94,7 +94,7 @@
   --secondary: oklch(0.95 0 0);
   --secondary-foreground: oklch(0.1 0 0);
   --muted: oklch(0.95 0 0);
-  --muted-foreground: oklch(0.45 0 0);
+  --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.95 0 0);
   --accent-foreground: oklch(0.1 0 0);
   --border: oklch(0.9 0 0);
@@ -340,8 +340,18 @@
   @media (hover: none) {
     .cta-glow:active,
     .cta-border-glow:active {
+      transform: translateY(-1px) scale(0.99);
+      background: rgba(255, 210, 120, 0.12);
+      box-shadow:
+        0 0 0 1px rgba(255, 210, 120, 0.45) inset,
+        0 18px 55px rgba(255, 200, 80, 0.35);
+    }
+    .tap-target:active,
+    button:active,
+    [role="button"]:active {
       transform: translateY(-1px);
-      box-shadow: 0 0 0 1px rgba(255, 210, 120, 0.35) inset, 0 18px 55px rgba(255, 200, 80, 0.28);
+      filter: brightness(1.08);
+      box-shadow: 0 0 0 1px rgba(255, 210, 120, 0.25) inset;
     }
   }
   .premium-border { position: relative; }
