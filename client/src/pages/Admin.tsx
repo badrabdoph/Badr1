@@ -77,7 +77,10 @@ import { useTestimonialsData } from "@/hooks/useSiteData";
 
 export default function Admin() {
   const utils = trpc.useUtils();
-  const statusQuery = trpc.adminAccess.status.useQuery();
+  const statusQuery = trpc.adminAccess.status.useQuery(undefined, {
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
   const loginMutation = trpc.adminAccess.login.useMutation({
     onSuccess: () => {
       utils.adminAccess.status.invalidate();
