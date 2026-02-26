@@ -1116,15 +1116,6 @@ export function EditableImage({
     onError: (error) => toast.error(error.message),
   });
 
-  const deleteMutation = trpc.siteImages.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف تعديل الصورة");
-      utils.siteImages.getAll.invalidate();
-      setIsEditing(false);
-    },
-    onError: (error) => toast.error(error.message),
-  });
-
   const handleSaveUrl = () => {
     if (!enabled || upsertMutation.isPending) return;
     const urlChanged = draftUrl !== src;
@@ -1178,51 +1169,25 @@ export function EditableImage({
     });
   };
 
-  const handleResetImage = () => {
-    if (!enabled || deleteMutation.isPending) return;
-    requestConfirm({
-      title: "حذف تعديل الصورة",
-      description: "سيتم الرجوع للصورة الافتراضية.",
-      confirmLabel: "حذف التعديل",
-      onConfirm: () => {
-        deleteMutation.mutate({ key: fieldKey });
-      },
-    });
-  };
-
   return (
     <div className={cn("relative group", className)} style={positionStyle}>
       <img src={src} alt={alt} className={imgClassName} />
       {enabled && (
-        <div className="absolute top-3 right-3 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/60 px-2 py-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setIsEditing((prev) => !prev);
-            }}
-            className={cn("inline-flex items-center gap-1", overlayClassName)}
-            title="استبدال الصورة"
-            aria-label={`استبدال ${label}`}
-          >
-            <ImageIcon className="w-3 h-3" />
-            استبدال
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              handleResetImage();
-            }}
-            className="inline-flex items-center gap-1 hover:text-primary"
-            title="حذف التعديل"
-            aria-label={`حذف تعديل ${label}`}
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsEditing((prev) => !prev);
+          }}
+          className={cn(
+            "absolute top-3 right-3 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100",
+            overlayClassName
+          )}
+        >
+          <ImageIcon className="w-3 h-3" />
+          تعديل الصورة
+        </button>
       )}
 
       {enabled && isEditing && (
