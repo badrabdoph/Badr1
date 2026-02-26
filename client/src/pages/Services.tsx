@@ -13,8 +13,6 @@ import {
   Receipt,
   PlusCircle,
   ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   Phone,
   Gift,
   ArrowDown,
@@ -26,9 +24,7 @@ import {
   customPrintGroups,
 } from "@/config/siteConfig";
 import { useContactData, usePackagesData, useContentData } from "@/hooks/useSiteData";
-import { EditableText, useInlineEditMode } from "@/components/InlineEdit";
-import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+import { EditableText } from "@/components/InlineEdit";
 import { getOffsetStyle } from "@/lib/positioning";
 import { servicesStyles } from "@/styles/servicesStyles";
 
@@ -251,17 +247,6 @@ export function PackageCard({
   onPreselectedPrintIdsChange?: (ids: string[]) => void;
 }) {
   if (!pkg) return null;
-  const { enabled: inlineEditEnabled } = useInlineEditMode();
-  const utils = trpc.useUtils();
-  const updatePackageMutation = trpc.packages.update.useMutation({
-    onSuccess: () => {
-      utils.packages.getAll.invalidate();
-      toast.success("تم تحديث الباقة");
-    },
-    onError: (error) => toast.error(error.message),
-  });
-  const numericId = Number(pkg.id);
-  const canInlineEditPackage = inlineEditEnabled && Number.isFinite(numericId);
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
   const isAddon = kind === "addon";
@@ -372,25 +357,6 @@ export function PackageCard({
     ) : (
       <Camera className="w-9 h-9 text-primary" />
     );
-
-  const handleAddFeatureLine = () => {
-    if (!canInlineEditPackage || updatePackageMutation.isPending) return;
-    const newLine = window.prompt("اكتب السطر الجديد", "سطر جديد");
-    if (!newLine) return;
-    updatePackageMutation.mutate({
-      id: numericId,
-      features: [...featureList, newLine],
-    });
-  };
-
-  const nudgePackage = (dx: number, dy: number) => {
-    if (!canInlineEditPackage || updatePackageMutation.isPending) return;
-    updatePackageMutation.mutate({
-      id: numericId,
-      offsetX: (pkg.offsetX ?? 0) + dx,
-      offsetY: (pkg.offsetY ?? 0) + dy,
-    });
-  };
 
   const waInquiryText = getValue("services_whatsapp_inquiry_text", "حابب استفسر ❤️");
   const waInquiryHref = buildWhatsAppHref(waInquiryText, whatsappNumber);
