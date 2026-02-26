@@ -3142,7 +3142,7 @@ function LiveEditor() {
                 معاينة الموقع
               </CardTitle>
               <CardDescription>
-                اضغط على أي نص داخل المعاينة للتعديل المباشر، ثم احفظ من لوحة التحرير.
+                استخدم أيقونة التعديل التي تظهر بجانب العناصر لتحديث النصوص والصور.
               </CardDescription>
             </div>
             <Badge variant="secondary" className="w-fit">
