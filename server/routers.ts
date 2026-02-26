@@ -37,10 +37,19 @@ export const appRouter = router({
 
   // Admin Access (Username/Password)
   adminAccess: router({
-    status: publicProcedure.query(({ ctx }) => {
+    status: publicProcedure.query(async ({ ctx }) => {
+      let expiresAt = ctx.adminExpiresAt;
+      if (ctx.adminAccess && ctx.adminExpiresAt) {
+        const remainingMs = ctx.adminExpiresAt.getTime() - Date.now();
+        if (remainingMs < 5 * 60 * 1000) {
+          const nextSession = await createAdminSession();
+          setAdminSessionCookie(ctx.req, ctx.res, nextSession.token);
+          expiresAt = nextSession.expiresAt;
+        }
+      }
       return {
         authenticated: ctx.adminAccess,
-        expiresAt: ctx.adminExpiresAt ? ctx.adminExpiresAt.toISOString() : null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
         loginDisabled: ENV.adminLoginDisabled,
         envIssues: ENV.adminEnvIssues,
       };

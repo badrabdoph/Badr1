@@ -55,6 +55,7 @@ import {
   Heart,
   Receipt,
   PlusCircle,
+  RotateCcw,
   ArrowUp,
   ArrowDown,
   ArrowLeft,
@@ -68,7 +69,7 @@ import {
   weddingPackages,
   additionalServices,
 } from "@/config/siteConfig";
-import { useEditHistory, type EditAction } from "@/lib/editHistory";
+import { pushEdit, useEditHistory, type EditAction } from "@/lib/editHistory";
 import { PackageCard } from "@/pages/Services";
 import { servicesStyles } from "@/styles/servicesStyles";
 import { parseContentValue, serializeContentValue } from "@/lib/contentMeta";
@@ -688,7 +689,15 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => deleteMutation.mutate({ id: image.id })}
+              onClick={() =>
+                requestConfirm({
+                  title: "حذف الصورة",
+                  description: `هل تريد حذف صورة "${image.title}" نهائيًا؟`,
+                  confirmLabel: "حذف",
+                  cancelLabel: "إلغاء",
+                  onConfirm: () => deleteMutation.mutate({ id: image.id }),
+                })
+              }
             >
               حذف
             </Button>
@@ -963,30 +972,55 @@ function AboutManager({ onRefresh }: ManagerProps) {
 
   const handleSave = async (key: string, label: string) => {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const nextValue = serializeContentValue({
+      text: editingContent[key] || "",
+      hidden: editingMeta[key]?.hidden,
+      scale: editingMeta[key]?.scale,
+    });
+    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
     await upsertContentMutation.mutateAsync({
       key,
-      value: serializeContentValue({
-        text: editingContent[key] || "",
-        hidden: editingMeta[key]?.hidden,
-        scale: editingMeta[key]?.scale,
-      }),
+      value: nextValue,
       category: "about",
       label,
       offsetX: pos.offsetX,
       offsetY: pos.offsetY,
     });
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "siteContent",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        category: "about",
+        label,
+      });
+    }
   };
 
   const handleSaveImage = async (key: string, label: string) => {
     const pos = editingImagePositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const prevUrl = (images ?? []).find((item) => item.key === key)?.url ?? "";
+    const nextUrl = editingImages[key] || "";
     await upsertImageMutation.mutateAsync({
       key,
-      url: editingImages[key] || "",
+      url: nextUrl,
       alt: label,
       category: "about",
       offsetX: pos.offsetX,
       offsetY: pos.offsetY,
     });
+    if (prevUrl !== nextUrl) {
+      pushEdit({
+        kind: "siteImage",
+        key,
+        prevUrl,
+        nextUrl,
+        alt: label,
+        category: "about",
+        label,
+      });
+    }
   };
 
   const groups = [
@@ -1230,21 +1264,49 @@ function ContentManager({ onRefresh }: ManagerProps) {
 
   const handleSave = async (key: string, category: string, label?: string) => {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const nextValue = serializeContentValue({
+      text: editingContent[key] || "",
+      hidden: editingMeta[key]?.hidden,
+      scale: editingMeta[key]?.scale,
+    });
+    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
     await upsertMutation.mutateAsync({
       key,
-      value: serializeContentValue({
-        text: editingContent[key] || "",
-        hidden: editingMeta[key]?.hidden,
-        scale: editingMeta[key]?.scale,
-      }),
+      value: nextValue,
       category,
       label,
       offsetX: pos.offsetX,
       offsetY: pos.offsetY,
     });
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "siteContent",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        category,
+        label: label ?? key,
+      });
+    }
   };
 
   const [searchTerm, setSearchTerm] = useState("");
+  const handleCopyKey = async (key: string) => {
+    try {
+      if (!navigator?.clipboard) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(key);
+      toast.success("تم نسخ المفتاح");
+    } catch {
+      toast.error("تعذر نسخ المفتاح");
+    }
+  };
+
+  const handleResetToDefault = (key: string) => {
+    const fallback = catalog.fallbackMap[key] ?? "";
+    setEditingContent((prev) => ({ ...prev, [key]: fallback }));
+  };
 
   const categoryOrder = [
     "home",
@@ -1365,6 +1427,26 @@ function ContentManager({ onRefresh }: ManagerProps) {
                       <div className="flex items-center gap-2 text-sm">
                         <Label>{item.label}</Label>
                         <span className="text-xs text-muted-foreground">{item.key}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="نسخ المفتاح"
+                          onClick={() => handleCopyKey(item.key)}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="استرجاع النص الافتراضي"
+                          onClick={() => handleResetToDefault(item.key)}
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </Button>
                         {editingMeta[item.key]?.hidden ? (
                           <Badge variant="outline" className="text-[10px]">
                             مخفي
@@ -1456,6 +1538,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     category: "session",
     features: "",
   });
+  const [packageSearch, setPackageSearch] = useState("");
+  const [packageCategoryFilter, setPackageCategoryFilter] = useState("all");
   const [seedBusy, setSeedBusy] = useState(false);
   const seedAttempted = useRef(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1482,12 +1566,20 @@ function PackagesManager({ onRefresh }: ManagerProps) {
       toast.error("يرجى إدخال اسم الباقة والسعر");
       return;
     }
+    const maxSort = (packages ?? [])
+      .filter((pkg: any) => (pkg?.category ?? "session") === newPackage.category)
+      .reduce((acc, pkg: any) => {
+        const value = Number(pkg?.sortOrder) || 0;
+        return value > acc ? value : acc;
+      }, 0);
+    const nextSort = maxSort + 1;
     await createMutation.mutateAsync({
       name: newPackage.name,
       price: newPackage.price,
       description: newPackage.description,
       category: newPackage.category,
       features: newPackage.features.split("\n").filter(Boolean),
+      sortOrder: nextSort,
     });
   };
 
@@ -1618,6 +1710,29 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     prints: sortByOrder(hiddenPackages.filter((pkg) => pkg.category === "prints")),
   };
 
+  const normalizedPackageSearch = packageSearch.trim().toLowerCase();
+  const matchesPackageSearch = (pkg: any) => {
+    if (!normalizedPackageSearch) return true;
+    const haystack = `${pkg.name ?? ""} ${pkg.price ?? ""} ${pkg.description ?? ""}`.toLowerCase();
+    return haystack.includes(normalizedPackageSearch);
+  };
+  const activeCategories =
+    packageCategoryFilter === "all"
+      ? categoryOrder
+      : categoryOrder.filter((cat) => cat.id === packageCategoryFilter);
+  const visibleListForCategory = (categoryId: string) =>
+    ((visibleByCategory as any)[categoryId] ?? []).filter(matchesPackageSearch);
+  const hiddenListForCategory = (categoryId: string) =>
+    ((hiddenByCategory as any)[categoryId] ?? []).filter(matchesPackageSearch);
+  const visibleFilteredCount = activeCategories.reduce(
+    (sum, cat) => sum + visibleListForCategory(cat.id).length,
+    0
+  );
+  const hiddenFilteredCount = activeCategories.reduce(
+    (sum, cat) => sum + hiddenListForCategory(cat.id).length,
+    0
+  );
+
   const togglePackageVisibility = async (pkgId: number, visible: boolean) => {
     await updateMutation.mutateAsync({ id: pkgId, visible });
   };
@@ -1689,7 +1804,15 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             <Button
               size="sm"
               variant="destructive"
-              onClick={() => deleteMutation.mutate({ id: pkg.id })}
+              onClick={() =>
+                requestConfirm({
+                  title: "حذف الباقة",
+                  description: `هل تريد حذف الباقة "${pkg.name}" نهائيًا؟`,
+                  confirmLabel: "حذف",
+                  cancelLabel: "إلغاء",
+                  onConfirm: () => deleteMutation.mutate({ id: pkg.id }),
+                })
+              }
             >
               حذف
             </Button>
@@ -1981,8 +2104,32 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <CardDescription>عدّل الباقات مباشرة، أو غيّر الترتيب والظهور.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={packageSearch}
+              onChange={(e) => setPackageSearch(e.target.value)}
+              placeholder="ابحث بالاسم أو السعر..."
+              className="max-w-sm"
+            />
+            <Select value={packageCategoryFilter} onValueChange={setPackageCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="كل الأقسام" />
+              </SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="all">كل الأقسام</SelectItem>
+                <SelectItem value="session">جلسات التصوير</SelectItem>
+                <SelectItem value="wedding">Full Day</SelectItem>
+                <SelectItem value="addon">إضافات</SelectItem>
+                <SelectItem value="prints">المطبوعات</SelectItem>
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary" className="text-xs">
+              {visibleFilteredCount} نتيجة
+            </Badge>
+          </div>
           {categoryOrder.map((category) => {
-            const list = (visibleByCategory as any)[category.id] ?? [];
+            if (!activeCategories.find((item) => item.id === category.id)) return null;
+            const list = visibleListForCategory(category.id);
             return (
               <div key={category.id} className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -2002,11 +2149,13 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             );
           })}
 
-          {visiblePackages.length === 0 && (
+          {visibleFilteredCount === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>لا توجد باقات بعد</p>
-              <p className="text-xs mt-2">سيتم تجهيز الباقات الافتراضية تلقائياً.</p>
+              <p>{normalizedPackageSearch ? "لا توجد نتائج مطابقة للبحث" : "لا توجد باقات بعد"}</p>
+              {!normalizedPackageSearch && (
+                <p className="text-xs mt-2">سيتم تجهيز الباقات الافتراضية تلقائياً.</p>
+              )}
             </div>
           )}
         </CardContent>
@@ -2021,8 +2170,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           <CardDescription>يمكنك استعادة أي باقة مخفية بضغطة واحدة.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {categoryOrder.map((category) => {
-            const list = (hiddenByCategory as any)[category.id] ?? [];
+          {activeCategories.map((category) => {
+            const list = hiddenListForCategory(category.id);
             if (!list.length) return null;
             return (
               <div key={category.id} className="space-y-4">
@@ -2035,10 +2184,10 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             );
           })}
 
-          {hiddenPackages.length === 0 && (
+          {hiddenFilteredCount === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p>لا توجد باقات مخفية</p>
+              <p>{normalizedPackageSearch ? "لا توجد نتائج مطابقة للبحث" : "لا توجد باقات مخفية"}</p>
             </div>
           )}
         </CardContent>
@@ -2137,7 +2286,15 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => deleteMutation.mutate({ id: testimonial.id })}
+                onClick={() =>
+                  requestConfirm({
+                    title: "حذف الرأي",
+                    description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
+                    confirmLabel: "حذف",
+                    cancelLabel: "إلغاء",
+                    onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
+                  })
+                }
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
@@ -2166,7 +2323,15 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => deleteMutation.mutate({ id: testimonial.id })}
+                onClick={() =>
+                  requestConfirm({
+                    title: "حذف الرأي",
+                    description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
+                    confirmLabel: "حذف",
+                    cancelLabel: "إلغاء",
+                    onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
+                  })
+                }
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
@@ -2337,31 +2502,54 @@ function ContactManager({ onRefresh }: ManagerProps) {
   }, [content]);
 
   const handleSaveContact = async (key: string, label: string) => {
+    const nextValue = serializeContentValue({
+      text: editingContact[key] || "",
+      hidden: editingContactMeta[key]?.hidden,
+      scale: editingContactMeta[key]?.scale,
+    });
+    const prevValue = (contactInfo ?? []).find((item) => item.key === key)?.value ?? "";
     await upsertContactMutation.mutateAsync({
       key,
-      value: serializeContentValue({
-        text: editingContact[key] || "",
-        hidden: editingContactMeta[key]?.hidden,
-        scale: editingContactMeta[key]?.scale,
-      }),
+      value: nextValue,
       label,
     });
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "contactInfo",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        label,
+      });
+    }
   };
 
   const handleSaveContent = async (key: string, label: string) => {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const nextValue = serializeContentValue({
+      text: editingContent[key] || "",
+      hidden: editingMeta[key]?.hidden,
+      scale: editingMeta[key]?.scale,
+    });
+    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
     await upsertContentMutation.mutateAsync({
       key,
-      value: serializeContentValue({
-        text: editingContent[key] || "",
-        hidden: editingMeta[key]?.hidden,
-        scale: editingMeta[key]?.scale,
-      }),
+      value: nextValue,
       category: "contact",
       label,
       offsetX: pos.offsetX,
       offsetY: pos.offsetY,
     });
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "siteContent",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        category: "contact",
+        label,
+      });
+    }
   };
 
   const focusContactField = (key: string) => {
@@ -3217,7 +3405,10 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
 // Live Editor Component
 // ============================================
 function LiveEditor() {
-  const [activeSection, setActiveSection] = useState("links");
+  const [activeSection, setActiveSection] = useState(() => {
+    if (typeof window === "undefined") return "content";
+    return window.sessionStorage.getItem("adminActiveSection") ?? "content";
+  });
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
   const {
@@ -3239,7 +3430,7 @@ function LiveEditor() {
     onSuccess: () => utils.siteImages.getAll.invalidate(),
   });
 
-  const refreshPreview = () => {
+  const refreshPreview = (showToast = false) => {
     if (typeof window === "undefined") return;
     const stamp = String(Date.now());
     window.localStorage.setItem("siteContentUpdatedAt", stamp);
@@ -3248,6 +3439,7 @@ function LiveEditor() {
     window.localStorage.setItem("siteContactUpdatedAt", stamp);
     window.localStorage.setItem("siteTestimonialsUpdatedAt", stamp);
     window.localStorage.setItem("sitePortfolioUpdatedAt", stamp);
+    if (showToast) toast.success("تم تحديث المزامنة");
   };
 
   const applyAction = async (action: EditAction, direction: "undo" | "redo") => {
@@ -3317,18 +3509,18 @@ function LiveEditor() {
 
   const sections = [
     {
-      id: "links",
-      title: "الروابط المؤقتة",
-      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
-      icon: Link2,
-      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
-    },
-    {
       id: "content",
       title: "تعديل النصوص",
       description: "كل نصوص الموقع في خانات قابلة للتعديل والحفظ.",
       icon: Pencil,
       render: () => <ContentManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "about",
+      title: "صفحة من أنا",
+      description: "تعديل نصوص وصور صفحة من أنا.",
+      icon: Camera,
+      render: () => <AboutManager onRefresh={refreshPreview} />,
     },
     {
       id: "packages",
@@ -3338,11 +3530,11 @@ function LiveEditor() {
       render: () => <PackagesManager onRefresh={refreshPreview} />,
     },
     {
-      id: "contact",
-      title: "بيانات التواصل",
-      description: "أرقام التواصل وروابط السوشيال.",
-      icon: Phone,
-      render: () => <ContactManager onRefresh={refreshPreview} />,
+      id: "portfolio",
+      title: "المعرض",
+      description: "إدارة صور المعرض وترتيبها.",
+      icon: Image,
+      render: () => <PortfolioManager onRefresh={refreshPreview} />,
     },
     {
       id: "testimonials",
@@ -3351,9 +3543,34 @@ function LiveEditor() {
       icon: MessageSquare,
       render: () => <TestimonialsManager onRefresh={refreshPreview} />,
     },
+    {
+      id: "contact",
+      title: "بيانات التواصل",
+      description: "أرقام التواصل وروابط السوشيال.",
+      icon: Phone,
+      render: () => <ContactManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "links",
+      title: "الروابط المؤقتة",
+      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
+      icon: Link2,
+      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
+    },
   ];
 
   const active = sections.find((section) => section.id === activeSection) ?? sections[0];
+
+  useEffect(() => {
+    if (!sections.find((section) => section.id === activeSection)) {
+      setActiveSection(sections[0].id);
+    }
+  }, [activeSection, sections]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem("adminActiveSection", active.id);
+  }, [active.id]);
 
   return (
     <div className="space-y-6">
@@ -3381,7 +3598,7 @@ function LiveEditor() {
             <Redo2 className="w-4 h-4 ml-2" />
             تقدم
           </Button>
-          <Button variant="secondary" size="sm" onClick={refreshPreview}>
+          <Button variant="secondary" size="sm" onClick={() => refreshPreview(true)}>
             <Monitor className="w-4 h-4 ml-2" />
             تحديث المزامنة
           </Button>

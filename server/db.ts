@@ -225,15 +225,25 @@ export async function getAllSiteContent() {
   if (useFileStore) return await listLocalSiteContent();
   const db = await getDb();
   if (!db) return await listLocalSiteContent();
-  return await db.select().from(siteContent);
+  try {
+    return await db.select().from(siteContent);
+  } catch (error) {
+    console.warn("[Database] Failed to load site content, falling back to file store:", error);
+    return await listLocalSiteContent();
+  }
 }
 
 export async function getSiteContentByKey(key: string) {
   if (useFileStore) return await getLocalSiteContentByKey(key);
   const db = await getDb();
   if (!db) return await getLocalSiteContentByKey(key);
-  const result = await db.select().from(siteContent).where(eq(siteContent.key, key)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(siteContent).where(eq(siteContent.key, key)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load site content item, falling back to file store:", error);
+    return await getLocalSiteContentByKey(key);
+  }
 }
 
 export async function upsertSiteContent(data: InsertSiteContent & Positionable) {
@@ -241,20 +251,29 @@ export async function upsertSiteContent(data: InsertSiteContent & Positionable) 
   const db = await getDb();
   if (!db) return await upsertLocalSiteContent(data);
 
-  const dbData = stripPositionFields(data);
-  await db.insert(siteContent).values(dbData).onDuplicateKeyUpdate({
-    set: { value: data.value, label: data.label, category: data.category },
-  });
-  
-  return await getSiteContentByKey(data.key);
+  try {
+    const dbData = stripPositionFields(data);
+    await db.insert(siteContent).values(dbData).onDuplicateKeyUpdate({
+      set: { value: data.value, label: data.label, category: data.category },
+    });
+    return await getSiteContentByKey(data.key);
+  } catch (error) {
+    console.warn("[Database] Failed to upsert site content, falling back to file store:", error);
+    return await upsertLocalSiteContent(data);
+  }
 }
 
 export async function deleteSiteContent(key: string) {
   if (useFileStore) return await deleteLocalSiteContent(key);
   const db = await getDb();
   if (!db) return await deleteLocalSiteContent(key);
-  await db.delete(siteContent).where(eq(siteContent.key, key));
-  return true;
+  try {
+    await db.delete(siteContent).where(eq(siteContent.key, key));
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to delete site content, falling back to file store:", error);
+    return await deleteLocalSiteContent(key);
+  }
 }
 
 // ============================================
@@ -265,15 +284,25 @@ export async function getAllSiteImages() {
   if (useFileStore) return await listFileSiteImages();
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(siteImages).orderBy(asc(siteImages.sortOrder));
+  try {
+    return await db.select().from(siteImages).orderBy(asc(siteImages.sortOrder));
+  } catch (error) {
+    console.warn("[Database] Failed to load site images, falling back to file store:", error);
+    return await listFileSiteImages();
+  }
 }
 
 export async function getSiteImageByKey(key: string) {
   if (useFileStore) return await getFileSiteImageByKey(key);
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(siteImages).where(eq(siteImages.key, key)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(siteImages).where(eq(siteImages.key, key)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load site image, falling back to file store:", error);
+    return await getFileSiteImageByKey(key);
+  }
 }
 
 export async function upsertSiteImage(data: InsertSiteImage & Positionable) {
@@ -281,20 +310,29 @@ export async function upsertSiteImage(data: InsertSiteImage & Positionable) {
   const db = await getDb();
   if (!db) return null;
 
-  const dbData = stripPositionFields(data);
-  await db.insert(siteImages).values(dbData).onDuplicateKeyUpdate({
-    set: { url: data.url, alt: data.alt, category: data.category, sortOrder: data.sortOrder },
-  });
-  
-  return await getSiteImageByKey(data.key);
+  try {
+    const dbData = stripPositionFields(data);
+    await db.insert(siteImages).values(dbData).onDuplicateKeyUpdate({
+      set: { url: data.url, alt: data.alt, category: data.category, sortOrder: data.sortOrder },
+    });
+    return await getSiteImageByKey(data.key);
+  } catch (error) {
+    console.warn("[Database] Failed to upsert site image, falling back to file store:", error);
+    return await upsertFileSiteImage(data);
+  }
 }
 
 export async function deleteSiteImage(key: string) {
   if (useFileStore) return await deleteFileSiteImage(key);
   const db = await getDb();
   if (!db) return false;
-  await db.delete(siteImages).where(eq(siteImages.key, key));
-  return true;
+  try {
+    await db.delete(siteImages).where(eq(siteImages.key, key));
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to delete site image, falling back to file store:", error);
+    return await deleteFileSiteImage(key);
+  }
 }
 
 // ============================================
@@ -436,15 +474,25 @@ export async function getAllPortfolioImages() {
   if (useFileStore) return await listFilePortfolioImages();
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(portfolioImages).orderBy(asc(portfolioImages.sortOrder));
+  try {
+    return await db.select().from(portfolioImages).orderBy(asc(portfolioImages.sortOrder));
+  } catch (error) {
+    console.warn("[Database] Failed to load portfolio images, falling back to file store:", error);
+    return await listFilePortfolioImages();
+  }
 }
 
 export async function getPortfolioImageById(id: number) {
   if (useFileStore) return await getFilePortfolioImageById(id);
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(portfolioImages).where(eq(portfolioImages.id, id)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(portfolioImages).where(eq(portfolioImages.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load portfolio image, falling back to file store:", error);
+    return await getFilePortfolioImageById(id);
+  }
 }
 
 export async function createPortfolioImage(data: InsertPortfolioImage & Positionable) {
@@ -452,10 +500,15 @@ export async function createPortfolioImage(data: InsertPortfolioImage & Position
   const db = await getDb();
   if (!db) return null;
 
-  const dbData = stripPositionFields(data);
-  const result = await db.insert(portfolioImages).values(dbData);
-  const insertId = result[0].insertId;
-  return await getPortfolioImageById(insertId);
+  try {
+    const dbData = stripPositionFields(data);
+    const result = await db.insert(portfolioImages).values(dbData);
+    const insertId = result[0].insertId;
+    return await getPortfolioImageById(insertId);
+  } catch (error) {
+    console.warn("[Database] Failed to create portfolio image, falling back to file store:", error);
+    return await createFilePortfolioImage(data);
+  }
 }
 
 export async function updatePortfolioImage(
@@ -466,17 +519,27 @@ export async function updatePortfolioImage(
   const db = await getDb();
   if (!db) return null;
 
-  const dbData = stripPositionFields(data);
-  await db.update(portfolioImages).set(dbData).where(eq(portfolioImages.id, id));
-  return await getPortfolioImageById(id);
+  try {
+    const dbData = stripPositionFields(data);
+    await db.update(portfolioImages).set(dbData).where(eq(portfolioImages.id, id));
+    return await getPortfolioImageById(id);
+  } catch (error) {
+    console.warn("[Database] Failed to update portfolio image, falling back to file store:", error);
+    return await updateFilePortfolioImage(id, data);
+  }
 }
 
 export async function deletePortfolioImage(id: number) {
   if (useFileStore) return await deleteFilePortfolioImage(id);
   const db = await getDb();
   if (!db) return false;
-  await db.delete(portfolioImages).where(eq(portfolioImages.id, id));
-  return true;
+  try {
+    await db.delete(portfolioImages).where(eq(portfolioImages.id, id));
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to delete portfolio image, falling back to file store:", error);
+    return await deleteFilePortfolioImage(id);
+  }
 }
 
 // ============================================
@@ -487,15 +550,25 @@ export async function getAllSiteSections() {
   if (useFileStore) return await listFileSiteSections();
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(siteSections).orderBy(asc(siteSections.sortOrder));
+  try {
+    return await db.select().from(siteSections).orderBy(asc(siteSections.sortOrder));
+  } catch (error) {
+    console.warn("[Database] Failed to load site sections, falling back to file store:", error);
+    return await listFileSiteSections();
+  }
 }
 
 export async function getSiteSectionByKey(key: string) {
   if (useFileStore) return await getFileSiteSectionByKey(key);
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(siteSections).where(eq(siteSections.key, key)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(siteSections).where(eq(siteSections.key, key)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load site section, falling back to file store:", error);
+    return await getFileSiteSectionByKey(key);
+  }
 }
 
 export async function upsertSiteSection(data: InsertSiteSection) {
@@ -503,11 +576,15 @@ export async function upsertSiteSection(data: InsertSiteSection) {
   const db = await getDb();
   if (!db) return null;
   
-  await db.insert(siteSections).values(data).onDuplicateKeyUpdate({
-    set: { name: data.name, visible: data.visible, sortOrder: data.sortOrder, page: data.page },
-  });
-  
-  return await getSiteSectionByKey(data.key);
+  try {
+    await db.insert(siteSections).values(data).onDuplicateKeyUpdate({
+      set: { name: data.name, visible: data.visible, sortOrder: data.sortOrder, page: data.page },
+    });
+    return await getSiteSectionByKey(data.key);
+  } catch (error) {
+    console.warn("[Database] Failed to upsert site section, falling back to file store:", error);
+    return await upsertFileSiteSection(data);
+  }
 }
 
 export async function updateSiteSectionVisibility(key: string, visible: boolean) {
@@ -515,8 +592,13 @@ export async function updateSiteSectionVisibility(key: string, visible: boolean)
   const db = await getDb();
   if (!db) return null;
   
-  await db.update(siteSections).set({ visible }).where(eq(siteSections.key, key));
-  return await getSiteSectionByKey(key);
+  try {
+    await db.update(siteSections).set({ visible }).where(eq(siteSections.key, key));
+    return await getSiteSectionByKey(key);
+  } catch (error) {
+    console.warn("[Database] Failed to update site section, falling back to file store:", error);
+    return await updateFileSiteSectionVisibility(key, visible);
+  }
 }
 
 // ============================================
@@ -661,15 +743,25 @@ export async function getAllTestimonials() {
   if (useFileStore) return await listFileTestimonials();
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
+  try {
+    return await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
+  } catch (error) {
+    console.warn("[Database] Failed to load testimonials, falling back to file store:", error);
+    return await listFileTestimonials();
+  }
 }
 
 export async function getTestimonialById(id: number) {
   if (useFileStore) return await getFileTestimonialById(id);
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(testimonials).where(eq(testimonials.id, id)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(testimonials).where(eq(testimonials.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load testimonial, falling back to file store:", error);
+    return await getFileTestimonialById(id);
+  }
 }
 
 export async function createTestimonial(data: InsertTestimonial & Positionable) {
@@ -677,10 +769,15 @@ export async function createTestimonial(data: InsertTestimonial & Positionable) 
   const db = await getDb();
   if (!db) return null;
 
-  const dbData = stripPositionFields(data);
-  const result = await db.insert(testimonials).values(dbData);
-  const insertId = result[0].insertId;
-  return await getTestimonialById(insertId);
+  try {
+    const dbData = stripPositionFields(data);
+    const result = await db.insert(testimonials).values(dbData);
+    const insertId = result[0].insertId;
+    return await getTestimonialById(insertId);
+  } catch (error) {
+    console.warn("[Database] Failed to create testimonial, falling back to file store:", error);
+    return await createFileTestimonial(data);
+  }
 }
 
 export async function updateTestimonial(
@@ -691,17 +788,27 @@ export async function updateTestimonial(
   const db = await getDb();
   if (!db) return null;
 
-  const dbData = stripPositionFields(data);
-  await db.update(testimonials).set(dbData).where(eq(testimonials.id, id));
-  return await getTestimonialById(id);
+  try {
+    const dbData = stripPositionFields(data);
+    await db.update(testimonials).set(dbData).where(eq(testimonials.id, id));
+    return await getTestimonialById(id);
+  } catch (error) {
+    console.warn("[Database] Failed to update testimonial, falling back to file store:", error);
+    return await updateFileTestimonial(id, data);
+  }
 }
 
 export async function deleteTestimonial(id: number) {
   if (useFileStore) return await deleteFileTestimonial(id);
   const db = await getDb();
   if (!db) return false;
-  await db.delete(testimonials).where(eq(testimonials.id, id));
-  return true;
+  try {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
+    return true;
+  } catch (error) {
+    console.warn("[Database] Failed to delete testimonial, falling back to file store:", error);
+    return await deleteFileTestimonial(id);
+  }
 }
 
 // ============================================
@@ -712,15 +819,25 @@ export async function getAllContactInfo() {
   if (useFileStore) return await listFileContactInfo();
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(contactInfo);
+  try {
+    return await db.select().from(contactInfo);
+  } catch (error) {
+    console.warn("[Database] Failed to load contact info, falling back to file store:", error);
+    return await listFileContactInfo();
+  }
 }
 
 export async function getContactInfoByKey(key: string) {
   if (useFileStore) return await getFileContactInfoByKey(key);
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(contactInfo).where(eq(contactInfo.key, key)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  try {
+    const result = await db.select().from(contactInfo).where(eq(contactInfo.key, key)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.warn("[Database] Failed to load contact info item, falling back to file store:", error);
+    return await getFileContactInfoByKey(key);
+  }
 }
 
 export async function upsertContactInfo(data: InsertContactInfo) {
@@ -728,9 +845,13 @@ export async function upsertContactInfo(data: InsertContactInfo) {
   const db = await getDb();
   if (!db) return null;
   
-  await db.insert(contactInfo).values(data).onDuplicateKeyUpdate({
-    set: { value: data.value, label: data.label },
-  });
-  
-  return await getContactInfoByKey(data.key);
+  try {
+    await db.insert(contactInfo).values(data).onDuplicateKeyUpdate({
+      set: { value: data.value, label: data.label },
+    });
+    return await getContactInfoByKey(data.key);
+  } catch (error) {
+    console.warn("[Database] Failed to upsert contact info, falling back to file store:", error);
+    return await upsertFileContactInfo(data);
+  }
 }

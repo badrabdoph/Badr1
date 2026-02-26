@@ -149,6 +149,10 @@
     -webkit-touch-callout: none;
   }
 
+  li[data-edit-hidden="true"] {
+    display: none;
+  }
+
 
   /* ✨ Modern cinematic grain + subtle glow (premium look) */
   body::before {

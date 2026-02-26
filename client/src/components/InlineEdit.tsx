@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ElementType,
   type KeyboardEvent,
@@ -163,6 +164,8 @@ export function useInlineEditMode() {
   const statusQuery = trpc.adminAccess.status.useQuery(undefined, {
     enabled: isPreview,
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 
   return {
@@ -202,6 +205,28 @@ function useContentEntries() {
   }, [data]);
 }
 
+function useContactEntries() {
+  const { data } = trpc.contactInfo.getAll.useQuery(undefined, {
+    staleTime: 60_000,
+  });
+
+  return useMemo(() => {
+    const out: Record<string, ContentEntry> = {};
+    (data ?? []).forEach((item: any) => {
+      const parsed = parseContentValue(item.value);
+      out[item.key] = {
+        text: parsed.text,
+        raw: parsed.raw,
+        hidden: parsed.hidden,
+        scale: parsed.scale,
+        offsetX: 0,
+        offsetY: 0,
+      };
+    });
+    return out;
+  }, [data]);
+}
+
 function useSiteImagePositions() {
   const { data } = trpc.siteImages.getAll.useQuery(undefined, {
     staleTime: 60_000,
@@ -235,6 +260,7 @@ export function EditableText({
 }: EditableTextProps) {
   const { enabled } = useInlineEditMode();
   const utils = trpc.useUtils();
+  const anchorRef = useRef<HTMLElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [textTouched, setTextTouched] = useState(false);
@@ -261,6 +287,22 @@ export function EditableText({
   const displayValue = entryText || fallback || "";
   const showPlaceholder = !entryText && !!placeholder;
   const rawValue = entry?.raw ?? serializeContentValue({ text: entryText, hidden: isHidden, scale: scaleValue });
+  const shouldHide = isHidden && !isEditing;
+
+  useEffect(() => {
+    const element = anchorRef.current;
+    if (!element) return;
+    const li = element.closest("li");
+    if (!li) return;
+    if (shouldHide) {
+      li.setAttribute("data-edit-hidden", "true");
+    } else {
+      li.removeAttribute("data-edit-hidden");
+    }
+    return () => {
+      li.removeAttribute("data-edit-hidden");
+    };
+  }, [shouldHide]);
 
   useEffect(() => {
     if (isEditing) return;
@@ -372,6 +414,7 @@ export function EditableText({
   };
 
   const Tag = as ?? "span";
+  const tagProps = typeof Tag === "string" ? { ref: anchorRef } : {};
 
   const clampScale = (value: number) => Math.max(0.6, Math.min(2, value));
 
@@ -437,12 +480,17 @@ export function EditableText({
   const textStyle =
     scaleValue && scaleValue !== 1 ? { fontSize: `${scaleValue}em` } : undefined;
 
-  if (isHidden && !enabled && !isEditing) {
-    return null;
-  }
-
   return (
-    <Tag className={cn("relative group", className)} style={positionStyle}>
+    <Tag
+      {...(tagProps as any)}
+      className={cn(
+        "relative group",
+        enabled ? "cursor-text" : "",
+        shouldHide ? "hidden" : "",
+        className
+      )}
+      style={positionStyle}
+    >
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -623,12 +671,7 @@ export function EditableText({
           )}
         </div>
       ) : (
-        <span
-          className={cn(
-            "inline-flex max-w-full flex-wrap items-center gap-2 align-baseline",
-            enabled ? "cursor-text" : ""
-          )}
-        >
+        <>
           {!isHidden ? (
             <span
               className={cn(
@@ -652,8 +695,11 @@ export function EditableText({
               )}
             </span>
           ) : null}
-          {enabled ? (
-            <span className="relative inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          {enabled && !isHidden ? (
+            <span
+              className="absolute top-1/2 z-20 inline-flex -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              style={{ right: "100%", marginRight: "0.5rem" }}
+            >
               <button
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
@@ -754,7 +800,7 @@ export function EditableText({
               ) : null}
             </span>
           ) : null}
-        </span>
+        </>
       )}
       <ConfirmDialog />
     </Tag>
@@ -784,16 +830,39 @@ export function EditableContactText({
 }: EditableContactTextProps) {
   const { enabled } = useInlineEditMode();
   const utils = trpc.useUtils();
+  const anchorRef = useRef<HTMLElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
+  const contactEntries = useContactEntries();
+  const entry = contactEntries[fieldKey];
 
   const parsedValue = parseContentValue(value ?? "");
-  const normalizedValue = parsedValue.text;
-  const isHidden = parsedValue.hidden;
-  const rawValue = parsedValue.raw;
+  const normalizedValue = entry?.text ?? parsedValue.text;
+  const isHidden = entry?.hidden ?? parsedValue.hidden;
+  const rawValue = entry?.raw ?? parsedValue.raw;
+  const scaleValue =
+    typeof entry?.scale === "number" ? entry.scale : parsedValue.scale ?? 1;
   const displayValue = normalizedValue || fallback || "";
   const showPlaceholder = !normalizedValue && !!placeholder;
+  const shouldHide = isHidden && !isEditing;
+  const textStyle =
+    scaleValue && scaleValue !== 1 ? { fontSize: `${scaleValue}em` } : undefined;
+
+  useEffect(() => {
+    const element = anchorRef.current;
+    if (!element) return;
+    const li = element.closest("li");
+    if (!li) return;
+    if (shouldHide) {
+      li.setAttribute("data-edit-hidden", "true");
+    } else {
+      li.removeAttribute("data-edit-hidden");
+    }
+    return () => {
+      li.removeAttribute("data-edit-hidden");
+    };
+  }, [shouldHide]);
 
   useEffect(() => {
     if (isEditing) return;
@@ -837,7 +906,7 @@ export function EditableContactText({
       onConfirm: () => {
         upsertMutation.mutate({
           key: fieldKey,
-          value: serializeContentValue({ text: draft, hidden: isHidden }),
+          value: serializeContentValue({ text: draft, hidden: isHidden, scale: scaleValue }),
           label,
         });
       },
@@ -854,7 +923,11 @@ export function EditableContactText({
       onConfirm: () => {
         upsertMutation.mutate({
           key: fieldKey,
-          value: serializeContentValue({ text: normalizedValue, hidden: !isHidden }),
+          value: serializeContentValue({
+            text: normalizedValue,
+            hidden: !isHidden,
+            scale: scaleValue,
+          }),
           label,
         });
       },
@@ -882,12 +955,16 @@ export function EditableContactText({
     }
   };
 
-  if (isHidden && !enabled && !isEditing) {
-    return null;
-  }
-
   return (
-    <span className={cn("relative group", className)}>
+    <span
+      ref={anchorRef as any}
+      className={cn(
+        "relative group",
+        enabled ? "cursor-text" : "",
+        shouldHide ? "hidden" : "",
+        className
+      )}
+    >
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -922,12 +999,7 @@ export function EditableContactText({
           </div>
         </div>
       ) : (
-        <span
-          className={cn(
-            "inline-flex max-w-full flex-wrap items-center gap-2 align-baseline",
-            enabled ? "cursor-text" : ""
-          )}
-        >
+        <>
           {!isHidden ? (
             <span
               className={cn(
@@ -938,12 +1010,16 @@ export function EditableContactText({
                   : "",
                 displayClassName
               )}
+              style={textStyle}
             >
               {displayValue || placeholder || ""}
             </span>
           ) : null}
-          {enabled ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          {enabled && !isHidden ? (
+            <span
+              className="absolute top-1/2 z-20 inline-flex -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              style={{ right: "100%", marginRight: "0.5rem" }}
+            >
               <button
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
@@ -967,7 +1043,7 @@ export function EditableContactText({
               </button>
             </span>
           ) : null}
-        </span>
+        </>
       )}
       <ConfirmDialog />
     </span>
