@@ -26,8 +26,6 @@ import {
   Check,
   Loader2,
   Pencil,
-  Trash2,
-  EyeOff,
   X,
   Image as ImageIcon,
   Upload,
@@ -230,11 +228,17 @@ export function EditableText({
       }
     : undefined;
 
+<<<<<<< ours
   const hasValue = value !== undefined && value !== null;
   const normalizedValue = hasValue ? value : "";
   const displayValue = hasValue ? normalizedValue : fallback || "";
   const showPlaceholder = !hasValue && !displayValue && !!placeholder;
   const isEmptyValue = displayValue === "";
+=======
+  const normalizedValue = value ?? "";
+  const displayValue = normalizedValue || fallback || "";
+  const showPlaceholder = !normalizedValue && !!placeholder;
+>>>>>>> theirs
 
   useEffect(() => {
     if (isEditing) return;
@@ -273,18 +277,9 @@ export function EditableText({
     onError: (error) => toast.error(error.message),
   });
 
-  const deleteMutation = trpc.siteContent.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف التعديل");
-      utils.siteContent.getAll.invalidate();
-      setIsEditing(false);
-    },
-    onError: (error) => toast.error(error.message),
-  });
-
   const startEditing = () => {
     if (!enabled) return;
-    setDraft(hasValue ? normalizedValue : fallback || "");
+    setDraft(normalizedValue || fallback || "");
     setTextTouched(false);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
@@ -344,50 +339,10 @@ export function EditableText({
     }
   };
 
-  const handleHide = () => {
-    if (!enabled || upsertMutation.isPending) return;
-    requestConfirm({
-      title: "إخفاء النص",
-      description: "سيتم إخفاء النص من الموقع حتى تعيد إظهاره.",
-      confirmLabel: "إخفاء",
-      onConfirm: () => {
-        upsertMutation.mutate({
-          key: fieldKey,
-          value: "",
-          category,
-          label,
-          offsetX: position?.offsetX ?? 0,
-          offsetY: position?.offsetY ?? 0,
-        });
-      },
-    });
-  };
-
-  const handleReset = () => {
-    if (!enabled || deleteMutation.isPending) return;
-    requestConfirm({
-      title: "حذف التعديل",
-      description: "سيتم الرجوع للنص الافتراضي.",
-      confirmLabel: "حذف التعديل",
-      onConfirm: () => {
-        deleteMutation.mutate({ key: fieldKey });
-      },
-    });
-  };
-
   const Tag = as ?? "span";
 
   return (
-    <Tag
-      className={cn(
-        "relative",
-        enabled
-          ? "group rounded-md outline outline-1 outline-dashed outline-transparent transition hover:outline-primary/40"
-          : "",
-        className
-      )}
-      style={positionStyle}
-    >
+    <Tag className={cn("relative", className)}>
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -534,6 +489,7 @@ export function EditableText({
           )}
         </div>
       ) : (
+<<<<<<< ours
         <>
           <span
             className={cn(
@@ -606,13 +562,42 @@ export function EditableText({
                 <Trash2 className="w-3 h-3" />
               </button>
             </div>
+=======
+        <span
+          className={cn(
+            "inline-block",
+            showPlaceholder ? "text-muted-foreground" : "text-inherit",
+            enabled
+              ? "group cursor-text rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
+              : "",
+            displayClassName
           )}
-          {enabled && isEmptyValue ? (
-            <span className="absolute -bottom-6 right-0 rounded-full border border-dashed border-primary/40 px-2 py-0.5 text-[10px] text-primary/80">
-              مخفي
+          style={positionStyle}
+          onClick={(event) => {
+            if (enabled) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+            startEditing();
+          }}
+        >
+          {normalizedValue ? (
+            <span className="whitespace-pre-line">{normalizedValue}</span>
+          ) : fallbackNode ? (
+            fallbackNode
+          ) : displayValue ? (
+            <span className="whitespace-pre-line">{displayValue}</span>
+          ) : (
+            placeholder ?? ""
+>>>>>>> theirs
+          )}
+          {enabled && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
+              <Pencil className="w-3 h-3" />
+              تعديل
             </span>
-          ) : null}
-        </>
+          )}
+        </span>
       )}
       <ConfirmDialog />
     </Tag>
@@ -646,10 +631,9 @@ export function EditableContactText({
   const [draft, setDraft] = useState("");
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
 
-  const hasValue = value !== undefined && value !== null;
-  const normalizedValue = hasValue ? value : "";
-  const displayValue = hasValue ? normalizedValue : fallback || "";
-  const showPlaceholder = !hasValue && !displayValue && !!placeholder;
+  const normalizedValue = value ?? "";
+  const displayValue = normalizedValue || fallback || "";
+  const showPlaceholder = !normalizedValue && !!placeholder;
 
   useEffect(() => {
     if (isEditing) return;
@@ -679,22 +663,6 @@ export function EditableContactText({
     },
     onError: (error) => toast.error(error.message),
   });
-
-  const handleHide = () => {
-    if (!enabled || upsertMutation.isPending) return;
-    requestConfirm({
-      title: "إخفاء النص",
-      description: "سيتم إخفاء النص من الموقع حتى تعيد إظهاره.",
-      confirmLabel: "إخفاء",
-      onConfirm: () => {
-        upsertMutation.mutate({
-          key: fieldKey,
-          value: "",
-          label,
-        });
-      },
-    });
-  };
 
   const handleSave = () => {
     if (!enabled || upsertMutation.isPending) return;
@@ -735,15 +703,7 @@ export function EditableContactText({
   };
 
   return (
-    <span
-      className={cn(
-        "relative",
-        enabled
-          ? "group rounded-md outline outline-1 outline-dashed outline-transparent transition hover:outline-primary/40"
-          : "",
-        className
-      )}
-    >
+    <span className={cn("relative", className)}>
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -778,6 +738,7 @@ export function EditableContactText({
           </div>
         </div>
       ) : (
+<<<<<<< ours
         <>
           <span
             className={cn(
@@ -787,38 +748,33 @@ export function EditableContactText({
           >
             {displayValue || placeholder || ""}
           </span>
-          {enabled && (
-            <div className="absolute -top-7 right-0 z-20 flex items-center gap-1 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setIsEditing(true);
-                  setDraft(hasValue ? normalizedValue : fallback || "");
-                }}
-                title="تعديل"
-                aria-label={`تعديل ${label}`}
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 hover:text-primary"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleHide();
-                }}
-                title="إخفاء"
-                aria-label={`إخفاء ${label}`}
-              >
-                <EyeOff className="w-3 h-3" />
-              </button>
-            </div>
+=======
+        <span
+          className={cn(
+            "inline-flex items-center gap-2",
+            showPlaceholder ? "text-muted-foreground" : "text-inherit",
+            enabled
+              ? "group cursor-text rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
+              : "",
+            displayClassName
           )}
-        </>
+          onClick={(event) => {
+            if (!enabled) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setIsEditing(true);
+            setDraft(normalizedValue || fallback || "");
+          }}
+        >
+          {displayValue || placeholder || ""}
+>>>>>>> theirs
+          {enabled && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
+              <Pencil className="w-3 h-3" />
+              تعديل
+            </span>
+          )}
+        </span>
       )}
       <ConfirmDialog />
     </span>
@@ -956,25 +912,17 @@ export function EditableLinkIcon({
           if (!canEdit) return;
           event.preventDefault();
           event.stopPropagation();
+          setIsEditing(true);
+          setDraft(displayValue);
         }}
       >
         {children}
       </a>
       {canEdit && !showEditButton && (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsEditing(true);
-            setDraft(displayValue);
-          }}
-          className="absolute -top-2 -right-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[10px] text-white opacity-0 transition group-hover:opacity-100"
-          aria-label={`تعديل ${label}`}
-        >
+        <span className="absolute -top-2 -right-2 flex items-center gap-1 rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
           <Pencil className="w-3 h-3" />
           تعديل
-        </button>
+        </span>
       )}
       {canEdit && showEditButton && (
         <button
