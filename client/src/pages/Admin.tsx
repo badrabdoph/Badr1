@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,7 @@ import {
 import { useEditHistory, type EditAction } from "@/lib/editHistory";
 import { PackageCard } from "@/pages/Services";
 import { servicesStyles } from "@/styles/servicesStyles";
+import { parseContentValue, serializeContentValue } from "@/lib/contentMeta";
 
 export default function Admin() {
   const utils = trpc.useUtils();
@@ -914,6 +915,7 @@ function AboutManager({ onRefresh }: ManagerProps) {
   const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
+  const [editingMeta, setEditingMeta] = useState<Record<string, { hidden?: boolean; scale?: number }>>({});
   const [editingImages, setEditingImages] = useState<Record<string, string>>({});
   const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
   const [editingImagePositions, setEditingImagePositions] = useState<Record<string, PositionValue>>({});
@@ -921,15 +923,19 @@ function AboutManager({ onRefresh }: ManagerProps) {
   useEffect(() => {
     if (content) {
       const map: Record<string, string> = {};
+      const meta: Record<string, { hidden?: boolean; scale?: number }> = {};
       const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
-        map[item.key] = item.value;
+        const parsed = parseContentValue(item.value);
+        map[item.key] = parsed.text;
+        meta[item.key] = { hidden: parsed.hidden, scale: parsed.scale };
         positions[item.key] = {
           offsetX: toOffset((item as any).offsetX),
           offsetY: toOffset((item as any).offsetY),
         };
       });
       setEditingContent(map);
+      setEditingMeta(meta);
       setEditingPositions(positions);
     }
   }, [content]);
@@ -954,7 +960,11 @@ function AboutManager({ onRefresh }: ManagerProps) {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertContentMutation.mutateAsync({
       key,
-      value: editingContent[key] || "",
+      value: serializeContentValue({
+        text: editingContent[key] || "",
+        hidden: editingMeta[key]?.hidden,
+        scale: editingMeta[key]?.scale,
+      }),
       category: "about",
       label,
       offsetX: pos.offsetX,
@@ -1167,20 +1177,25 @@ function ContentManager({ onRefresh }: ManagerProps) {
   const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
+  const [editingMeta, setEditingMeta] = useState<Record<string, { hidden?: boolean; scale?: number }>>({});
   const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
 
   useEffect(() => {
     if (content) {
       const contentMap: Record<string, string> = {};
+      const meta: Record<string, { hidden?: boolean; scale?: number }> = {};
       const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
-        contentMap[item.key] = item.value;
+        const parsed = parseContentValue(item.value);
+        contentMap[item.key] = parsed.text;
+        meta[item.key] = { hidden: parsed.hidden, scale: parsed.scale };
         positions[item.key] = {
           offsetX: toOffset((item as any).offsetX),
           offsetY: toOffset((item as any).offsetY),
         };
       });
       setEditingContent(contentMap);
+      setEditingMeta(meta);
       setEditingPositions(positions);
     }
   }, [content]);
@@ -1189,7 +1204,11 @@ function ContentManager({ onRefresh }: ManagerProps) {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertMutation.mutateAsync({
       key,
-      value: editingContent[key] || "",
+      value: serializeContentValue({
+        text: editingContent[key] || "",
+        hidden: editingMeta[key]?.hidden,
+        scale: editingMeta[key]?.scale,
+      }),
       category,
       label,
       offsetX: pos.offsetX,
@@ -1197,17 +1216,64 @@ function ContentManager({ onRefresh }: ManagerProps) {
     });
   };
 
-  // Default content structure
-  const defaultContent = [
-    { key: "hero_title", label: "عنوان الصفحة الرئيسية", category: "home" },
-    { key: "hero_subtitle", label: "العنوان الفرعي", category: "home" },
-    { key: "hero_description", label: "الوصف", category: "home" },
-    { key: "about_subtitle", label: "العنوان الفرعي (من أنا)", category: "about" },
-    { key: "about_title", label: "عنوان صفحة من أنا", category: "about" },
-    { key: "about_description", label: "وصف صفحة من أنا", category: "about" },
-    { key: "cta_title", label: "عنوان قسم الدعوة للتواصل", category: "cta" },
-    { key: "cta_description", label: "وصف قسم الدعوة للتواصل", category: "cta" },
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const categoryOrder = [
+    "home",
+    "services",
+    "about",
+    "contact",
+    "portfolio",
+    "cta",
+    "nav",
+    "footer",
+    "shared",
   ];
+  const categoryLabels: Record<string, string> = {
+    home: "الصفحة الرئيسية",
+    services: "صفحة الخدمات",
+    about: "صفحة من أنا",
+    contact: "صفحة التواصل",
+    portfolio: "صفحة الأعمال",
+    cta: "الدعوة للتواصل",
+    nav: "القائمة العلوية",
+    footer: "التذييل",
+    shared: "نصوص عامة",
+  };
+
+  const items = useMemo(() => {
+    return (content ?? []).map((item: any) => ({
+      key: item.key,
+      label: item.label ?? item.key,
+      category: item.category ?? "shared",
+    }));
+  }, [content]);
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredItems = items.filter((item) => {
+    if (!normalizedSearch) return true;
+    return (
+      item.key.toLowerCase().includes(normalizedSearch) ||
+      item.label.toLowerCase().includes(normalizedSearch)
+    );
+  });
+
+  const groupedItems = useMemo(() => {
+    const buckets: Record<string, typeof filteredItems> = {};
+    filteredItems.forEach((item) => {
+      if (!buckets[item.category]) buckets[item.category] = [];
+      buckets[item.category].push(item);
+    });
+    const extra = Object.keys(buckets).filter((key) => !categoryOrder.includes(key)).sort();
+    const ordered = [...categoryOrder, ...extra];
+    return ordered
+      .filter((key) => buckets[key]?.length)
+      .map((key) => ({
+        key,
+        label: categoryLabels[key] ?? key,
+        items: buckets[key].sort((a, b) => a.label.localeCompare(b.label, "ar")),
+      }));
+  }, [filteredItems, categoryOrder, categoryLabels]);
 
   if (isLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
@@ -1218,43 +1284,81 @@ function ContentManager({ onRefresh }: ManagerProps) {
       <Card>
         <CardHeader>
           <CardTitle>تعديل النصوص</CardTitle>
-          <CardDescription>قم بتعديل نصوص الموقع مباشرة</CardDescription>
+          <CardDescription>كل نصوص الموقع المسجلة في خانات قابلة للتعديل والحفظ.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {defaultContent.map((item) => (
-            <div key={item.key} className="space-y-2">
-              <Label>{item.label}</Label>
-              <div className="flex gap-2">
-                <Textarea
-                  value={editingContent[item.key] || ""}
-                  onChange={(e) => setEditingContent({ ...editingContent, [item.key]: e.target.value })}
-                  placeholder={item.label}
-                  rows={2}
-                />
-                <Button
-                  size="icon"
-                  onClick={() => handleSave(item.key, item.category, item.label)}
-                  disabled={upsertMutation.isPending}
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
-              <PositionControls
-                value={editingPositions[item.key] ?? { offsetX: 0, offsetY: 0 }}
-                onChange={(next) =>
-                  setEditingPositions((prev) => ({ ...prev, [item.key]: next }))
-                }
-                onSave={() =>
-                  requestConfirm({
-                    title: "تأكيد حفظ الموضع",
-                    description: `حفظ موضع "${item.label}"؟`,
-                    onConfirm: () => handleSave(item.key, item.category, item.label),
-                  })
-                }
-                disabled={upsertMutation.isPending}
-              />
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ابحث بالاسم أو المفتاح..."
+              className="max-w-sm"
+            />
+            <Badge variant="secondary" className="text-xs">
+              {filteredItems.length} نص
+            </Badge>
+          </div>
+
+          {groupedItems.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              لا توجد نصوص مطابقة للبحث الحالي.
             </div>
-          ))}
+          ) : (
+            groupedItems.map((group) => (
+              <div key={group.key} className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold">{group.label}</h4>
+                  <Separator className="flex-1" />
+                </div>
+                <div className="space-y-4">
+                  {group.items.map((item) => (
+                    <div key={item.key} className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Label>{item.label}</Label>
+                        <span className="text-xs text-muted-foreground">{item.key}</span>
+                        {editingMeta[item.key]?.hidden ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            مخفي
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex gap-2">
+                        <Textarea
+                          value={editingContent[item.key] || ""}
+                          onChange={(e) =>
+                            setEditingContent({ ...editingContent, [item.key]: e.target.value })
+                          }
+                          placeholder={item.label}
+                          rows={2}
+                        />
+                        <Button
+                          size="icon"
+                          onClick={() => handleSave(item.key, item.category, item.label)}
+                          disabled={upsertMutation.isPending}
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <PositionControls
+                        value={editingPositions[item.key] ?? { offsetX: 0, offsetY: 0 }}
+                        onChange={(next) =>
+                          setEditingPositions((prev) => ({ ...prev, [item.key]: next }))
+                        }
+                        onSave={() =>
+                          requestConfirm({
+                            title: "تأكيد حفظ الموضع",
+                            description: `حفظ موضع "${item.label}"؟`,
+                            onConfirm: () => handleSave(item.key, item.category, item.label),
+                          })
+                        }
+                        disabled={upsertMutation.isPending}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -1432,7 +1536,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
   }
 
   const contentMap = (content ?? []).reduce<Record<string, string>>((acc, item: any) => {
-    acc[item.key] = item.value;
+    const parsed = parseContentValue(item.value);
+    acc[item.key] = parsed.hidden ? "" : parsed.text;
     return acc;
   }, {});
   const categoryLabel: Record<string, string> = {
@@ -1443,12 +1548,26 @@ function PackagesManager({ onRefresh }: ManagerProps) {
   };
   const visiblePackages = (packages ?? []).filter((pkg) => pkg.visible !== false);
   const hiddenPackages = (packages ?? []).filter((pkg) => pkg.visible === false);
-  const sortedVisiblePackages = [...visiblePackages].sort(
-    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)
-  );
-  const sortedHiddenPackages = [...hiddenPackages].sort(
-    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)
-  );
+  const sortByOrder = (list: any[]) =>
+    [...list].sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0));
+  const categoryOrder = [
+    { id: "session", label: categoryLabel.session },
+    { id: "wedding", label: categoryLabel.wedding },
+    { id: "addon", label: categoryLabel.addon },
+    { id: "prints", label: categoryLabel.prints },
+  ];
+  const visibleByCategory = {
+    session: sortByOrder(visiblePackages.filter((pkg) => pkg.category === "session")),
+    wedding: sortByOrder(visiblePackages.filter((pkg) => pkg.category === "wedding")),
+    addon: sortByOrder(visiblePackages.filter((pkg) => pkg.category === "addon")),
+    prints: sortByOrder(visiblePackages.filter((pkg) => pkg.category === "prints")),
+  };
+  const hiddenByCategory = {
+    session: sortByOrder(hiddenPackages.filter((pkg) => pkg.category === "session")),
+    wedding: sortByOrder(hiddenPackages.filter((pkg) => pkg.category === "wedding")),
+    addon: sortByOrder(hiddenPackages.filter((pkg) => pkg.category === "addon")),
+    prints: sortByOrder(hiddenPackages.filter((pkg) => pkg.category === "prints")),
+  };
 
   const togglePackageVisibility = async (pkgId: number, visible: boolean) => {
     await updateMutation.mutateAsync({ id: pkgId, visible });
@@ -1812,10 +1931,29 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           </CardTitle>
           <CardDescription>عدّل الباقات مباشرة، أو غيّر الترتيب والظهور.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {sortedVisiblePackages.map(renderPackageCard)}
+        <CardContent className="space-y-6">
+          {categoryOrder.map((category) => {
+            const list = (visibleByCategory as any)[category.id] ?? [];
+            return (
+              <div key={category.id} className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold">{category.label}</h4>
+                  <Separator className="flex-1" />
+                </div>
+                <div className="space-y-4">
+                  {list.length > 0 ? (
+                    list.map(renderPackageCard)
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      لا توجد باقات في هذا القسم حالياً.
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-          {sortedVisiblePackages.length === 0 && (
+          {visiblePackages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>لا توجد باقات بعد</p>
@@ -1833,10 +1971,22 @@ function PackagesManager({ onRefresh }: ManagerProps) {
           </CardTitle>
           <CardDescription>يمكنك استعادة أي باقة مخفية بضغطة واحدة.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {sortedHiddenPackages.length > 0 ? (
-            sortedHiddenPackages.map(renderPackageCard)
-          ) : (
+        <CardContent className="space-y-6">
+          {categoryOrder.map((category) => {
+            const list = (hiddenByCategory as any)[category.id] ?? [];
+            if (!list.length) return null;
+            return (
+              <div key={category.id} className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-semibold">{category.label}</h4>
+                  <Separator className="flex-1" />
+                </div>
+                <div className="space-y-4">{list.map(renderPackageCard)}</div>
+              </div>
+            );
+          })}
+
+          {hiddenPackages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
               <p>لا توجد باقات مخفية</p>
@@ -2098,31 +2248,41 @@ function ContactManager({ onRefresh }: ManagerProps) {
   });
 
   const [editingContact, setEditingContact] = useState<Record<string, string>>({});
+  const [editingContactMeta, setEditingContactMeta] = useState<Record<string, { hidden?: boolean; scale?: number }>>({});
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
+  const [editingMeta, setEditingMeta] = useState<Record<string, { hidden?: boolean; scale?: number }>>({});
   const [editingPositions, setEditingPositions] = useState<Record<string, PositionValue>>({});
 
   useEffect(() => {
     if (contactInfo) {
       const contactMap: Record<string, string> = {};
+      const meta: Record<string, { hidden?: boolean; scale?: number }> = {};
       contactInfo.forEach((item) => {
-        contactMap[item.key] = item.value;
+        const parsed = parseContentValue(item.value);
+        contactMap[item.key] = parsed.text;
+        meta[item.key] = { hidden: parsed.hidden, scale: parsed.scale };
       });
       setEditingContact(contactMap);
+      setEditingContactMeta(meta);
     }
   }, [contactInfo]);
 
   useEffect(() => {
     if (content) {
       const contentMap: Record<string, string> = {};
+      const meta: Record<string, { hidden?: boolean; scale?: number }> = {};
       const positions: Record<string, PositionValue> = {};
       content.forEach((item) => {
-        contentMap[item.key] = item.value;
+        const parsed = parseContentValue(item.value);
+        contentMap[item.key] = parsed.text;
+        meta[item.key] = { hidden: parsed.hidden, scale: parsed.scale };
         positions[item.key] = {
           offsetX: toOffset((item as any).offsetX),
           offsetY: toOffset((item as any).offsetY),
         };
       });
       setEditingContent(contentMap);
+      setEditingMeta(meta);
       setEditingPositions(positions);
     }
   }, [content]);
@@ -2130,7 +2290,11 @@ function ContactManager({ onRefresh }: ManagerProps) {
   const handleSaveContact = async (key: string, label: string) => {
     await upsertContactMutation.mutateAsync({
       key,
-      value: editingContact[key] || "",
+      value: serializeContentValue({
+        text: editingContact[key] || "",
+        hidden: editingContactMeta[key]?.hidden,
+        scale: editingContactMeta[key]?.scale,
+      }),
       label,
     });
   };
@@ -2139,7 +2303,11 @@ function ContactManager({ onRefresh }: ManagerProps) {
     const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
     await upsertContentMutation.mutateAsync({
       key,
-      value: editingContent[key] || "",
+      value: serializeContentValue({
+        text: editingContent[key] || "",
+        hidden: editingMeta[key]?.hidden,
+        scale: editingMeta[key]?.scale,
+      }),
       category: "contact",
       label,
       offsetX: pos.offsetX,
@@ -3001,7 +3169,6 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
 // ============================================
 function LiveEditor() {
   const [activeSection, setActiveSection] = useState("links");
-  const [previewKey, setPreviewKey] = useState(0);
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
   const {
@@ -3024,7 +3191,14 @@ function LiveEditor() {
   });
 
   const refreshPreview = () => {
-    setPreviewKey((prev) => prev + 1);
+    if (typeof window === "undefined") return;
+    const stamp = String(Date.now());
+    window.localStorage.setItem("siteContentUpdatedAt", stamp);
+    window.localStorage.setItem("siteImagesUpdatedAt", stamp);
+    window.localStorage.setItem("sitePackagesUpdatedAt", stamp);
+    window.localStorage.setItem("siteContactUpdatedAt", stamp);
+    window.localStorage.setItem("siteTestimonialsUpdatedAt", stamp);
+    window.localStorage.setItem("sitePortfolioUpdatedAt", stamp);
   };
 
   const applyAction = async (action: EditAction, direction: "undo" | "redo") => {
@@ -3101,6 +3275,13 @@ function LiveEditor() {
       render: () => <ShareLinksManager onRefresh={refreshPreview} />,
     },
     {
+      id: "content",
+      title: "تعديل النصوص",
+      description: "كل نصوص الموقع في خانات قابلة للتعديل والحفظ.",
+      icon: Pencil,
+      render: () => <ContentManager onRefresh={refreshPreview} />,
+    },
+    {
       id: "packages",
       title: "الباقات",
       description: "إضافة الباقات وتعديل تفاصيلها وترتيبها.",
@@ -3115,52 +3296,11 @@ function LiveEditor() {
       render: () => <ContactManager onRefresh={refreshPreview} />,
     },
     {
-      id: "sections",
-      title: "إدارة الأقسام",
-      description: "إظهار أو إخفاء أقسام الصفحة الرئيسية.",
-      icon: Move,
-      render: () => <SectionsManager onRefresh={refreshPreview} />,
-    },
-    {
       id: "testimonials",
       title: "آراء العملاء",
       description: "إضافة وحذف الآراء والتحكم في ظهورها.",
       icon: MessageSquare,
       render: () => <TestimonialsManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "preview",
-      title: "المعاينة",
-      description: "عدّل وشاهد الموقع مباشرة مع معاينة مدمجة.",
-      icon: Monitor,
-      render: () => (
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Monitor className="w-5 h-5" />
-                معاينة الموقع
-              </CardTitle>
-              <CardDescription>
-                اضغط على أي نص داخل المعاينة للتعديل المباشر، ثم احفظ من لوحة التحرير.
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" className="w-fit">
-              Live Preview
-            </Badge>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="relative border-t border-border">
-              <iframe
-                key={previewKey}
-                src="/?adminPreview=1"
-                title="Site Live Preview"
-                className="w-full h-[70vh] md:h-[78vh] bg-background"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ),
     },
   ];
 
@@ -3173,44 +3313,35 @@ function LiveEditor() {
           <h2 className="text-2xl font-semibold">{active.title}</h2>
           <p className="text-sm text-muted-foreground">{active.description}</p>
         </div>
-        {active.id === "preview" ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUndo}
-              disabled={!canUndo || historyBusy}
-            >
-              <Undo2 className="w-4 h-4 ml-2" />
-              رجوع
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRedo}
-              disabled={!canRedo || historyBusy}
-            >
-              <Redo2 className="w-4 h-4 ml-2" />
-              تقدم
-            </Button>
-            <Button variant="secondary" size="sm" onClick={refreshPreview}>
-              <Monitor className="w-4 h-4 ml-2" />
-              تحديث المعاينة
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
-                صفحه التعديلا
-              </a>
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={refreshPreview}>
-              <Monitor className="w-4 h-4 ml-2" />
-              تحديث المعاينة
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUndo}
+            disabled={!canUndo || historyBusy}
+          >
+            <Undo2 className="w-4 h-4 ml-2" />
+            رجوع
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRedo}
+            disabled={!canRedo || historyBusy}
+          >
+            <Redo2 className="w-4 h-4 ml-2" />
+            تقدم
+          </Button>
+          <Button variant="secondary" size="sm" onClick={refreshPreview}>
+            <Monitor className="w-4 h-4 ml-2" />
+            تحديث المزامنة
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
+              صفحة التعديلات
+            </a>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
@@ -3238,6 +3369,12 @@ function LiveEditor() {
                 </Button>
               );
             })}
+            <Button variant="outline" className="w-full justify-start gap-2" asChild>
+              <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
+                <Monitor className="w-4 h-4" />
+                صفحة التعديلات
+              </a>
+            </Button>
           </CardContent>
         </Card>
 

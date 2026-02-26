@@ -27,6 +27,12 @@ import {
   Loader2,
   Pencil,
   X,
+  Eye,
+  EyeOff,
+  Plus,
+  Minus,
+  Type,
+  RotateCcw,
   Image as ImageIcon,
   Upload,
   ArrowUp,
@@ -36,6 +42,7 @@ import {
   Move,
 } from "lucide-react";
 import { pushEdit } from "@/lib/editHistory";
+import { parseContentValue, serializeContentValue } from "@/lib/contentMeta";
 
 type ConfirmState = {
   open: boolean;
@@ -164,15 +171,29 @@ export function useInlineEditMode() {
   };
 }
 
-function useContentPositions() {
+type ContentEntry = {
+  text: string;
+  raw: string;
+  hidden: boolean;
+  scale?: number;
+  offsetX: number;
+  offsetY: number;
+};
+
+function useContentEntries() {
   const { data } = trpc.siteContent.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
 
   return useMemo(() => {
-    const out: Record<string, { offsetX: number; offsetY: number }> = {};
+    const out: Record<string, ContentEntry> = {};
     (data ?? []).forEach((item: any) => {
+      const parsed = parseContentValue(item.value);
       out[item.key] = {
+        text: parsed.text,
+        raw: parsed.raw,
+        hidden: parsed.hidden,
+        scale: parsed.scale,
         offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
         offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
       };
@@ -218,9 +239,16 @@ export function EditableText({
   const [draft, setDraft] = useState("");
   const [textTouched, setTextTouched] = useState(false);
   const [offsetDraft, setOffsetDraft] = useState({ offsetX: 0, offsetY: 0 });
+  const [scaleDraft, setScaleDraft] = useState(1);
+  const [showMoveTools, setShowMoveTools] = useState(false);
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
-  const contentPositions = useContentPositions();
-  const position = contentPositions[fieldKey];
+  const contentEntries = useContentEntries();
+  const entry = contentEntries[fieldKey];
+  const position = entry
+    ? { offsetX: entry.offsetX, offsetY: entry.offsetY }
+    : undefined;
+  const isHidden = entry?.hidden ?? false;
+  const scaleValue = typeof entry?.scale === "number" ? entry.scale : 1;
   const hasOffset = Boolean(position?.offsetX || position?.offsetY);
   const positionStyle = hasOffset
     ? {
@@ -229,21 +257,25 @@ export function EditableText({
     : undefined;
 
   const normalizedValue = value ?? "";
-  const displayValue = normalizedValue || fallback || "";
-  const showPlaceholder = !normalizedValue && !!placeholder;
+  const entryText = entry?.text ?? normalizedValue;
+  const displayValue = entryText || fallback || "";
+  const showPlaceholder = !entryText && !!placeholder;
+  const rawValue = entry?.raw ?? serializeContentValue({ text: entryText, hidden: isHidden, scale: scaleValue });
 
   useEffect(() => {
     if (isEditing) return;
-    setDraft(normalizedValue);
+    setDraft(entryText);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
       offsetY: position?.offsetY ?? 0,
     });
-  }, [normalizedValue, position, isEditing]);
+    setScaleDraft(scaleValue || 1);
+    setShowMoveTools(false);
+  }, [entryText, position, scaleValue, isEditing]);
 
   const upsertMutation = trpc.siteContent.upsert.useMutation({
     onMutate: (input) => {
-      const prev = normalizedValue ?? "";
+      const prev = rawValue;
       return {
         action: {
           kind: "siteContent" as const,
@@ -271,22 +303,25 @@ export function EditableText({
 
   const startEditing = () => {
     if (!enabled) return;
-    setDraft(normalizedValue || fallback || "");
+    setDraft(entryText || fallback || "");
     setTextTouched(false);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
       offsetY: position?.offsetY ?? 0,
     });
+    setScaleDraft(scaleValue || 1);
+    setShowMoveTools(false);
     setIsEditing(true);
   };
 
   const handleSave = () => {
     if (!enabled || upsertMutation.isPending) return;
-    const textChanged = textTouched && draft !== normalizedValue;
+    const textChanged = textTouched && draft !== entryText;
     const offsetChanged =
       offsetDraft.offsetX !== (position?.offsetX ?? 0) ||
       offsetDraft.offsetY !== (position?.offsetY ?? 0);
-    if (!textChanged && !offsetChanged) {
+    const scaleChanged = Math.abs(scaleDraft - scaleValue) > 0.001;
+    if (!textChanged && !offsetChanged && !scaleChanged) {
       setIsEditing(false);
       return;
     }
@@ -294,7 +329,11 @@ export function EditableText({
       onConfirm: () => {
         upsertMutation.mutate({
           key: fieldKey,
-          value: textChanged ? draft : normalizedValue,
+          value: serializeContentValue({
+            text: textChanged ? draft : entryText,
+            hidden: isHidden,
+            scale: scaleDraft,
+          }),
           category,
           label,
           offsetX: offsetDraft.offsetX,
@@ -305,12 +344,13 @@ export function EditableText({
   };
 
   const handleCancel = () => {
-    setDraft(normalizedValue);
+    setDraft(entryText);
     setTextTouched(false);
     setOffsetDraft({
       offsetX: position?.offsetX ?? 0,
       offsetY: position?.offsetY ?? 0,
     });
+    setScaleDraft(scaleValue || 1);
     setIsEditing(false);
   };
 
@@ -333,8 +373,76 @@ export function EditableText({
 
   const Tag = as ?? "span";
 
+  const clampScale = (value: number) => Math.max(0.6, Math.min(2, value));
+
+  const persistMeta = (next: {
+    text?: string;
+    hidden?: boolean;
+    scale?: number;
+    offsetX?: number;
+    offsetY?: number;
+  }) => {
+    if (!enabled || upsertMutation.isPending) return;
+    const nextText = next.text ?? entryText;
+    const nextHidden = next.hidden ?? isHidden;
+    const nextScale = typeof next.scale === "number" ? next.scale : scaleValue;
+    const nextOffsetX =
+      typeof next.offsetX === "number" ? next.offsetX : (position?.offsetX ?? 0);
+    const nextOffsetY =
+      typeof next.offsetY === "number" ? next.offsetY : (position?.offsetY ?? 0);
+    upsertMutation.mutate({
+      key: fieldKey,
+      value: serializeContentValue({
+        text: nextText,
+        hidden: nextHidden,
+        scale: nextScale,
+      }),
+      category,
+      label,
+      offsetX: nextOffsetX,
+      offsetY: nextOffsetY,
+    });
+  };
+
+  const handleToggleHidden = () => {
+    requestConfirm({
+      title: isHidden ? "إظهار النص" : "إخفاء النص",
+      description: isHidden
+        ? "هل تريد إظهار النص المخفي؟"
+        : "سيتم إخفاء هذا النص من الموقع.",
+      confirmLabel: isHidden ? "إظهار" : "إخفاء",
+      onConfirm: () => persistMeta({ hidden: !isHidden }),
+    });
+  };
+
+  const adjustScale = (delta: number) => {
+    const next = clampScale((scaleValue || 1) + delta);
+    persistMeta({ scale: next });
+  };
+
+  const resetScale = () => {
+    persistMeta({ scale: 1 });
+  };
+
+  const nudgePosition = (dx: number, dy: number) => {
+    const nextX = (position?.offsetX ?? 0) + dx;
+    const nextY = (position?.offsetY ?? 0) + dy;
+    persistMeta({ offsetX: nextX, offsetY: nextY });
+  };
+
+  const resetPosition = () => {
+    persistMeta({ offsetX: 0, offsetY: 0 });
+  };
+
+  const textStyle =
+    scaleValue && scaleValue !== 1 ? { fontSize: `${scaleValue}em` } : undefined;
+
+  if (isHidden && !enabled && !isEditing) {
+    return null;
+  }
+
   return (
-    <Tag className={cn("relative", className)}>
+    <Tag className={cn("relative group", className)} style={positionStyle}>
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -474,6 +582,40 @@ export function EditableText({
               </Button>
             </div>
           </div>
+          <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Type className="w-3 h-3" />
+                حجم الخط
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() => setScaleDraft((prev) => clampScale(prev - 0.05))}
+                >
+                  <Minus className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  type="button"
+                  onClick={() => setScaleDraft((prev) => clampScale(prev + 0.05))}
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                onClick={() => setScaleDraft(1)}
+              >
+                تصفير الحجم
+              </Button>
+            </div>
+          </div>
           {multiline && (
             <div className="text-xs text-muted-foreground">
               للحفظ اضغط Ctrl + Enter
@@ -481,40 +623,135 @@ export function EditableText({
           )}
         </div>
       ) : (
-        <span
-          className={cn(
-            "inline-block",
-            showPlaceholder ? "text-muted-foreground" : "text-inherit",
-            enabled
-              ? "group cursor-text rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
-              : "",
-            displayClassName
-          )}
-          style={positionStyle}
-          onClick={(event) => {
-            if (enabled) {
-              event.preventDefault();
-              event.stopPropagation();
-            }
-            startEditing();
-          }}
-        >
-          {normalizedValue ? (
-            <span className="whitespace-pre-line">{normalizedValue}</span>
-          ) : fallbackNode ? (
-            fallbackNode
-          ) : displayValue ? (
-            <span className="whitespace-pre-line">{displayValue}</span>
-          ) : (
-            placeholder ?? ""
-          )}
-          {enabled && (
-            <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
-              <Pencil className="w-3 h-3" />
-              تعديل
+        <>
+          {!isHidden ? (
+            <span
+              className={cn(
+                "inline-block",
+                showPlaceholder ? "text-muted-foreground" : "text-inherit",
+                enabled
+                  ? "rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
+                  : "",
+                displayClassName
+              )}
+              style={textStyle}
+            >
+              {entryText ? (
+                <span className="whitespace-pre-line">{entryText}</span>
+              ) : fallbackNode ? (
+                fallbackNode
+              ) : displayValue ? (
+                <span className="whitespace-pre-line">{displayValue}</span>
+              ) : (
+                placeholder ?? ""
+              )}
             </span>
-          )}
-        </span>
+          ) : null}
+          {enabled ? (
+            <>
+              <div className="absolute -top-3 -right-2 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={startEditing}
+                  title="تعديل"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={handleToggleHidden}
+                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                  disabled={upsertMutation.isPending}
+                >
+                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => adjustScale(-0.05)}
+                  title="تصغير النص"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => adjustScale(0.05)}
+                  title="تكبير النص"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={resetScale}
+                  title="تصفير الحجم"
+                  disabled={upsertMutation.isPending}
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => setShowMoveTools((prev) => !prev)}
+                  title="تحريك"
+                >
+                  <Move className="w-3 h-3" />
+                </button>
+              </div>
+              {showMoveTools ? (
+                <div className="absolute top-full right-0 mt-1 z-20 rounded-lg border border-white/15 bg-black/80 p-2 text-[10px] text-white shadow-lg">
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                      onClick={() => nudgePosition(0, -6)}
+                      title="أعلى"
+                    >
+                      <ArrowUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                      onClick={() => nudgePosition(0, 6)}
+                      title="أسفل"
+                    >
+                      <ArrowDown className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                      onClick={() => nudgePosition(-6, 0)}
+                      title="يسار"
+                    >
+                      <ArrowLeft className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                      onClick={() => nudgePosition(6, 0)}
+                      title="يمين"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-2 w-full rounded-md border border-white/15 px-2 py-1 text-[10px] hover:bg-black/70"
+                    onClick={resetPosition}
+                  >
+                    تصفير الموضع
+                  </button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </>
       )}
       <ConfirmDialog />
     </Tag>
@@ -548,7 +785,10 @@ export function EditableContactText({
   const [draft, setDraft] = useState("");
   const { requestConfirm, ConfirmDialog } = useInlineConfirm();
 
-  const normalizedValue = value ?? "";
+  const parsedValue = parseContentValue(value ?? "");
+  const normalizedValue = parsedValue.text;
+  const isHidden = parsedValue.hidden;
+  const rawValue = parsedValue.raw;
   const displayValue = normalizedValue || fallback || "";
   const showPlaceholder = !normalizedValue && !!placeholder;
 
@@ -559,7 +799,7 @@ export function EditableContactText({
 
   const upsertMutation = trpc.contactInfo.upsert.useMutation({
     onMutate: (input) => {
-      const prev = normalizedValue ?? "";
+      const prev = rawValue;
       return {
         action: {
           kind: "contactInfo" as const,
@@ -576,6 +816,9 @@ export function EditableContactText({
       }
       toast.success("تم حفظ البيانات");
       utils.contactInfo.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("siteContactUpdatedAt", String(Date.now()));
+      }
       setIsEditing(false);
     },
     onError: (error) => toast.error(error.message),
@@ -591,7 +834,24 @@ export function EditableContactText({
       onConfirm: () => {
         upsertMutation.mutate({
           key: fieldKey,
-          value: draft,
+          value: serializeContentValue({ text: draft, hidden: isHidden }),
+          label,
+        });
+      },
+    });
+  };
+
+  const handleToggleHidden = () => {
+    requestConfirm({
+      title: isHidden ? "إظهار النص" : "إخفاء النص",
+      description: isHidden
+        ? "هل تريد إظهار النص المخفي؟"
+        : "سيتم إخفاء هذا النص من الموقع.",
+      confirmLabel: isHidden ? "إظهار" : "إخفاء",
+      onConfirm: () => {
+        upsertMutation.mutate({
+          key: fieldKey,
+          value: serializeContentValue({ text: normalizedValue, hidden: !isHidden }),
           label,
         });
       },
@@ -619,8 +879,12 @@ export function EditableContactText({
     }
   };
 
+  if (isHidden && !enabled && !isEditing) {
+    return null;
+  }
+
   return (
-    <span className={cn("relative", className)}>
+    <span className={cn("relative group", className)}>
       {isEditing ? (
         <div className="space-y-2">
           {multiline ? (
@@ -655,31 +919,47 @@ export function EditableContactText({
           </div>
         </div>
       ) : (
-        <span
-          className={cn(
-            "inline-flex items-center gap-2",
-            showPlaceholder ? "text-muted-foreground" : "text-inherit",
-            enabled
-              ? "group cursor-text rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
-              : "",
-            displayClassName
-          )}
-          onClick={(event) => {
-            if (!enabled) return;
-            event.preventDefault();
-            event.stopPropagation();
-            setIsEditing(true);
-            setDraft(normalizedValue || fallback || "");
-          }}
-        >
-          {displayValue || placeholder || ""}
-          {enabled && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground opacity-0 transition group-hover:opacity-100">
-              <Pencil className="w-3 h-3" />
-              تعديل
+        <>
+          {!isHidden ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-2",
+                showPlaceholder ? "text-muted-foreground" : "text-inherit",
+                enabled
+                  ? "rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
+                  : "",
+                displayClassName
+              )}
+            >
+              {displayValue || placeholder || ""}
             </span>
-          )}
-        </span>
+          ) : null}
+          {enabled ? (
+            <span className="absolute -top-3 -right-2 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={() => {
+                  setIsEditing(true);
+                  setDraft(normalizedValue || fallback || "");
+                }}
+                title="تعديل"
+                disabled={upsertMutation.isPending}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={handleToggleHidden}
+                title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                disabled={upsertMutation.isPending}
+              >
+                {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              </button>
+            </span>
+          ) : null}
+        </>
       )}
       <ConfirmDialog />
     </span>
@@ -719,7 +999,7 @@ export function EditableLinkIcon({
   formatHref,
   target,
   rel,
-  showEditButton = false,
+  showEditButton = true,
   editButtonClassName,
   hideWhenDisabled = false,
   allowEdit = true,
@@ -758,6 +1038,9 @@ export function EditableLinkIcon({
       }
       toast.success("تم تحديث الرابط");
       utils.contactInfo.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("siteContactUpdatedAt", String(Date.now()));
+      }
       setIsEditing(false);
     },
     onError: (error) => toast.error(error.message),
@@ -814,7 +1097,7 @@ export function EditableLinkIcon({
         aria-label={ariaLabel}
         className={linkClassName}
         onClick={(event) => {
-          if (!canEdit) return;
+          if (!canEdit || showEditButton) return;
           event.preventDefault();
           event.stopPropagation();
           setIsEditing(true);
@@ -839,7 +1122,7 @@ export function EditableLinkIcon({
             setDraft(displayValue);
           }}
           className={cn(
-            "inline-flex items-center justify-center rounded-full border border-white/20 bg-black/60 text-white text-[11px] px-2 py-1 hover:bg-black/70 transition",
+            "absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full border border-white/20 bg-black/60 text-white text-[11px] px-2 py-1 opacity-100 md:opacity-0 transition md:group-hover:opacity-100 hover:bg-black/70",
             editButtonClassName
           )}
           aria-label={`تعديل ${label}`}
@@ -943,6 +1226,9 @@ export function EditableImage({
       }
       toast.success("تم تحديث الصورة");
       utils.siteImages.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("siteImagesUpdatedAt", String(Date.now()));
+      }
       setIsEditing(false);
     },
     onError: (error) => toast.error(error.message),
@@ -964,6 +1250,9 @@ export function EditableImage({
       }
       toast.success("تم رفع الصورة");
       utils.siteImages.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("siteImagesUpdatedAt", String(Date.now()));
+      }
       setIsEditing(false);
     },
     onError: (error) => toast.error(error.message),
@@ -1034,7 +1323,7 @@ export function EditableImage({
             setIsEditing((prev) => !prev);
           }}
           className={cn(
-            "absolute top-3 right-3 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100",
+            "absolute top-3 right-3 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white opacity-100 md:opacity-0 transition md:group-hover:opacity-100",
             overlayClassName
           )}
         >

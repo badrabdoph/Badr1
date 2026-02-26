@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { parseContentValue } from "@/lib/contentMeta";
 import {
   additionalServices,
   contactInfo as fallbackContact,
@@ -55,14 +56,26 @@ function normalizePackages(list: PackageLike[]) {
 }
 
 export function useContactData() {
-  const { data } = trpc.contactInfo.getAll.useQuery(undefined, {
+  const { data, refetch } = trpc.contactInfo.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "siteContactUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
 
   const map = useMemo(() => {
     const out: Record<string, string> = {};
     (data ?? []).forEach((item) => {
-      out[item.key] = item.value;
+      const parsed = parseContentValue(item.value);
+      out[item.key] = parsed.hidden ? "" : parsed.text;
     });
     return out;
   }, [data]);
@@ -84,9 +97,20 @@ export function useContactData() {
 }
 
 export function usePackagesData() {
-  const { data } = trpc.packages.getAll.useQuery(undefined, {
+  const { data, refetch } = trpc.packages.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "sitePackagesUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
 
   const fallbackList: PackageLike[] = [
     ...sessionPackages.map((p) => ({ ...p, category: "session" })),
@@ -115,9 +139,20 @@ export function usePackagesData() {
 }
 
 export function useTestimonialsData() {
-  const { data } = trpc.testimonials.getAll.useQuery(undefined, {
+  const { data, refetch } = trpc.testimonials.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "siteTestimonialsUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
 
   const list = useMemo(() => {
     const source = data && data.length ? data : fallbackTestimonials;
@@ -138,9 +173,20 @@ export function useTestimonialsData() {
 }
 
 export function usePortfolioData() {
-  const { data } = trpc.portfolio.getAll.useQuery(undefined, {
+  const { data, refetch } = trpc.portfolio.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "sitePortfolioUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
 
   const gallery = useMemo(() => {
     if (data && data.length) {
@@ -186,7 +232,8 @@ export function useContentData() {
   const map = useMemo(() => {
     const out: Record<string, string> = {};
     (data ?? []).forEach((item) => {
-      out[item.key] = item.value;
+      const parsed = parseContentValue(item.value);
+      out[item.key] = parsed.hidden ? "" : parsed.text;
     });
     return out;
   }, [data]);
@@ -217,9 +264,20 @@ export function useContentData() {
 }
 
 export function useSiteImagesData() {
-  const { data } = trpc.siteImages.getAll.useQuery(undefined, {
+  const { data, refetch } = trpc.siteImages.getAll.useQuery(undefined, {
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "siteImagesUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
 
   const map = useMemo(() => {
     const out: Record<

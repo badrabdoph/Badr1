@@ -11,6 +11,7 @@ import {
   Camera,
   Heart,
   Receipt,
+  Plus,
   PlusCircle,
   ArrowLeft,
   Phone,
@@ -24,9 +25,11 @@ import {
   customPrintGroups,
 } from "@/config/siteConfig";
 import { useContactData, usePackagesData, useContentData } from "@/hooks/useSiteData";
-import { EditableText } from "@/components/InlineEdit";
+import { EditableText, useInlineEditMode } from "@/components/InlineEdit";
 import { getOffsetStyle } from "@/lib/positioning";
 import { servicesStyles } from "@/styles/servicesStyles";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 type Pkg = {
   id: string;
@@ -247,6 +250,18 @@ export function PackageCard({
   onPreselectedPrintIdsChange?: (ids: string[]) => void;
 }) {
   if (!pkg) return null;
+  const { enabled: inlineEditEnabled } = useInlineEditMode();
+  const utils = trpc.useUtils();
+  const addFeatureMutation = trpc.packages.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم إضافة سطر جديد");
+      utils.packages.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("sitePackagesUpdatedAt", String(Date.now()));
+      }
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const isVipPlus = (p: any) => p?.id === "full-day-vip-plus" || p?.featured === true;
   const isWedding = kind === "wedding";
   const isAddon = kind === "addon";
@@ -374,6 +389,18 @@ export function PackageCard({
       event.preventDefault();
       setIsExpanded(true);
     }
+  };
+
+  const handleAddFeatureLine = () => {
+    if (!inlineEditEnabled || addFeatureMutation.isPending) return;
+    const id = Number(pkg.id);
+    if (!Number.isFinite(id)) {
+      toast.error("لا يمكن إضافة سطر جديد لهذه الباقة");
+      return;
+    }
+    const current = Array.isArray(pkg.features) ? pkg.features : [];
+    const next = [...current, "سطر جديد"];
+    addFeatureMutation.mutate({ id, features: next });
   };
 
   return (
@@ -634,6 +661,20 @@ export function PackageCard({
               );
             })}
           </ul>
+        ) : null}
+
+        {inlineEditEnabled && !isCustom ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={handleAddFeatureLine}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] text-white/90 hover:bg-black/60 transition"
+              disabled={addFeatureMutation.isPending}
+            >
+              <Plus className="w-3 h-3" />
+              إضافة سطر جديد
+            </button>
+          </div>
         ) : null}
 
         {isCustom ? (
@@ -1025,6 +1066,18 @@ function QuickNav({
 export default function Services() {
   const { contactInfo } = useContactData();
   const content = useContentData();
+  const { enabled: inlineEditEnabled } = useInlineEditMode();
+  const utils = trpc.useUtils();
+  const addAddonFeatureMutation = trpc.packages.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم إضافة سطر جديد");
+      utils.packages.getAll.invalidate();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("sitePackagesUpdatedAt", String(Date.now()));
+      }
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const {
     sessionPackages,
     sessionPackagesWithPrints,
@@ -1044,6 +1097,17 @@ export default function Services() {
     () => additionalServices.filter((pkg) => pkg.id !== "special-montage-design"),
     [additionalServices]
   );
+  const handleAddAddonLine = (service: any) => {
+    if (!inlineEditEnabled || addAddonFeatureMutation.isPending) return;
+    const id = Number(service?.id);
+    if (!Number.isFinite(id)) {
+      toast.error("لا يمكن إضافة سطر جديد لهذا الكرت");
+      return;
+    }
+    const current = Array.isArray(service?.features) ? service.features : [];
+    const next = [...current, "سطر جديد"];
+    addAddonFeatureMutation.mutate({ id, features: next });
+  };
   const hasProSession = useMemo(
     () => sessionPackages.some((pkg: any) => pkg?.id === "session-2"),
     [sessionPackages]
@@ -1384,6 +1448,20 @@ export default function Services() {
                       </li>
                     ))}
                   </ul>
+
+                  {inlineEditEnabled ? (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => handleAddAddonLine(service)}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] text-white/90 hover:bg-black/60 transition"
+                        disabled={addAddonFeatureMutation.isPending}
+                      >
+                        <Plus className="w-3 h-3" />
+                        إضافة سطر جديد
+                      </button>
+                    </div>
+                  ) : null}
 
                   <div className="mt-7">
                     <PrimaryCTA
