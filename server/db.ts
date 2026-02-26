@@ -69,6 +69,8 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
 const STORE_MODE = process.env.ADMIN_STORE_MODE ?? "file";
 const useFileStore = STORE_MODE === "file";
+let dbDisabled = false;
+let adminTablesReady = false;
 let packagesSeeded = false;
 let cleanupRan = false;
 
@@ -83,14 +85,44 @@ function stripPositionFields<T extends Record<string, any>>(data: T): Omit<T, "o
   return rest as Omit<T, "offsetX" | "offsetY">;
 }
 
+function shouldDisableDbForError(error: unknown) {
+  const anyError = error as any;
+  const code = anyError?.code ?? anyError?.cause?.code ?? "";
+  const message = String(anyError?.cause?.sqlMessage ?? anyError?.message ?? "");
+  return code === "ER_NO_SUCH_TABLE" || message.includes("doesn't exist");
+}
+
+async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
+  if (adminTablesReady || dbDisabled) return adminTablesReady;
+  try {
+    await db.select({ id: packages.id }).from(packages).limit(1);
+    adminTablesReady = true;
+    return true;
+  } catch (error) {
+    if (shouldDisableDbForError(error)) {
+      console.warn("[Database] Missing admin tables, falling back to file store:", error);
+    } else {
+      console.warn("[Database] Failed to verify admin tables, falling back to file store:", error);
+    }
+    dbDisabled = true;
+    return false;
+  }
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
+  if (useFileStore || dbDisabled) return null;
   if (!_db && ENV.databaseUrl) {
     try {
       if (!_pool) {
         _pool = mysql.createPool(ENV.databaseUrl);
       }
       _db = drizzle(_pool);
+      const ready = await ensureAdminTables(_db);
+      if (!ready) {
+        _db = null;
+        return null;
+      }
       await runCleanupOnce(_db);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
