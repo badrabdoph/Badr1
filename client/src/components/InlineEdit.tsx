@@ -623,11 +623,16 @@ export function EditableText({
           )}
         </div>
       ) : (
-        <>
+        <span
+          className={cn(
+            "inline-flex max-w-full flex-wrap items-center gap-2 align-baseline",
+            enabled ? "cursor-text" : ""
+          )}
+        >
           {!isHidden ? (
             <span
               className={cn(
-                "inline-block",
+                "inline-block min-w-0",
                 showPlaceholder ? "text-muted-foreground" : "text-inherit",
                 enabled
                   ? "rounded-md outline outline-1 outline-dashed outline-transparent hover:outline-primary/40 transition"
@@ -648,62 +653,60 @@ export function EditableText({
             </span>
           ) : null}
           {enabled ? (
-            <>
-              <div className="absolute -top-3 -right-2 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={startEditing}
-                  title="تعديل"
-                  disabled={upsertMutation.isPending}
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={handleToggleHidden}
-                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
-                  disabled={upsertMutation.isPending}
-                >
-                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={() => adjustScale(-0.05)}
-                  title="تصغير النص"
-                  disabled={upsertMutation.isPending}
-                >
-                  <Minus className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={() => adjustScale(0.05)}
-                  title="تكبير النص"
-                  disabled={upsertMutation.isPending}
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={resetScale}
-                  title="تصفير الحجم"
-                  disabled={upsertMutation.isPending}
-                >
-                  <RotateCcw className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                  onClick={() => setShowMoveTools((prev) => !prev)}
-                  title="تحريك"
-                >
-                  <Move className="w-3 h-3" />
-                </button>
-              </div>
+            <span className="relative inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={startEditing}
+                title="تعديل"
+                disabled={upsertMutation.isPending}
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={handleToggleHidden}
+                title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                disabled={upsertMutation.isPending}
+              >
+                {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={() => adjustScale(-0.05)}
+                title="تصغير النص"
+                disabled={upsertMutation.isPending}
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={() => adjustScale(0.05)}
+                title="تكبير النص"
+                disabled={upsertMutation.isPending}
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={resetScale}
+                title="تصفير الحجم"
+                disabled={upsertMutation.isPending}
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                onClick={() => setShowMoveTools((prev) => !prev)}
+                title="تحريك"
+              >
+                <Move className="w-3 h-3" />
+              </button>
               {showMoveTools ? (
                 <div className="absolute top-full right-0 mt-1 z-20 rounded-lg border border-white/15 bg-black/80 p-2 text-[10px] text-white shadow-lg">
                   <div className="flex items-center justify-center gap-1">
@@ -749,9 +752,9 @@ export function EditableText({
                   </button>
                 </div>
               ) : null}
-            </>
+            </span>
           ) : null}
-        </>
+        </span>
       )}
       <ConfirmDialog />
     </Tag>
@@ -919,7 +922,12 @@ export function EditableContactText({
           </div>
         </div>
       ) : (
-        <>
+        <span
+          className={cn(
+            "inline-flex max-w-full flex-wrap items-center gap-2 align-baseline",
+            enabled ? "cursor-text" : ""
+          )}
+        >
           {!isHidden ? (
             <span
               className={cn(
@@ -935,7 +943,7 @@ export function EditableContactText({
             </span>
           ) : null}
           {enabled ? (
-            <span className="absolute -top-3 -right-2 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
               <button
                 type="button"
                 className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
@@ -959,7 +967,7 @@ export function EditableContactText({
               </button>
             </span>
           ) : null}
-        </>
+        </span>
       )}
       <ConfirmDialog />
     </span>
