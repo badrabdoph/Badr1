@@ -234,7 +234,6 @@ export function EditableText({
   const normalizedValue = hasValue ? value : "";
   const displayValue = hasValue ? normalizedValue : fallback || "";
   const showPlaceholder = !hasValue && !displayValue && !!placeholder;
-  const displayText = hasValue ? displayValue : displayValue || placeholder || "";
   const isEmptyValue = displayValue === "";
 
   useEffect(() => {
@@ -542,10 +541,8 @@ export function EditableText({
               displayClassName
             )}
           >
-            {hasValue ? (
-              normalizedValue ? (
-                <span className="whitespace-pre-line">{normalizedValue}</span>
-              ) : null
+            {normalizedValue ? (
+              <span className="whitespace-pre-line">{normalizedValue}</span>
             ) : fallbackNode ? (
               fallbackNode
             ) : displayValue ? (
@@ -788,7 +785,7 @@ export function EditableContactText({
               displayClassName
             )}
           >
-            {displayText}
+            {displayValue || placeholder || ""}
           </span>
           {enabled && (
             <div className="absolute -top-7 right-0 z-20 flex items-center gap-1 rounded-full border border-white/10 bg-black/70 px-2 py-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
@@ -1211,19 +1208,6 @@ export function EditableImage({
           >
             <ImageIcon className="w-3 h-3" />
             استبدال
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setIsEditing(true);
-            }}
-            className="inline-flex items-center gap-1 hover:text-primary"
-            title="تحريك الصورة"
-            aria-label={`تحريك ${label}`}
-          >
-            <Move className="w-3 h-3" />
           </button>
           <button
             type="button"
