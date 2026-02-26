@@ -1,4 +1,4 @@
-import { eq, asc, desc, sql } from "drizzle-orm";
+import { eq, asc, desc, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2";
 import type { Pool } from "mysql2";
@@ -70,6 +70,7 @@ let _pool: Pool | null = null;
 const STORE_MODE = process.env.ADMIN_STORE_MODE ?? "file";
 const useFileStore = STORE_MODE === "file";
 let packagesSeeded = false;
+let cleanupRan = false;
 
 type Positionable = {
   offsetX?: number | null;
@@ -90,12 +91,59 @@ export async function getDb() {
         _pool = mysql.createPool(ENV.databaseUrl);
       }
       _db = drizzle(_pool);
+      await runCleanupOnce(_db);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
   }
   return _db;
+}
+
+async function runCleanupOnce(db: ReturnType<typeof drizzle>) {
+  if (cleanupRan || useFileStore) return;
+  cleanupRan = true;
+  if (process.env.ADMIN_AUTO_CLEAN === "false") return;
+  try {
+    const legacyPattern = "سيشن\\+مطبوعات|جلسات\\s*التصوير\\s*\\+\\s*المطبوعات";
+
+    await db.delete(packages).where(
+      sql`(${packages.visible} = 0) OR (${packages.name} REGEXP ${legacyPattern})`
+    );
+
+    await db.delete(siteContent).where(eq(siteContent.value, ""));
+    await db.delete(contactInfo).where(eq(contactInfo.value, ""));
+    await db.delete(testimonials).where(eq(testimonials.visible, false));
+    await db.delete(portfolioImages).where(eq(portfolioImages.visible, false));
+    await db.delete(siteSections).where(eq(siteSections.visible, false));
+    await db.delete(siteImages).where(eq(siteImages.url, ""));
+    await db.delete(shareLinks).where(
+      sql`revokedAt IS NOT NULL OR (expiresAt IS NOT NULL AND expiresAt < NOW())`
+    );
+
+    const packageRows = await db.select({ id: packages.id }).from(packages);
+    const packageIdSet = new Set(packageRows.map((row) => String(row.id)));
+    const contentRows = await db
+      .select({ key: siteContent.key })
+      .from(siteContent)
+      .where(sql`${siteContent.key} LIKE 'package_%'`);
+
+    const orphanKeys: string[] = [];
+    for (const row of contentRows) {
+      const key = row.key;
+      const raw = key.replace(/^package_/, "");
+      const idPart = raw.split("_")[0] ?? "";
+      if (!idPart) continue;
+      if (!packageIdSet.has(idPart)) {
+        orphanKeys.push(key);
+      }
+    }
+    if (orphanKeys.length) {
+      await db.delete(siteContent).where(inArray(siteContent.key, orphanKeys));
+    }
+  } catch (error) {
+    console.warn("[Cleanup] Failed to cleanup hidden/legacy data:", error);
+  }
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
