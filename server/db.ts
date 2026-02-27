@@ -253,6 +253,7 @@ async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
           adminTablesReady = true;
           return true;
         } catch (retryError) {
+          flagDbDisabledForError(retryError);
           console.warn("[Database] Schema created but verify failed:", retryError);
         }
       }
