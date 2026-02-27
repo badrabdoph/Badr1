@@ -585,6 +585,9 @@ export default function Home() {
                       featured ? "opacity-45" : "opacity-0 group-hover:opacity-100",
                     ].join(" ")}
                   />
+                  <div className="card-tap-hint" aria-hidden="true">
+                    اضغط للتفاصيل
+                  </div>
 
                   {card.badge ? (
                     <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1">
@@ -1100,8 +1103,42 @@ export default function Home() {
           backdrop-filter: blur(18px) saturate(130%);
           -webkit-backdrop-filter: blur(18px) saturate(130%);
         }
+        .package-card:hover {
+          box-shadow:
+            0 32px 110px rgba(0,0,0,0.6),
+            0 0 45px rgba(255,210,120,0.18),
+            0 0 0 1px rgba(255,220,170,0.28) inset;
+        }
+        .package-card:focus-visible {
+          outline: 2px solid rgba(255,210,120,0.65);
+          outline-offset: 4px;
+        }
         .package-card .card-glow {
           animation: glow-drift 6s ease-in-out infinite;
+        }
+        .card-tap-hint {
+          position: absolute;
+          top: 18px;
+          left: 18px;
+          padding: 6px 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.35);
+          background: rgba(10,10,14,0.55);
+          color: rgba(255,235,200,0.92);
+          font-size: 11px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+          opacity: 0;
+          transform: translateY(-6px);
+          transition: opacity 200ms ease, transform 200ms ease;
+          pointer-events: none;
+          z-index: 2;
+        }
+        .package-card:hover .card-tap-hint,
+        .package-card:focus-visible .card-tap-hint {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .card-title-chip {
