@@ -301,6 +301,7 @@ export default function Contact() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [printsOpen, setPrintsOpen] = useState(false);
   const [printQuantities, setPrintQuantities] = useState<Record<string, number>>({});
+  const prefillLocationRef = useRef<string>("");
   type PackageOption = {
     id: string;
     label: string;
@@ -465,6 +466,8 @@ export default function Contact() {
   };
 
   useEffect(() => {
+    if (prefillLocationRef.current === location) return;
+    prefillLocationRef.current = location;
     const params = new URLSearchParams(window.location.search);
     const packageParam = params.get("package")?.trim();
     const printsParam = params.get("prints")?.trim();
@@ -502,6 +505,18 @@ export default function Contact() {
       if (nextAddons.length) form.setValue("addonIds", nextAddons);
     }
   }, [location, addonOptions, packageOptions, printOptions, form]);
+
+  useEffect(() => {
+    try {
+      if (!watchedPrintIds.length) {
+        sessionStorage.removeItem(PRINTS_STORAGE_KEY);
+      } else {
+        sessionStorage.setItem(PRINTS_STORAGE_KEY, JSON.stringify(watchedPrintIds));
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [watchedPrintIds]);
 
   const selectedPackage = useMemo(
     () => packageOptions.find((p) => p.id === watchedPackageId),

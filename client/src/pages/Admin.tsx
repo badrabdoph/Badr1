@@ -4261,9 +4261,8 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
   });
   useEffect(() => {
     if (!listQuery.data) return;
-    setCachedLinks((prev) => {
-      const next =
-        listQuery.data.length === 0 && prev.length > 0 ? prev : listQuery.data;
+    setCachedLinks(() => {
+      const next = listQuery.data;
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem(cacheKey, JSON.stringify(next));
       }
@@ -4282,8 +4281,7 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
     description: "",
     confirmLabel: "تأكيد",
   });
-  const links =
-    listQuery.data && listQuery.data.length > 0 ? listQuery.data : cachedLinks;
+  const links = Array.isArray(listQuery.data) ? listQuery.data : cachedLinks;
   const isLoading = listQuery.isLoading && cachedLinks.length === 0;
 
   const buildShareUrl = (code: string) => {

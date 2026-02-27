@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import type { InsertShareLink } from "../../drizzle/schema";
+import { queueAdminGithubSync } from "./adminFileStore";
 
 type LocalShareLink = {
   id: number;
@@ -24,7 +25,8 @@ type StoredShareLink = {
 
 const storeFile =
   process.env.SHARE_LINKS_FILE ??
-  path.resolve(process.cwd(), "data", "share-links.json");
+  path.resolve(process.cwd(), "data", "admin", "share-links.json");
+const legacyStoreFile = path.resolve(process.cwd(), "data", "share-links.json");
 
 let store: Map<string, LocalShareLink> | null = null;
 let loading: Promise<void> | null = null;
@@ -55,9 +57,36 @@ async function ensureStoreLoaded() {
       );
     } catch (error: any) {
       if (error?.code !== "ENOENT") {
-        console.warn("[ShareLinks] Failed to load fallback store:", error);
+        console.warn("[ShareLinks] Failed to load store:", error);
+        store = new Map();
+        return;
       }
-      store = new Map();
+
+      // Try legacy path once for migration
+      try {
+        const legacyRaw = await fs.readFile(legacyStoreFile, "utf8");
+        const legacyParsed = JSON.parse(legacyRaw) as StoredShareLink[];
+        store = new Map(
+          legacyParsed.map((item) => [
+            item.code,
+            {
+              id: item.id,
+              code: item.code,
+              note: item.note ?? null,
+              expiresAt: item.expiresAt ? new Date(item.expiresAt) : null,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              revokedAt: item.revokedAt ? new Date(item.revokedAt) : null,
+            },
+          ])
+        );
+        await persistStore();
+      } catch (legacyError: any) {
+        if (legacyError?.code !== "ENOENT") {
+          console.warn("[ShareLinks] Failed to load legacy store:", legacyError);
+        }
+        store = new Map();
+      }
     }
   })();
   await loading;
@@ -77,7 +106,9 @@ async function persistStore() {
     updatedAt: item.updatedAt.toISOString(),
     revokedAt: item.revokedAt ? item.revokedAt.toISOString() : null,
   }));
-  await fs.writeFile(storeFile, JSON.stringify(data, null, 2), "utf8");
+  const serialized = JSON.stringify(data, null, 2);
+  await fs.writeFile(storeFile, serialized, "utf8");
+  queueAdminGithubSync("share-links.json", serialized);
 }
 
 function nextId() {
