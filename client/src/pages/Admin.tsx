@@ -1845,6 +1845,20 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     });
   };
 
+  const handleClearPackageHistoryOnly = () => {
+    if (historyCount === 0) {
+      toast.info("لا يوجد سجل تعديلات للباقات لمسحه");
+      return;
+    }
+    requestConfirm({
+      title: "تفريغ سجل تعديلات الباقات",
+      description: "سيتم حذف كل سجل تغييرات الباقات نهائيًا مع الاحتفاظ بالقيم الحالية.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: () => clearHistoryMutation.mutate(),
+    });
+  };
+
   const handleClearAllEdits = () => {
     if (!allContentEdits.length && !packageEdits.length && historyCount === 0) {
       toast.info("لا توجد تعديلات لمسحها");
@@ -2206,6 +2220,14 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
                 disabled={deleteMutation.isPending || bulkDeleting}
               >
                 تفريغ المحذوف فقط
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleClearPackageHistoryOnly}
+                disabled={clearHistoryMutation.isPending}
+              >
+                تفريغ سجل الباقات
               </Button>
               <Button
                 size="sm"
