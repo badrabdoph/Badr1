@@ -69,5 +69,16 @@
     "offsetY": 0,
     "createdAt": "2026-02-27T14:46:37.988Z",
     "updatedAt": "2026-02-27T14:46:37.988Z"
+  },
+  {
+    "id": 1772204720411,
+    "key": "package_2_feature_2",
+    "value": "‏Moodboard مخصص قبل السيشن",
+    "category": "services",
+    "label": "ميزة 2 - سيشن برو",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-27T15:05:20.163Z",
+    "updatedAt": "2026-02-27T15:05:20.163Z"
   }
 ]
