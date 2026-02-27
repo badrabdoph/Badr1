@@ -1240,7 +1240,11 @@ function AboutManager({ onRefresh }: ManagerProps) {
 // ============================================
 // Content Manager Component
 // ============================================
-function ContentManager({ onRefresh }: ManagerProps) {
+function ContentManager({
+  onRefresh,
+  searchSeed,
+  searchText,
+}: ManagerProps & { searchSeed?: number; searchText?: string }) {
   const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
   const { data: packagesData } = trpc.packages.getAll.useQuery();
   const testimonials = useTestimonialsData();
@@ -1329,6 +1333,10 @@ function ContentManager({ onRefresh }: ManagerProps) {
 
 
   const [searchTerm, setSearchTerm] = useState("");
+  useEffect(() => {
+    if (!searchText) return;
+    setSearchTerm(searchText);
+  }, [searchSeed]);
   const handleCopyKey = async (key: string) => {
     try {
       if (!navigator?.clipboard) {
@@ -1401,9 +1409,11 @@ function ContentManager({ onRefresh }: ManagerProps) {
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredItems = items.filter((item) => {
     if (!normalizedSearch) return true;
+    const value = (editingContent[item.key] ?? catalog.fallbackMap[item.key] ?? "").toLowerCase();
     return (
       item.key.toLowerCase().includes(normalizedSearch) ||
-      item.label.toLowerCase().includes(normalizedSearch)
+      item.label.toLowerCase().includes(normalizedSearch) ||
+      value.includes(normalizedSearch)
     );
   });
 
@@ -1440,7 +1450,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ابحث بالاسم أو المفتاح..."
+              placeholder="ابحث بالكلمة داخل النص أو بالاسم أو المفتاح..."
               className="max-w-sm"
             />
             <Badge variant="secondary" className="text-xs">
@@ -4766,6 +4776,13 @@ function LiveEditor({
     return window.sessionStorage.getItem("adminActiveSection") ?? "content";
   });
   const [globalQuery, setGlobalQuery] = useState("");
+  const [contentSearchText, setContentSearchText] = useState("");
+  const [contentSearchSeed, setContentSearchSeed] = useState(0);
+  const contentQuery = trpc.siteContent.getAll.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+  const catalog = useMemo(() => buildContentCatalog(), []);
+  const catalogFallbacks = catalog.fallbackMap;
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
   const {
@@ -4878,7 +4895,13 @@ function LiveEditor({
       title: "تعديل النصوص",
       description: "كل نصوص الموقع في خانات قابلة للتعديل والحفظ.",
       icon: Pencil,
-      render: () => <ContentManager onRefresh={refreshPreview} />,
+      render: () => (
+        <ContentManager
+          onRefresh={refreshPreview}
+          searchSeed={contentSearchSeed}
+          searchText={contentSearchText}
+        />
+      ),
     },
     {
       id: "hidden-edits",
@@ -4940,6 +4963,48 @@ function LiveEditor({
           section.description.toLowerCase().includes(normalizedGlobalQuery)
       )
     : sections;
+  const quickResults = useMemo(() => {
+    if (!normalizedGlobalQuery) return [] as Array<{ key: string; label: string; category: string }>;
+    const contentList = (contentQuery.data ?? []) as Array<{
+      key: string;
+      value: string;
+      label?: string | null;
+      category?: string | null;
+    }>;
+    const baseRows =
+      contentList.length > 0
+        ? contentList.map((row) => {
+            const parsed = parseContentValue(row.value ?? "");
+            return {
+              key: row.key,
+              label: row.label ?? row.key,
+              category: row.category ?? "shared",
+              value: parsed.text ?? "",
+            };
+          })
+        : catalog.items.map((item) => ({
+            key: item.key,
+            label: item.label ?? item.key,
+            category: item.category ?? "shared",
+            value: catalogFallbacks[item.key] ?? "",
+          }));
+    const withFallback = baseRows.map((row) => ({
+      ...row,
+      value: row.value || catalogFallbacks[row.key] || "",
+    }));
+    return withFallback
+      .filter((row) => {
+        const key = row.key.toLowerCase();
+        const label = row.label.toLowerCase();
+        const value = row.value.toLowerCase();
+        return (
+          key.includes(normalizedGlobalQuery) ||
+          label.includes(normalizedGlobalQuery) ||
+          value.includes(normalizedGlobalQuery)
+        );
+      })
+      .slice(0, 8);
+  }, [normalizedGlobalQuery, contentQuery.data, catalogFallbacks, catalog.items]);
 
   useEffect(() => {
     if (!sections.find((section) => section.id === activeSection)) {
@@ -4952,9 +5017,17 @@ function LiveEditor({
     window.sessionStorage.setItem("adminActiveSection", active.id);
   }, [active.id]);
 
+  const triggerContentSearch = () => {
+    const query = globalQuery.trim();
+    if (!query) return;
+    setActiveSection("content");
+    setContentSearchText(query);
+    setContentSearchSeed((prev) => prev + 1);
+  };
+
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">{active.title}</h2>
           <p className="text-sm text-muted-foreground">{active.description}</p>
@@ -4996,13 +5069,51 @@ function LiveEditor({
             <Input
               value={globalQuery}
               onChange={(e) => setGlobalQuery(e.target.value)}
-              placeholder="ابحث في الأقسام..."
+              placeholder="ابحث في الأقسام أو نصوص الموقع..."
               className="max-w-sm"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  triggerContentSearch();
+                }
+              }}
             />
             <Badge variant="secondary" className="text-xs">
               {sectionMatches.length} قسم
             </Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={triggerContentSearch}
+              disabled={!normalizedGlobalQuery}
+            >
+              بحث داخل النصوص
+            </Button>
           </div>
+          {normalizedGlobalQuery && quickResults.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">
+                نتائج النصوص:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {quickResults.map((row) => (
+                  <Button
+                    key={row.key}
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setActiveSection("content");
+                      setContentSearchText(globalQuery.trim());
+                      setContentSearchSeed((prev) => prev + 1);
+                    }}
+                  >
+                    {row.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {normalizedGlobalQuery ? (
             sectionMatches.length ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -5027,7 +5138,7 @@ function LiveEditor({
             )
           ) : (
             <div className="text-xs text-muted-foreground">
-              اكتب للبحث والانتقال السريع بين الأقسام.
+              اكتب أي كلمة واضغط Enter للبحث داخل نصوص الموقع.
             </div>
           )}
         </CardContent>
