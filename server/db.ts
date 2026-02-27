@@ -69,7 +69,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
 const STORE_MODE = (process.env.ADMIN_STORE_MODE ?? "file").trim().toLowerCase();
 const FORCE_FILE_STORE = (process.env.ADMIN_FORCE_FILE_STORE ?? "false") === "true";
-const useFileStore = FORCE_FILE_STORE || STORE_MODE !== "db";
+let useFileStore = FORCE_FILE_STORE || STORE_MODE !== "db";
 let storeModeLogged = false;
 let dbDisabled = false;
 let adminTablesReady = false;
@@ -115,6 +115,7 @@ function flagDbDisabledForError(error: unknown) {
   if (dbDisabled) return;
   dbDisabled = true;
   adminTablesReady = false;
+  useFileStore = true;
   console.warn("[Database] Disabling DB after error; switching to file store.");
 }
 
