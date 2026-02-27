@@ -80,5 +80,16 @@
     "offsetY": 0,
     "createdAt": "2026-02-27T15:13:11.008Z",
     "updatedAt": "2026-02-27T16:21:15.386Z"
+  },
+  {
+    "id": 1772231461090,
+    "key": "package_6_price",
+    "value": "1500",
+    "category": "services",
+    "label": "سعر الباقة MEDIA COVERAGE",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-27T22:31:01.038Z",
+    "updatedAt": "2026-02-27T22:31:01.038Z"
   }
 ]
