@@ -917,7 +917,8 @@ function MonthlyOfferCard({
   contentMap: Record<string, string>;
   contactHref: string;
 }) {
-  const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
+  const getValue = (key: string, fallback = "") =>
+    asText(contentMap[key] as string | undefined, fallback);
   const featureList = [
     { key: "services_monthly_offer_feature_1", fallback: "ألبوم كبير مقاس 80x30 عدد من 20 ل 40 صورة" },
     { key: "services_monthly_offer_feature_2", fallback: "تابلوه أنيميشن كبير 70x50 جودة عالية مع طبقة حماية" },
