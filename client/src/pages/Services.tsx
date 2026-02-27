@@ -430,7 +430,7 @@ export function PackageCard({
         onClickCapture={handleCardClickCapture}
         onKeyDown={handleCardKeyDown}
         className={[
-          "relative overflow-hidden bg-card border transition-all duration-300 group premium-border services-card",
+          "relative overflow-visible bg-card border transition-all duration-300 group premium-border services-card",
           isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
           isCustom ? "custom-package" : "",
           isCollapsible && !isExpanded ? "full-day-collapsed" : "",

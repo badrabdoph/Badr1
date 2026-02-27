@@ -1519,6 +1519,7 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
   const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
   const { data: packagesData } = trpc.packages.getAll.useQuery();
   const testimonials = useTestimonialsData();
+  const utils = trpc.useUtils();
   const packagesById = useMemo(() => {
     const map = new Map<string, string>();
     const list = (packagesData ?? []) as any[];
@@ -1533,6 +1534,14 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     onSuccess: () => {
       toast.success("تم حفظ التغييرات");
       refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const packageUpdateMutation = trpc.packages.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث الباقة");
+      utils.packages.getAll.invalidate();
       onRefresh?.();
     },
     onError: (error) => toast.error(error.message),
@@ -1564,6 +1573,16 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     if (packagesData && packagesData.length) return packagesData as any[];
     return fallbackPackages;
   }, [packagesData, fallbackPackages]);
+
+  const defaultPackagesByName = useMemo(() => {
+    const map = new Map<string, any>();
+    const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+    fallbackPackages.forEach((pkg) => {
+      if (!pkg?.name) return;
+      map.set(normalize(String(pkg.name)), pkg);
+    });
+    return { map, normalize };
+  }, [fallbackPackages]);
 
   const catalog = useMemo(
     () => buildContentCatalog({ packages: packageList, testimonials }),
@@ -1752,6 +1771,129 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     });
   };
 
+  const packageEdits = useMemo(() => {
+    const diffs: Array<{
+      id: number;
+      name: string;
+      changes: Array<{
+        field: "price" | "description" | "features" | "badge" | "priceNote" | "popular";
+        label: string;
+        current: string;
+        fallback: string;
+      }>;
+    }> = [];
+    const normalize = defaultPackagesByName.normalize;
+    const defaults = defaultPackagesByName.map;
+    (packagesData ?? []).forEach((pkg: any) => {
+      if (!pkg?.name) return;
+      const baseline = defaults.get(normalize(String(pkg.name)));
+      if (!baseline) return;
+      const changes: Array<{
+        field: "price" | "description" | "features" | "badge" | "priceNote" | "popular";
+        label: string;
+        current: string;
+        fallback: string;
+      }> = [];
+      const currentPrice = String(pkg.price ?? "");
+      const fallbackPrice = String(baseline.price ?? "");
+      if (currentPrice !== fallbackPrice) {
+        changes.push({
+          field: "price",
+          label: "السعر",
+          current: currentPrice || "—",
+          fallback: fallbackPrice || "—",
+        });
+      }
+      const currentDesc = String(pkg.description ?? "");
+      const fallbackDesc = String(baseline.description ?? "");
+      if (currentDesc !== fallbackDesc) {
+        changes.push({
+          field: "description",
+          label: "الوصف",
+          current: currentDesc || "—",
+          fallback: fallbackDesc || "—",
+        });
+      }
+      const currentBadge = String(pkg.badge ?? "");
+      const fallbackBadge = String(baseline.badge ?? "");
+      if (currentBadge !== fallbackBadge) {
+        changes.push({
+          field: "badge",
+          label: "شارة الباقة",
+          current: currentBadge || "—",
+          fallback: fallbackBadge || "—",
+        });
+      }
+      const currentNote = String(pkg.priceNote ?? "");
+      const fallbackNote = String(baseline.priceNote ?? "");
+      if (currentNote !== fallbackNote) {
+        changes.push({
+          field: "priceNote",
+          label: "ملاحظة السعر",
+          current: currentNote || "—",
+          fallback: fallbackNote || "—",
+        });
+      }
+      const currentPopular = Boolean(pkg.popular);
+      const fallbackPopular = Boolean(baseline.popular);
+      if (currentPopular !== fallbackPopular) {
+        changes.push({
+          field: "popular",
+          label: "الأكثر طلبًا",
+          current: currentPopular ? "نعم" : "لا",
+          fallback: fallbackPopular ? "نعم" : "لا",
+        });
+      }
+      const currentFeatures = Array.isArray(pkg.features) ? pkg.features : [];
+      const fallbackFeatures = Array.isArray(baseline.features) ? baseline.features : [];
+      if (JSON.stringify(currentFeatures) !== JSON.stringify(fallbackFeatures)) {
+        changes.push({
+          field: "features",
+          label: "المميزات",
+          current: currentFeatures.length ? currentFeatures.join(" • ") : "—",
+          fallback: fallbackFeatures.length ? fallbackFeatures.join(" • ") : "—",
+        });
+      }
+      if (changes.length) {
+        diffs.push({
+          id: pkg.id,
+          name: String(pkg.name),
+          changes,
+        });
+      }
+    });
+    return diffs;
+  }, [packagesData, defaultPackagesByName]);
+
+  const restorePackageField = async (
+    pkgId: number,
+    field: "price" | "description" | "features" | "badge" | "priceNote" | "popular",
+    fallbackPkg: any
+  ) => {
+    const payload: any = { id: pkgId };
+    if (field === "price") payload.price = String(fallbackPkg.price ?? "");
+    if (field === "description") payload.description = String(fallbackPkg.description ?? "");
+    if (field === "badge") payload.badge = String(fallbackPkg.badge ?? "");
+    if (field === "priceNote") payload.priceNote = String(fallbackPkg.priceNote ?? "");
+    if (field === "popular") payload.popular = Boolean(fallbackPkg.popular);
+    if (field === "features")
+      payload.features = Array.isArray(fallbackPkg.features) ? fallbackPkg.features : [];
+    await packageUpdateMutation.mutateAsync(payload);
+  };
+
+  const restorePackageAll = async (pkgId: number, fallbackPkg: any) => {
+    await packageUpdateMutation.mutateAsync({
+      id: pkgId,
+      name: String(fallbackPkg.name ?? ""),
+      price: String(fallbackPkg.price ?? ""),
+      description: String(fallbackPkg.description ?? ""),
+      badge: String(fallbackPkg.badge ?? ""),
+      priceNote: String(fallbackPkg.priceNote ?? ""),
+      popular: Boolean(fallbackPkg.popular),
+      features: Array.isArray(fallbackPkg.features) ? fallbackPkg.features : [],
+    });
+  };
+
   const handleRestoreGroup = (group: (typeof grouped)[number]) => {
     requestConfirm({
       title: "استعادة الكارت بالكامل",
@@ -1908,6 +2050,80 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
             <div className="text-center py-8 text-muted-foreground">
               <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
               <p>لا توجد تعديلات مخفية أو محذوفة</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            تعديلات الباقات
+          </CardTitle>
+          <CardDescription>
+            يعرض تغييرات الباقات مقارنة بالنصوص الافتراضية (مثل السعر والوصف والمميزات).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {packageEdits.length > 0 ? (
+            packageEdits.map((pkg) => {
+              const fallbackPkg = defaultPackagesByName.map.get(
+                defaultPackagesByName.normalize(pkg.name)
+              );
+              return (
+                <div key={pkg.id} className="space-y-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold">كارت {pkg.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {pkg.changes.length} تغيير
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => restorePackageAll(pkg.id, fallbackPkg)}
+                      disabled={packageUpdateMutation.isPending}
+                    >
+                      استعادة الكارت بالكامل
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {pkg.changes.map((change) => (
+                      <div
+                        key={change.field}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-background/40 px-3 py-2"
+                      >
+                        <div className="text-sm">
+                          <div className="font-semibold">{change.label}</div>
+                          <div className="text-xs text-muted-foreground">
+                            الحالي: {change.current}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            الافتراضي: {change.fallback}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            restorePackageField(pkg.id, change.field, fallbackPkg)
+                          }
+                          disabled={packageUpdateMutation.isPending}
+                        >
+                          استعادة الحقل
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>لا توجد تغييرات على الباقات حالياً</p>
             </div>
           )}
         </CardContent>
