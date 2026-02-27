@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { reportGlobalError } from "@/lib/globalError";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
@@ -19,6 +20,12 @@ class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: any) {
+    const details =
+      typeof info?.componentStack === "string" ? info.componentStack : undefined;
+    reportGlobalError(error, "react-render", details);
   }
 
   render() {

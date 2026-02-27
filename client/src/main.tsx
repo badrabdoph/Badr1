@@ -7,6 +7,7 @@ import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
+import { installGlobalErrorHandlers } from "@/lib/globalError";
 
 const shouldAllowContextMenu = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
@@ -16,6 +17,8 @@ const shouldAllowContextMenu = (target: EventTarget | null) => {
 };
 
 if (typeof window !== "undefined") {
+  installGlobalErrorHandlers();
+
   const root = document.documentElement;
   root.lang = "ar";
   root.dir = "rtl";

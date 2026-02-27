@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import GlobalErrorWidget from "./components/GlobalErrorWidget";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useContactData } from "@/hooks/useSiteData";
 import Home from "./pages/Home";
@@ -118,6 +119,7 @@ function App() {
           <TooltipProvider>
             <Toaster position="top-center" />
             <Router />
+            <GlobalErrorWidget />
             <FloatingWhatsApp />
           </TooltipProvider>
           <style>{`
