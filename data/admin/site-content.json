@@ -69,5 +69,16 @@
     "offsetY": 0,
     "createdAt": "2026-02-27T15:05:20.163Z",
     "updatedAt": "2026-02-27T15:05:20.163Z"
+  },
+  {
+    "id": 1772205191943,
+    "key": "package_2_price",
+    "value": "3000",
+    "category": "services",
+    "label": "سعر الباقة سيشن برو",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-27T15:13:11.008Z",
+    "updatedAt": "2026-02-27T15:13:11.008Z"
   }
 ]
