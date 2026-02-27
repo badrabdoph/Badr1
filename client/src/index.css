@@ -153,6 +153,20 @@
     display: none;
   }
 
+  @media (max-width: 768px) {
+    [data-admin-panel] button {
+      min-height: 44px;
+    }
+
+    [data-admin-panel] .h-7 {
+      height: 2.5rem;
+    }
+
+    [data-admin-panel] .w-7 {
+      width: 2.5rem;
+    }
+  }
+
 
   /* ✨ Modern cinematic grain + subtle glow (premium look) */
   body::before {

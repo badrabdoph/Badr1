@@ -135,7 +135,7 @@ function AdminDashboard({
   logoutPending: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir="rtl" data-admin-panel>
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -4486,6 +4486,7 @@ function LiveEditor() {
     if (typeof window === "undefined") return "content";
     return window.sessionStorage.getItem("adminActiveSection") ?? "content";
   });
+  const [globalQuery, setGlobalQuery] = useState("");
   const [historyBusy, setHistoryBusy] = useState(false);
   const utils = trpc.useUtils();
   const {
@@ -4644,6 +4645,14 @@ function LiveEditor() {
   ];
 
   const active = sections.find((section) => section.id === activeSection) ?? sections[0];
+  const normalizedGlobalQuery = globalQuery.trim().toLowerCase();
+  const sectionMatches = normalizedGlobalQuery
+    ? sections.filter(
+        (section) =>
+          section.title.toLowerCase().includes(normalizedGlobalQuery) ||
+          section.description.toLowerCase().includes(normalizedGlobalQuery)
+      )
+    : sections;
 
   useEffect(() => {
     if (!sections.find((section) => section.id === activeSection)) {
@@ -4657,7 +4666,7 @@ function LiveEditor() {
   }, [active.id]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-0">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">{active.title}</h2>
@@ -4694,8 +4703,74 @@ function LiveEditor() {
         </div>
       </div>
 
+      <Card>
+        <CardContent className="pt-6 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={globalQuery}
+              onChange={(e) => setGlobalQuery(e.target.value)}
+              placeholder="ابحث في الأقسام..."
+              className="max-w-sm"
+            />
+            <Badge variant="secondary" className="text-xs">
+              {sectionMatches.length} قسم
+            </Badge>
+          </div>
+          {normalizedGlobalQuery ? (
+            sectionMatches.length ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {sectionMatches.map((section) => (
+                  <Button
+                    key={section.id}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setActiveSection(section.id);
+                      setGlobalQuery("");
+                    }}
+                  >
+                    {section.title}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                لا توجد نتائج مطابقة للبحث الحالي.
+              </div>
+            )
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              اكتب للبحث والانتقال السريع بين الأقسام.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="md:hidden">
+        <Card>
+          <CardContent className="pt-6 space-y-2">
+            <div className="text-sm font-semibold">التنقل السريع</div>
+            <Select value={active.id} onValueChange={setActiveSection}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="اختر القسم" />
+              </SelectTrigger>
+              <SelectContent align="start">
+                {sections.map((section) => (
+                  <SelectItem key={section.id} value={section.id}>
+                    {section.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="text-xs text-muted-foreground">
+              {active.description}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <Card className="h-fit lg:sticky lg:top-24">
+        <Card className="hidden lg:block h-fit lg:sticky lg:top-24">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Home className="w-5 h-5" />
@@ -4730,6 +4805,46 @@ function LiveEditor() {
 
         <div className="space-y-6">
           {active.render()}
+        </div>
+      </div>
+
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur">
+        <div className="grid grid-cols-4 gap-2 px-3 py-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUndo}
+            disabled={!canUndo || historyBusy}
+            className="w-full"
+          >
+            <Undo2 className="w-4 h-4 ml-1" />
+            رجوع
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRedo}
+            disabled={!canRedo || historyBusy}
+            className="w-full"
+          >
+            <Redo2 className="w-4 h-4 ml-1" />
+            تقدم
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => refreshPreview(true)}
+            className="w-full"
+          >
+            <Monitor className="w-4 h-4 ml-1" />
+            تحديث
+          </Button>
+          <Button variant="outline" size="sm" asChild className="w-full">
+            <a href="/?adminPreview=1" target="_blank" rel="noreferrer">
+              <Monitor className="w-4 h-4 ml-1" />
+              معاينة
+            </a>
+          </Button>
         </div>
       </div>
     </div>
