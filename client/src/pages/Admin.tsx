@@ -5003,8 +5003,38 @@ function LiveEditor({
           value.includes(normalizedGlobalQuery)
         );
       })
-      .slice(0, 8);
+      .slice(0, 8)
+      .map((row) => ({
+        key: row.key,
+        label: row.label,
+        category: row.category,
+        value: row.value,
+      }));
   }, [normalizedGlobalQuery, contentQuery.data, catalogFallbacks, catalog.items]);
+
+  const renderSnippet = (value: string, query: string) => {
+    const clean = value?.trim() ?? "";
+    if (!clean) return "—";
+    if (!query) return clean.slice(0, 90);
+    const lower = clean.toLowerCase();
+    const idx = lower.indexOf(query);
+    if (idx === -1) return clean.slice(0, 90);
+    const start = Math.max(0, idx - 26);
+    const end = Math.min(clean.length, idx + query.length + 26);
+    const prefix = start > 0 ? "…" : "";
+    const suffix = end < clean.length ? "…" : "";
+    return (
+      <>
+        {prefix}
+        {clean.slice(start, idx)}
+        <span className="text-primary font-semibold">
+          {clean.slice(idx, idx + query.length)}
+        </span>
+        {clean.slice(idx + query.length, end)}
+        {suffix}
+      </>
+    );
+  };
 
   useEffect(() => {
     if (!sections.find((section) => section.id === activeSection)) {
@@ -5096,20 +5126,26 @@ function LiveEditor({
               <div className="text-xs text-muted-foreground">
                 نتائج النصوص:
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid gap-2">
                 {quickResults.map((row) => (
-                  <Button
+                  <button
                     key={row.key}
-                    size="sm"
-                    variant="secondary"
+                    type="button"
+                    className="w-full text-right rounded-lg border border-white/10 bg-black/20 hover:border-primary/35 transition-colors px-3 py-2"
                     onClick={() => {
                       setActiveSection("content");
                       setContentSearchText(globalQuery.trim());
                       setContentSearchSeed((prev) => prev + 1);
                     }}
                   >
-                    {row.label}
-                  </Button>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold">{row.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{row.key}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      {renderSnippet(row.value, normalizedGlobalQuery)}
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -5131,10 +5167,11 @@ function LiveEditor({
                   </Button>
                 ))}
               </div>
-            ) : (
+            ) : quickResults.length === 0 ? (
               <div className="text-xs text-muted-foreground">
                 لا توجد نتائج مطابقة للبحث الحالي.
               </div>
+            ) : null
             )
           ) : (
             <div className="text-xs text-muted-foreground">
