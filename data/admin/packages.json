@@ -31,13 +31,13 @@
     ],
     "badge": "PRO",
     "category": "session",
-    "popular": false,
+    "popular": true,
     "visible": true,
     "sortOrder": 2,
     "offsetX": 0,
     "offsetY": 0,
     "createdAt": "2026-02-25T00:00:00.000Z",
-    "updatedAt": "2026-02-27T14:44:56.156Z"
+    "updatedAt": "2026-02-27T14:46:02.589Z"
   },
   {
     "id": 3,
