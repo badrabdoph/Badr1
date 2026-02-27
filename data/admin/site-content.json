@@ -73,12 +73,12 @@
   {
     "id": 1772205191943,
     "key": "package_2_price",
-    "value": "3500",
+    "value": "3000",
     "category": "services",
     "label": "سعر الباقة سيشن برو",
     "offsetX": 0,
     "offsetY": 0,
     "createdAt": "2026-02-27T15:13:11.008Z",
-    "updatedAt": "2026-02-27T16:20:56.598Z"
+    "updatedAt": "2026-02-27T16:21:13.249Z"
   }
 ]
