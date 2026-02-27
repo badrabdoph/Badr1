@@ -47,5 +47,16 @@
     "offsetY": 0,
     "createdAt": "2026-02-27T14:29:59.112Z",
     "updatedAt": "2026-02-27T14:29:59.112Z"
+  },
+  {
+    "id": 1772202718599,
+    "key": "package_2_feature_2",
+    "value": "__META__:{\"text\":\"\",\"scale\":1.6000000000000005}",
+    "category": "services",
+    "label": "ميزة 2 - سيشن برو",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-27T14:31:57.779Z",
+    "updatedAt": "2026-02-27T14:31:57.779Z"
   }
 ]
