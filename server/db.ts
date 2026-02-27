@@ -89,9 +89,33 @@ function stripPositionFields<T extends Record<string, any>>(data: T): Omit<T, "o
 
 function shouldDisableDbForError(error: unknown) {
   const anyError = error as any;
-  const code = anyError?.code ?? anyError?.cause?.code ?? "";
+  const code = (anyError?.code ?? anyError?.cause?.code ?? "").toString();
   const message = String(anyError?.cause?.sqlMessage ?? anyError?.message ?? "");
-  return code === "ER_NO_SUCH_TABLE" || message.includes("doesn't exist");
+  const lowered = message.toLowerCase();
+  const disableCodes = new Set([
+    "ER_NO_SUCH_TABLE",
+    "ER_BAD_DB_ERROR",
+    "ER_ACCESS_DENIED_ERROR",
+    "ER_DBACCESS_DENIED_ERROR",
+    "PROTOCOL_CONNECTION_LOST",
+    "ECONNREFUSED",
+    "ENOTFOUND",
+    "ETIMEDOUT",
+  ]);
+  if (disableCodes.has(code)) return true;
+  return (
+    lowered.includes("doesn't exist") ||
+    lowered.includes("unknown database") ||
+    lowered.includes("access denied")
+  );
+}
+
+function flagDbDisabledForError(error: unknown) {
+  if (!shouldDisableDbForError(error)) return;
+  if (dbDisabled) return;
+  dbDisabled = true;
+  adminTablesReady = false;
+  console.warn("[Database] Disabling DB after error; switching to file store.");
 }
 
 async function ensureAdminSchema(db: ReturnType<typeof drizzle>) {
@@ -207,6 +231,7 @@ async function ensureAdminSchema(db: ReturnType<typeof drizzle>) {
     `);
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to auto-create schema:", error);
     return false;
   }
@@ -231,8 +256,10 @@ async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
           console.warn("[Database] Schema created but verify failed:", retryError);
         }
       }
+      flagDbDisabledForError(error);
       console.warn("[Database] Missing admin tables, falling back to file store:", error);
     } else {
+      flagDbDisabledForError(error);
       console.warn("[Database] Failed to verify admin tables, falling back to file store:", error);
     }
     dbDisabled = true;
@@ -260,6 +287,7 @@ export async function getDb() {
       }
       await runCleanupOnce(_db);
     } catch (error) {
+      flagDbDisabledForError(error);
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
@@ -395,6 +423,7 @@ export async function getAllSiteContent() {
   try {
     return await db.select().from(siteContent);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site content, falling back to file store:", error);
     return await listLocalSiteContent();
   }
@@ -408,6 +437,7 @@ export async function getSiteContentByKey(key: string) {
     const result = await db.select().from(siteContent).where(eq(siteContent.key, key)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site content item, falling back to file store:", error);
     return await getLocalSiteContentByKey(key);
   }
@@ -425,6 +455,7 @@ export async function upsertSiteContent(data: InsertSiteContent & Positionable) 
     });
     return await getSiteContentByKey(data.key);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to upsert site content, falling back to file store:", error);
     return await upsertLocalSiteContent(data);
   }
@@ -438,6 +469,7 @@ export async function deleteSiteContent(key: string) {
     await db.delete(siteContent).where(eq(siteContent.key, key));
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete site content, falling back to file store:", error);
     return await deleteLocalSiteContent(key);
   }
@@ -454,6 +486,7 @@ export async function getAllSiteImages() {
   try {
     return await db.select().from(siteImages).orderBy(asc(siteImages.sortOrder));
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site images, falling back to file store:", error);
     return await listFileSiteImages();
   }
@@ -467,6 +500,7 @@ export async function getSiteImageByKey(key: string) {
     const result = await db.select().from(siteImages).where(eq(siteImages.key, key)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site image, falling back to file store:", error);
     return await getFileSiteImageByKey(key);
   }
@@ -484,6 +518,7 @@ export async function upsertSiteImage(data: InsertSiteImage & Positionable) {
     });
     return await getSiteImageByKey(data.key);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to upsert site image, falling back to file store:", error);
     return await upsertFileSiteImage(data);
   }
@@ -497,6 +532,7 @@ export async function deleteSiteImage(key: string) {
     await db.delete(siteImages).where(eq(siteImages.key, key));
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete site image, falling back to file store:", error);
     return await deleteFileSiteImage(key);
   }
@@ -644,6 +680,7 @@ export async function getAllPortfolioImages() {
   try {
     return await db.select().from(portfolioImages).orderBy(asc(portfolioImages.sortOrder));
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load portfolio images, falling back to file store:", error);
     return await listFilePortfolioImages();
   }
@@ -657,6 +694,7 @@ export async function getPortfolioImageById(id: number) {
     const result = await db.select().from(portfolioImages).where(eq(portfolioImages.id, id)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load portfolio image, falling back to file store:", error);
     return await getFilePortfolioImageById(id);
   }
@@ -673,6 +711,7 @@ export async function createPortfolioImage(data: InsertPortfolioImage & Position
     const insertId = result[0].insertId;
     return await getPortfolioImageById(insertId);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to create portfolio image, falling back to file store:", error);
     return await createFilePortfolioImage(data);
   }
@@ -691,6 +730,7 @@ export async function updatePortfolioImage(
     await db.update(portfolioImages).set(dbData).where(eq(portfolioImages.id, id));
     return await getPortfolioImageById(id);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to update portfolio image, falling back to file store:", error);
     return await updateFilePortfolioImage(id, data);
   }
@@ -704,6 +744,7 @@ export async function deletePortfolioImage(id: number) {
     await db.delete(portfolioImages).where(eq(portfolioImages.id, id));
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete portfolio image, falling back to file store:", error);
     return await deleteFilePortfolioImage(id);
   }
@@ -720,6 +761,7 @@ export async function getAllSiteSections() {
   try {
     return await db.select().from(siteSections).orderBy(asc(siteSections.sortOrder));
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site sections, falling back to file store:", error);
     return await listFileSiteSections();
   }
@@ -733,6 +775,7 @@ export async function getSiteSectionByKey(key: string) {
     const result = await db.select().from(siteSections).where(eq(siteSections.key, key)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load site section, falling back to file store:", error);
     return await getFileSiteSectionByKey(key);
   }
@@ -749,6 +792,7 @@ export async function upsertSiteSection(data: InsertSiteSection) {
     });
     return await getSiteSectionByKey(data.key);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to upsert site section, falling back to file store:", error);
     return await upsertFileSiteSection(data);
   }
@@ -763,6 +807,7 @@ export async function updateSiteSectionVisibility(key: string, visible: boolean)
     await db.update(siteSections).set({ visible }).where(eq(siteSections.key, key));
     return await getSiteSectionByKey(key);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to update site section, falling back to file store:", error);
     return await updateFileSiteSectionVisibility(key, visible);
   }
@@ -837,6 +882,7 @@ export async function getAllPackages() {
       ? await db.select().from(packages).orderBy(asc(packages.sortOrder))
       : rows;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load packages, falling back to file store:", error);
     return await listFilePackages();
   }
@@ -850,6 +896,7 @@ export async function getPackageById(id: number) {
     const result = await db.select().from(packages).where(eq(packages.id, id)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load package, falling back to file store:", error);
     return await getFilePackageById(id);
   }
@@ -866,6 +913,7 @@ export async function createPackage(data: InsertPackage & Positionable) {
     const insertId = result[0].insertId;
     return await getPackageById(insertId);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to create package, falling back to file store:", error);
     return await createFilePackage(data);
   }
@@ -884,6 +932,7 @@ export async function updatePackage(
     await db.update(packages).set(dbData).where(eq(packages.id, id));
     return await getPackageById(id);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to update package, falling back to file store:", error);
     return await updateFilePackage(id, data);
   }
@@ -897,6 +946,7 @@ export async function deletePackage(id: number) {
     await db.delete(packages).where(eq(packages.id, id));
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete package, falling back to file store:", error);
     return await deleteFilePackage(id);
   }
@@ -913,6 +963,7 @@ export async function getAllTestimonials() {
   try {
     return await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load testimonials, falling back to file store:", error);
     return await listFileTestimonials();
   }
@@ -926,6 +977,7 @@ export async function getTestimonialById(id: number) {
     const result = await db.select().from(testimonials).where(eq(testimonials.id, id)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load testimonial, falling back to file store:", error);
     return await getFileTestimonialById(id);
   }
@@ -942,6 +994,7 @@ export async function createTestimonial(data: InsertTestimonial & Positionable) 
     const insertId = result[0].insertId;
     return await getTestimonialById(insertId);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to create testimonial, falling back to file store:", error);
     return await createFileTestimonial(data);
   }
@@ -960,6 +1013,7 @@ export async function updateTestimonial(
     await db.update(testimonials).set(dbData).where(eq(testimonials.id, id));
     return await getTestimonialById(id);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to update testimonial, falling back to file store:", error);
     return await updateFileTestimonial(id, data);
   }
@@ -973,6 +1027,7 @@ export async function deleteTestimonial(id: number) {
     await db.delete(testimonials).where(eq(testimonials.id, id));
     return true;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete testimonial, falling back to file store:", error);
     return await deleteFileTestimonial(id);
   }
@@ -989,6 +1044,7 @@ export async function getAllContactInfo() {
   try {
     return await db.select().from(contactInfo);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load contact info, falling back to file store:", error);
     return await listFileContactInfo();
   }
@@ -1002,6 +1058,7 @@ export async function getContactInfoByKey(key: string) {
     const result = await db.select().from(contactInfo).where(eq(contactInfo.key, key)).limit(1);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to load contact info item, falling back to file store:", error);
     return await getFileContactInfoByKey(key);
   }
@@ -1018,6 +1075,7 @@ export async function upsertContactInfo(data: InsertContactInfo) {
     });
     return await getContactInfoByKey(data.key);
   } catch (error) {
+    flagDbDisabledForError(error);
     console.warn("[Database] Failed to upsert contact info, falling back to file store:", error);
     return await upsertFileContactInfo(data);
   }
