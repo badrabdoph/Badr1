@@ -841,7 +841,7 @@ export function PackageCard({
             </Link>
           </div>
         ) : (
-          <div className={isSessionCard ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-4"}>
+          <div className={isSessionCard ? "grid grid-cols-1 sm:grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 gap-4"}>
             <Link href={contactHref}>
               <Button
                 variant="outline"
@@ -1063,7 +1063,7 @@ function QuickNav({
       ref={navRef}
     >
       <div className="container mx-auto px-4 py-2 sm:py-3">
-        <div className="quicknav-row flex items-center gap-1.5 overflow-x-auto scrollbar-hide justify-center">
+        <div className="quicknav-row flex items-center gap-1.5 overflow-x-auto scrollbar-hide justify-start md:justify-center snap-x snap-mandatory -mx-4 px-4">
           {items.map((it) => {
             const isActive = active === it.id;
             return (
@@ -1071,7 +1071,7 @@ function QuickNav({
                 key={it.id}
                 onClick={() => onJump(it.id)}
                 className={[
-                  "shrink-0 px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-semibold transition-all duration-200 rounded-full tap-target border quicknav-btn",
+                  "shrink-0 px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-semibold transition-all duration-200 rounded-full tap-target border quicknav-btn snap-start",
                   isActive ? "quicknav-btn--active" : "quicknav-btn--idle",
                 ].join(" ")}
               >

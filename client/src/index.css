@@ -154,6 +154,23 @@
   }
 
   @media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+
+    .tap-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    button,
+    [role="button"],
+    a {
+      touch-action: manipulation;
+    }
+
     [data-admin-panel] button {
       min-height: 44px;
     }
