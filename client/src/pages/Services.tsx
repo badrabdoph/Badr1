@@ -155,9 +155,20 @@ function extractPriceUnit(raw?: string) {
   return raw.replace(/[0-9.,\s]/g, "").trim();
 }
 
-const customPrintItems = customPrintGroups.flatMap((group) => group.items);
+const customPrintItems = customPrintGroups.reduce((acc, group) => {
+  if (Array.isArray(group.items)) {
+    acc.push(...group.items);
+  }
+  return acc;
+}, [] as typeof customPrintGroups[number]["items"]);
 const customPrintIdSet = new Set(customPrintItems.map((item) => item.id));
 const PRINTS_STORAGE_KEY = "prefill_print_ids";
+
+const asText = (value: unknown, fallback = "") => {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+};
 
 function readStoredPrintIds() {
   try {
@@ -273,10 +284,13 @@ export function PackageCard({
   const weddingTone = isWedding;
   const popular = !!pkg.popular || forcePopular;
   const isPro = pkg.id === "session-2";
-  const featureList = pkg.features ?? [];
+  const featureList = (Array.isArray(pkg.features) ? pkg.features : []).map((feature) =>
+    typeof feature === "string" ? feature : feature == null ? "" : String(feature)
+  );
   const isCollapsible = (isWedding && featureList.length > 6) || (isAddon && featureList.length > 2);
   const baseKey = `package_${pkg.id}`;
-  const getValue = (key: string, fallback = "") => (contentMap[key] as string | undefined) ?? fallback;
+  const getValue = (key: string, fallback = "") =>
+    asText(contentMap[key] as string | undefined, fallback);
   const badgeValue = (contentMap[`${baseKey}_badge`] ?? pkg.badge) as string | undefined;
   const customDescription = getValue(`${baseKey}_description`, pkg.description ?? "").trim();
   const [localCustomIds, setLocalCustomIds] = useState<string[]>([]);
@@ -330,7 +344,7 @@ export function PackageCard({
 
   const featureItems = featureList.map((feature, index) => {
     const fieldKey = `${baseKey}_feature_${index + 1}`;
-    const value = contentMap[fieldKey] ?? feature;
+    const value = asText(contentMap[fieldKey] ?? feature, "");
     return { index, feature, fieldKey, value, isSynthetic: false };
   });
 
@@ -1127,7 +1141,10 @@ export default function Services() {
   );
   const contentMap = content.contentMap ?? {};
   const legacyServicesSubtitle = "اختار الباقة المناسبة… وكلها بتتعمل بنفس الجودة والاهتمام بالتفاصيل";
-  const rawServicesSubtitle = ((contentMap.services_subtitle ?? pageTexts.services.subtitle) ?? "").trim();
+  const rawServicesSubtitle = asText(
+    contentMap.services_subtitle ?? pageTexts.services.subtitle ?? "",
+    ""
+  ).trim();
   const servicesSubtitleText = rawServicesSubtitle === legacyServicesSubtitle ? "" : rawServicesSubtitle;
   const [prefillPrintIds, setPrefillPrintIds] = useState<string[]>(() => readStoredPrintIds());
   const [activeSection, setActiveSection] = useState("sessions");
