@@ -434,6 +434,7 @@ export function PackageCard({
           isSessionCard ? "p-6 md:p-7" : "p-7 md:p-8",
           isCustom ? "custom-package" : "",
           isCollapsible && !isExpanded ? "full-day-collapsed" : "",
+          popular ? "popular-card" : "",
           weddingTone
             ? "border-primary/45 shadow-[0_0_70px_rgba(255,200,80,0.12)] hover:shadow-[0_0_95px_rgba(255,200,80,0.18)] hover:-translate-y-2"
             : popular || isPro

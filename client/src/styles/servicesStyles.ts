@@ -59,13 +59,16 @@ export const servicesStyles = `
         }
         .popular-badge--top {
           position: absolute;
-          top: -12px;
+          top: -18px;
           left: 50%;
           transform: translateX(-50%);
           padding: 6px 14px;
           z-index: 3;
           background: linear-gradient(135deg, rgba(48,38,22,0.95), rgba(16,12,8,0.95));
           box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+        }
+        .popular-card {
+          padding-top: calc(1.5rem + 0.35rem);
         }
         .package-price {
           font-variant-numeric: tabular-nums;
@@ -452,8 +455,8 @@ export const servicesStyles = `
         }
         .price-corner {
           position: absolute;
-          top: 1.25rem;
-          left: 1.25rem;
+          top: 1.6rem;
+          left: 1.6rem;
           padding: 0;
           border-radius: 0;
           border: 0;
@@ -472,6 +475,15 @@ export const servicesStyles = `
           pointer-events: none;
           isolation: isolate;
           animation: price-glow 3.6s ease-in-out infinite;
+        }
+        @media (min-width: 768px) {
+          .price-corner {
+            top: 1.75rem;
+            left: 1.75rem;
+          }
+          .popular-card {
+            padding-top: calc(1.75rem + 0.35rem);
+          }
         }
         .price-corner::after {
           content: none;
