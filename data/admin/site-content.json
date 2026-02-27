@@ -36,5 +36,16 @@
     "offsetY": 0,
     "createdAt": "2026-02-25T22:31:15.468Z",
     "updatedAt": "2026-02-25T22:31:15.468Z"
+  },
+  {
+    "id": 1772202599179,
+    "key": "services_monthly_offer_button",
+    "value": "خصم 🔥",
+    "category": "services",
+    "label": "زر خصم (عرض الشهر)",
+    "offsetX": 0,
+    "offsetY": 0,
+    "createdAt": "2026-02-27T14:29:59.112Z",
+    "updatedAt": "2026-02-27T14:29:59.112Z"
   }
 ]
