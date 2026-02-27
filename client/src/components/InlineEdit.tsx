@@ -306,14 +306,20 @@ export function EditableText({
 
   useEffect(() => {
     if (isEditing) return;
-    setDraft(entryText);
-    setOffsetDraft({
-      offsetX: position?.offsetX ?? 0,
-      offsetY: position?.offsetY ?? 0,
-    });
-    setScaleDraft(scaleValue || 1);
+    const nextOffsetX = position?.offsetX ?? 0;
+    const nextOffsetY = position?.offsetY ?? 0;
+    const nextScale = scaleValue || 1;
+    setDraft((prev) => (prev === entryText ? prev : entryText));
+    setOffsetDraft((prev) =>
+      prev.offsetX === nextOffsetX && prev.offsetY === nextOffsetY
+        ? prev
+        : { offsetX: nextOffsetX, offsetY: nextOffsetY }
+    );
+    setScaleDraft((prev) =>
+      Math.abs(prev - nextScale) <= 0.001 ? prev : nextScale
+    );
     setShowMoveTools(false);
-  }, [entryText, position, scaleValue, isEditing]);
+  }, [entryText, position?.offsetX, position?.offsetY, scaleValue, isEditing]);
 
   const upsertMutation = trpc.siteContent.upsert.useMutation({
     onMutate: (input) => {
@@ -1285,12 +1291,15 @@ export function EditableImage({
 
   useEffect(() => {
     if (isEditing) return;
-    setDraftUrl(src);
-    setOffsetDraft({
-      offsetX: position?.offsetX ?? 0,
-      offsetY: position?.offsetY ?? 0,
-    });
-  }, [src, position, isEditing]);
+    const nextOffsetX = position?.offsetX ?? 0;
+    const nextOffsetY = position?.offsetY ?? 0;
+    setDraftUrl((prev) => (prev === src ? prev : src));
+    setOffsetDraft((prev) =>
+      prev.offsetX === nextOffsetX && prev.offsetY === nextOffsetY
+        ? prev
+        : { offsetX: nextOffsetX, offsetY: nextOffsetY }
+    );
+  }, [src, position?.offsetX, position?.offsetY, isEditing]);
 
   const upsertMutation = trpc.siteImages.upsert.useMutation({
     onMutate: (input) => ({
