@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Camera, Sparkles, Heart, Star, ArrowLeft } from "lucide-react";
 import { aboutContent, photographerInfo, siteImages, ctaTexts, externalPortfolioUrl } from "@/config/siteConfig";
-import { useContentData, useTestimonialsData, useSiteImagesData } from "@/hooks/useSiteData";
+import { useContentData, useSiteImagesData } from "@/hooks/useSiteData";
 import SmartImage from "@/components/SmartImage";
 import { EditableImage, EditableText } from "@/components/InlineEdit";
 import { getOffsetStyle } from "@/lib/positioning";
@@ -12,9 +12,30 @@ import { getOffsetStyle } from "@/lib/positioning";
 export default function About() {
   const content = useContentData();
   const { imageMap } = useSiteImagesData();
-  const testimonials = useTestimonialsData();
   const contentMap = content.contentMap ?? {};
   const aboutImg = imageMap.aboutImage?.url ?? siteImages.aboutImage ?? siteImages.heroImage;
+  const sharedTestimonials = [
+    {
+      name: "Mohamed & Heba",
+      quote:
+        "بجد احلي فوتوغرافر اتعاملنا معاه في خطوبتنا والصور مشاء الله طالعه احلي مما كنا عايزين كمان وانشاء الله مش اخر تعامل ♥️",
+    },
+    {
+      name: "Basent & Abdo",
+      quote:
+        "الصور احنا مش مصدقين حلاوتها بجد ولا الألوان خطيره اكيد مش اخر مره ما بينا انشاء الله ♥️",
+    },
+    {
+      name: "Norhan & Hossam",
+      quote:
+        "صور الفرح مشاء الله جميله اوي اوي عجبت كل صحابنا وأهلنا دا غير البرومو التحفه اللي اتعرض في الفرح كلو انبهر بيه ♥️",
+    },
+    {
+      name: "Shahd",
+      quote:
+        "سيشن عيد ميلادي كان خطير بجد متصورتش صور بالحلاوه دي قبل كد تسلم ايدك ❤️",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -346,11 +367,12 @@ export default function About() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {testimonials.slice(0, 2).map((t, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto">
+            {sharedTestimonials.slice(0, 4).map((t, i) => {
+              const keyBase = `home_testimonial_${i + 1}`;
+              return (
               <div
                 key={i}
-                style={getOffsetStyle((t as any)?.offsetX, (t as any)?.offsetY)}
                 className="bg-card/40 border border-white/10 p-7 premium-border hover:border-primary/25 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-3 text-primary">
@@ -363,10 +385,10 @@ export default function About() {
                 <p className="text-muted-foreground italic leading-relaxed mb-5">
                   “
                   <EditableText
-                    value={contentMap[`about_testimonial_${i + 1}_quote`]}
+                    value={contentMap[`${keyBase}_quote`]}
                     fallback={t.quote}
-                    fieldKey={`about_testimonial_${i + 1}_quote`}
-                    category="about"
+                    fieldKey={`${keyBase}_quote`}
+                    category="home"
                     label={`رأي العميل ${i + 1}`}
                     multiline
                   />
@@ -374,15 +396,16 @@ export default function About() {
                 </p>
                 <div className="font-bold">
                   <EditableText
-                    value={contentMap[`about_testimonial_${i + 1}_name`]}
+                    value={contentMap[`${keyBase}_name`]}
                     fallback={t.name}
-                    fieldKey={`about_testimonial_${i + 1}_name`}
-                    category="about"
+                    fieldKey={`${keyBase}_name`}
+                    category="home"
                     label={`اسم العميل ${i + 1}`}
                   />
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>
