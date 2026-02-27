@@ -1374,6 +1374,46 @@ function ContentManager({ onRefresh }: ManagerProps) {
     });
   };
 
+  const handleRestoreContent = async (
+    key: string,
+    category: string,
+    label: string,
+    status: "hidden" | "cleared"
+  ) => {
+    if (status === "hidden") {
+      await persistHiddenState(key, category, label, false);
+      return;
+    }
+    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const fallback = catalog.fallbackMap[key] ?? "";
+    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
+    const nextValue = serializeContentValue({
+      text: fallback,
+      hidden: false,
+      scale: editingMeta[key]?.scale,
+    });
+    await upsertMutation.mutateAsync({
+      key,
+      value: nextValue,
+      category,
+      label,
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
+    });
+    setEditingContent((prev) => ({ ...prev, [key]: fallback }));
+    setEditingMeta((prev) => ({ ...prev, [key]: { ...prev[key], hidden: false } }));
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "siteContent",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        category,
+        label,
+      });
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const handleCopyKey = async (key: string) => {
     try {
@@ -1444,6 +1484,15 @@ function ContentManager({ onRefresh }: ManagerProps) {
     });
   }, [content, catalog.items]);
 
+  const contentState = useMemo(() => {
+    const map = new Map<string, { text: string; hidden: boolean; raw: string }>();
+    (content ?? []).forEach((item: any) => {
+      const parsed = parseContentValue(item.value);
+      map.set(item.key, { text: parsed.text, hidden: parsed.hidden, raw: parsed.raw });
+    });
+    return map;
+  }, [content]);
+
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredItems = items.filter((item) => {
     if (!normalizedSearch) return true;
@@ -1452,7 +1501,20 @@ function ContentManager({ onRefresh }: ManagerProps) {
       item.label.toLowerCase().includes(normalizedSearch)
     );
   });
-  const hiddenItems = filteredItems.filter((item) => editingMeta[item.key]?.hidden);
+  const hiddenItems = filteredItems.filter((item) => contentState.get(item.key)?.hidden);
+  const clearedItems = filteredItems.filter((item) => {
+    const state = contentState.get(item.key);
+    if (!state) return false;
+    if (state.hidden) return false;
+    const text = (state.text ?? "").trim();
+    if (text.length) return false;
+    const fallback = (catalog.fallbackMap[item.key] ?? "").trim();
+    return fallback.length > 0;
+  });
+  const flaggedItems = [
+    ...hiddenItems.map((item) => ({ ...item, status: "hidden" as const })),
+    ...clearedItems.map((item) => ({ ...item, status: "cleared" as const })),
+  ].sort((a, b) => a.label.localeCompare(b.label, "ar"));
 
   const groupedItems = useMemo(() => {
     const buckets: Record<string, typeof filteredItems> = {};
@@ -1582,15 +1644,15 @@ function ContentManager({ onRefresh }: ManagerProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <EyeOff className="w-5 h-5" />
-            النصوص المخفية
+            التعديلات المخفية والمحذوفة
           </CardTitle>
           <CardDescription>
-            يمكنك استعادة أي نص مخفي أو حذفه نهائيًا ليعود للنص الافتراضي.
+            استعد أي تعديل مخفي أو محذوف، أو احذفه نهائيًا ليعود للنص الافتراضي.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {hiddenItems.length > 0 ? (
-            hiddenItems.map((item) => (
+          {flaggedItems.length > 0 ? (
+            flaggedItems.map((item) => (
               <div
                 key={item.key}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
@@ -1598,13 +1660,20 @@ function ContentManager({ onRefresh }: ManagerProps) {
                 <div className="text-sm">
                   <div className="font-semibold">{item.label}</div>
                   <div className="text-xs text-muted-foreground">{item.key}</div>
+                  <div className="mt-1">
+                    <Badge variant={item.status === "hidden" ? "outline" : "secondary"} className="text-[10px]">
+                      {item.status === "hidden" ? "مخفي" : "محذوف"}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => persistHiddenState(item.key, item.category, item.label, false)}
-                    disabled={upsertMutation.isPending}
+                    onClick={() =>
+                      handleRestoreContent(item.key, item.category, item.label, item.status)
+                    }
+                    disabled={upsertMutation.isPending || deleteMutation.isPending}
                   >
                     استعادة
                   </Button>
@@ -1622,7 +1691,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p>لا توجد نصوص مخفية</p>
+              <p>لا توجد تعديلات مخفية أو محذوفة</p>
             </div>
           )}
         </CardContent>
