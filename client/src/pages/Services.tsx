@@ -278,11 +278,11 @@ export function PackageCard({
   const isAddon = kind === "addon";
   const vip = isWedding && isVipPlus(pkg);
   const forcePopular = ["full-day-vip-plus", "media-coverage", "session-2"].includes(pkg.id);
-  const popularTopCenter = ["full-day-vip-plus", "session-2"].includes(pkg.id);
   const isCustom = isCustomPackage(pkg);
   const isSessionCard = kind === "session" && !isCustom;
   const weddingTone = isWedding;
   const popular = !!pkg.popular || forcePopular;
+  const popularTopCenter = popular;
   const isPro = pkg.id === "session-2";
   const featureList = (Array.isArray(pkg.features) ? pkg.features : []).map((feature) =>
     typeof feature === "string" ? feature : feature == null ? "" : String(feature)
@@ -441,7 +441,7 @@ export function PackageCard({
             : "border-white/10 hover:border-primary/35 hover:-translate-y-2 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
         ].join(" ")}
       >
-      {popularTopCenter && !vip ? (
+      {popularTopCenter ? (
         <div className="popular-badge popular-badge--top">
           <EditableText
             value={contentMap[`${baseKey}_popular_label`]}
