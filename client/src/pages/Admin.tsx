@@ -1539,9 +1539,12 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
+  const [bulkPackageRestoring, setBulkPackageRestoring] = useState(false);
   const packageUpdateMutation = trpc.packages.update.useMutation({
     onSuccess: () => {
-      toast.success("تم تحديث الباقة");
+      if (!bulkPackageRestoring) {
+        toast.success("تم تحديث الباقة");
+      }
       utils.packages.getAll.invalidate();
       onRefresh?.();
     },
@@ -1791,18 +1794,39 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
 
   const runBulkDelete = async (
     list: Array<{ key: string }>,
-    successMessage: string
+    successMessage?: string
   ) => {
     setBulkDeleting(true);
     try {
       for (const item of list) {
         await deleteMutation.mutateAsync({ key: item.key });
       }
-      toast.success(successMessage);
+      if (successMessage) {
+        toast.success(successMessage);
+      }
       refetch();
       onRefresh?.();
     } finally {
       setBulkDeleting(false);
+    }
+  };
+
+  const restoreAllDefaultPackages = async () => {
+    if (!packageEdits.length) return;
+    setBulkPackageRestoring(true);
+    try {
+      for (const pkg of packageEdits) {
+        const fallbackPkg = defaultPackagesByName.map.get(
+          defaultPackagesByName.normalize(pkg.name)
+        );
+        if (!fallbackPkg) continue;
+        await restorePackageAll(pkg.id, fallbackPkg);
+      }
+      toast.success("تم استعادة كل الباقات الافتراضية");
+      utils.packages.getAll.invalidate();
+      onRefresh?.();
+    } finally {
+      setBulkPackageRestoring(false);
     }
   };
 
@@ -1818,6 +1842,36 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
       confirmLabel: "تفريغ",
       cancelLabel: "إلغاء",
       onConfirm: () => runBulkDelete(allContentEdits, "تم تفريغ التعديلات المخفية والمحذوفة"),
+    });
+  };
+
+  const handleClearAllEdits = () => {
+    if (!allContentEdits.length && !packageEdits.length && historyCount === 0) {
+      toast.info("لا توجد تعديلات لمسحها");
+      return;
+    }
+    requestConfirm({
+      title: "تفريغ كل التعديلات",
+      description:
+        "سيتم حذف كل التعديلات المخفية/المحذوفة، واستعادة الباقات الافتراضية، ومسح سجل الباقات بالكامل.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: async () => {
+        if (allContentEdits.length) {
+          await runBulkDelete(allContentEdits);
+        }
+        if (packageEdits.length) {
+          await restoreAllDefaultPackages();
+        }
+        if (historyCount > 0) {
+          await clearHistoryMutation.mutateAsync();
+        }
+        toast.success("تم تفريغ كل التعديلات");
+        refetch();
+        utils.packages.getAll.invalidate();
+        utils.packages.history.getAll.invalidate();
+        onRefresh?.();
+      },
     });
   };
 
@@ -2156,7 +2210,7 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={handleClearContentEdits}
+                onClick={handleClearAllEdits}
                 disabled={deleteMutation.isPending || bulkDeleting}
               >
                 تفريغ الكل
