@@ -67,8 +67,10 @@ import {
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: Pool | null = null;
-const STORE_MODE = process.env.ADMIN_STORE_MODE ?? "file";
-const useFileStore = STORE_MODE === "file";
+const STORE_MODE = (process.env.ADMIN_STORE_MODE ?? "file").trim().toLowerCase();
+const FORCE_FILE_STORE = (process.env.ADMIN_FORCE_FILE_STORE ?? "false") === "true";
+const useFileStore = FORCE_FILE_STORE || STORE_MODE !== "db";
+let storeModeLogged = false;
 let dbDisabled = false;
 let adminTablesReady = false;
 let packagesSeeded = false;
@@ -240,6 +242,10 @@ async function ensureAdminTables(db: ReturnType<typeof drizzle>) {
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
+  if (!storeModeLogged) {
+    storeModeLogged = true;
+    console.log("[AdminStore] mode=%s forceFile=%s databaseUrl=%s", STORE_MODE, FORCE_FILE_STORE, ENV.databaseUrl ? "set" : "missing");
+  }
   if (useFileStore || dbDisabled) return null;
   if (!_db && ENV.databaseUrl) {
     try {
