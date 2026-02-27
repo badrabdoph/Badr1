@@ -25,5 +25,30 @@
       "updatedAt": "2026-02-27T15:52:48.676Z"
     },
     "createdAt": "2026-02-27T15:52:48.681Z"
+  },
+  {
+    "id": 1772207694800,
+    "packageId": 1,
+    "action": "update",
+    "snapshot": {
+      "id": 1,
+      "name": "سيشن بيزك",
+      "price": "1500",
+      "description": "تصوير فقط",
+      "features": [
+        "عدد غير محدود من الصور",
+        "شامل REELS & TIKTOK",
+        "وقت محدد \"\"انت من تحدد الوقت\"\""
+      ],
+      "category": "session",
+      "popular": false,
+      "visible": true,
+      "sortOrder": 1,
+      "offsetX": 0,
+      "offsetY": 0,
+      "createdAt": "2026-02-25T00:00:00.000Z",
+      "updatedAt": "2026-02-27T15:54:54.785Z"
+    },
+    "createdAt": "2026-02-27T15:54:54.800Z"
   }
 ]
