@@ -483,7 +483,7 @@ export async function deleteSiteContent(key: string) {
 export async function getAllSiteImages() {
   if (useFileStore) return await listFileSiteImages();
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return await listFileSiteImages();
   try {
     return await db.select().from(siteImages).orderBy(asc(siteImages.sortOrder));
   } catch (error) {
@@ -677,7 +677,7 @@ export async function extendShareLink(code: string, hours: number): Promise<Shar
 export async function getAllPortfolioImages() {
   if (useFileStore) return await listFilePortfolioImages();
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return await listFilePortfolioImages();
   try {
     return await db.select().from(portfolioImages).orderBy(asc(portfolioImages.sortOrder));
   } catch (error) {
@@ -758,7 +758,7 @@ export async function deletePortfolioImage(id: number) {
 export async function getAllSiteSections() {
   if (useFileStore) return await listFileSiteSections();
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return await listFileSiteSections();
   try {
     return await db.select().from(siteSections).orderBy(asc(siteSections.sortOrder));
   } catch (error) {
@@ -960,7 +960,7 @@ export async function deletePackage(id: number) {
 export async function getAllTestimonials() {
   if (useFileStore) return await listFileTestimonials();
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return await listFileTestimonials();
   try {
     return await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
   } catch (error) {
@@ -1041,7 +1041,7 @@ export async function deleteTestimonial(id: number) {
 export async function getAllContactInfo() {
   if (useFileStore) return await listFileContactInfo();
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return await listFileContactInfo();
   try {
     return await db.select().from(contactInfo);
   } catch (error) {
