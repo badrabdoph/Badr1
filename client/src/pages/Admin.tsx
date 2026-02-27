@@ -1519,6 +1519,16 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
   const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
   const { data: packagesData } = trpc.packages.getAll.useQuery();
   const testimonials = useTestimonialsData();
+  const packagesById = useMemo(() => {
+    const map = new Map<string, string>();
+    const list = (packagesData ?? []) as any[];
+    list.forEach((pkg) => {
+      if (pkg?.id != null) {
+        map.set(String(pkg.id), String(pkg.name ?? `الباقة ${pkg.id}`));
+      }
+    });
+    return map;
+  }, [packagesData]);
   const upsertMutation = trpc.siteContent.upsert.useMutation({
     onSuccess: () => {
       toast.success("تم حفظ التغييرات");
@@ -1622,6 +1632,97 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     );
   });
 
+  const parsePackageKey = (key: string) => {
+    const featureMatch = key.match(/^package_(\d+)_feature_(\d+)$/);
+    if (featureMatch) {
+      return {
+        id: featureMatch[1],
+        field: "feature",
+        line: Number(featureMatch[2]),
+      };
+    }
+    const fieldMatch = key.match(
+      /^package_(\d+)_(name|price|description|badge|price_note|popular_label|vip_label)$/
+    );
+    if (fieldMatch) {
+      return {
+        id: fieldMatch[1],
+        field: fieldMatch[2],
+        line: null as number | null,
+      };
+    }
+    return null;
+  };
+
+  const packageFieldLabel = (field: string, line?: number | null) => {
+    if (field === "feature") return `سطر ${line}`;
+    if (field === "name") return "اسم الباقة";
+    if (field === "price") return "سعر الباقة";
+    if (field === "description") return "وصف الباقة";
+    if (field === "badge") return "شارة الباقة";
+    if (field === "price_note") return "ملاحظة السعر";
+    if (field === "popular_label") return "شارة الأكثر طلبًا";
+    if (field === "vip_label") return "شارة VIP";
+    return "عنصر";
+  };
+
+  const grouped = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        kind: "package" | "generic";
+        items: (typeof filtered)[number][];
+        packageId?: string;
+      }
+    >();
+
+    filtered.forEach((item) => {
+      const pkg = parsePackageKey(item.key);
+      if (pkg) {
+        const packageName = packagesById.get(pkg.id) ?? `الباقة ${pkg.id}`;
+        const groupId = `package:${pkg.id}`;
+        const existing = groups.get(groupId);
+        if (!existing) {
+          groups.set(groupId, {
+            id: groupId,
+            title: `كارت ${packageName}`,
+            kind: "package",
+            items: [item],
+            packageId: pkg.id,
+          });
+        } else {
+          existing.items.push(item);
+        }
+      } else {
+        const groupId = `generic:${item.key}`;
+        groups.set(groupId, {
+          id: groupId,
+          title: item.label,
+          kind: "generic",
+          items: [item],
+        });
+      }
+    });
+
+    return Array.from(groups.values()).map((group) => ({
+      ...group,
+      items: group.items.sort((a, b) => a.label.localeCompare(b.label, "ar")),
+    }));
+  }, [filtered, packagesById]);
+
+  const resolveTextPreview = (key: string) => {
+    const state = contentState.get(key);
+    const currentText = (state?.text ?? "").trim();
+    const fallbackText = (catalog.fallbackMap[key] ?? "").toString().trim();
+    return {
+      currentText,
+      fallbackText,
+      preview: currentText || fallbackText || "—",
+    };
+  };
+
   const handleDeleteContent = (key: string, label: string) => {
     requestConfirm({
       title: "حذف نهائي للنص",
@@ -1648,6 +1749,34 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
       value: nextValue,
       category,
       label,
+    });
+  };
+
+  const handleRestoreGroup = (group: (typeof grouped)[number]) => {
+    requestConfirm({
+      title: "استعادة الكارت بالكامل",
+      description: `هل تريد استعادة كل تعديلات "${group.title}"؟`,
+      confirmLabel: "استعادة",
+      cancelLabel: "إلغاء",
+      onConfirm: async () => {
+        for (const item of group.items) {
+          await handleRestore(item.key, item.category, item.label, item.status);
+        }
+      },
+    });
+  };
+
+  const handleDeleteGroup = (group: (typeof grouped)[number]) => {
+    requestConfirm({
+      title: "حذف الكارت نهائيًا",
+      description: `هل تريد حذف كل تعديلات "${group.title}" نهائيًا؟`,
+      confirmLabel: "حذف",
+      cancelLabel: "إلغاء",
+      onConfirm: async () => {
+        for (const item of group.items) {
+          await deleteMutation.mutateAsync({ key: item.key });
+        }
+      },
     });
   };
 
@@ -1690,41 +1819,88 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
             </Badge>
           </div>
 
-          {filtered.length > 0 ? (
-            filtered.map((item) => (
-              <div
-                key={item.key}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
-              >
-                <div className="text-sm">
-                  <div className="font-semibold">{item.label}</div>
-                  <div className="text-xs text-muted-foreground">{item.key}</div>
-                  <div className="mt-1">
-                    <Badge
-                      variant={item.status === "hidden" ? "outline" : "secondary"}
-                      className="text-[10px]"
-                    >
-                      {item.status === "hidden" ? "مخفي" : "محذوف"}
-                    </Badge>
+          {grouped.length > 0 ? (
+            grouped.map((group) => (
+              <div key={group.id} className="space-y-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">{group.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {group.items.length} تعديل
+                    </div>
                   </div>
+                  {group.kind === "package" ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRestoreGroup(group)}
+                        disabled={upsertMutation.isPending || deleteMutation.isPending}
+                      >
+                        استعادة الكارت بالكامل
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteGroup(group)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        حذف الكارت نهائيًا
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRestore(item.key, item.category, item.label, item.status)}
-                    disabled={upsertMutation.isPending || deleteMutation.isPending}
-                  >
-                    استعادة
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteContent(item.key, item.label)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    حذف نهائي
-                  </Button>
+
+                <div className="space-y-2">
+                  {group.items.map((item) => {
+                    const pkg = parsePackageKey(item.key);
+                    const fieldLabel = pkg
+                      ? packageFieldLabel(pkg.field, pkg.line)
+                      : item.label;
+                    const textInfo = resolveTextPreview(item.key);
+                    return (
+                      <div
+                        key={item.key}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-background/40 px-3 py-2"
+                      >
+                        <div className="text-sm">
+                          <div className="font-semibold">{fieldLabel}</div>
+                          <div className="text-xs text-muted-foreground">{item.key}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            النص: {textInfo.preview}
+                          </div>
+                          <div className="mt-1">
+                            <Badge
+                              variant={item.status === "hidden" ? "outline" : "secondary"}
+                              className="text-[10px]"
+                            >
+                              {item.status === "hidden" ? "مخفي" : "محذوف"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleRestore(item.key, item.category, item.label, item.status)
+                            }
+                            disabled={upsertMutation.isPending || deleteMutation.isPending}
+                          >
+                            استعادة
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteContent(item.key, item.label)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            حذف نهائي
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))
