@@ -49,17 +49,6 @@
     "updatedAt": "2026-02-27T14:29:59.112Z"
   },
   {
-    "id": 1772202732631,
-    "key": "package_2_feature_2",
-    "value": "__META__:{\"text\":\"\",\"hidden\":true}",
-    "category": "services",
-    "label": "ميزة 2 - سيشن برو",
-    "offsetX": 0,
-    "offsetY": 0,
-    "createdAt": "2026-02-27T14:32:11.679Z",
-    "updatedAt": "2026-02-27T14:32:20.125Z"
-  },
-  {
     "id": 1772202954994,
     "key": "home_follow_title",
     "value": "__META__:{\"text\":\"\",\"scale\":1.1}",

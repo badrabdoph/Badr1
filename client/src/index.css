@@ -149,7 +149,7 @@
     -webkit-touch-callout: none;
   }
 
-  li[data-edit-hidden="true"] {
+  [data-edit-hidden="true"] {
     display: none;
   }
 

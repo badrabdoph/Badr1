@@ -119,6 +119,24 @@ function useInlineConfirm() {
   return { requestConfirm, ConfirmDialog };
 }
 
+function getEditCollapseTarget(element: HTMLElement | null) {
+  if (!element) return null;
+  const li = element.closest("li");
+  if (li) return li;
+  const parent = element.parentElement;
+  if (!parent) return null;
+  const meaningfulNodes = Array.from(parent.childNodes).filter((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return (node.textContent ?? "").trim().length > 0;
+    }
+    return node.nodeType === Node.ELEMENT_NODE;
+  });
+  if (meaningfulNodes.length === 1 && meaningfulNodes[0] === element) {
+    return parent;
+  }
+  return null;
+}
+
 type EditableTextProps = {
   value?: string | null;
   fallback?: string;
@@ -291,16 +309,15 @@ export function EditableText({
 
   useEffect(() => {
     const element = anchorRef.current;
-    if (!element) return;
-    const li = element.closest("li");
-    if (!li) return;
+    const target = getEditCollapseTarget(element);
+    if (!target) return;
     if (shouldHide) {
-      li.setAttribute("data-edit-hidden", "true");
+      target.setAttribute("data-edit-hidden", "true");
     } else {
-      li.removeAttribute("data-edit-hidden");
+      target.removeAttribute("data-edit-hidden");
     }
     return () => {
-      li.removeAttribute("data-edit-hidden");
+      target.removeAttribute("data-edit-hidden");
     };
   }, [shouldHide]);
 
@@ -486,6 +503,145 @@ export function EditableText({
   const textStyle =
     scaleValue && scaleValue !== 1 ? { fontSize: `${scaleValue}em` } : undefined;
 
+  const advancedControls = (
+    <>
+      <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Move className="w-3 h-3" />
+            الموضع (px)
+          </span>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={offsetDraft.offsetX}
+              onChange={(e) =>
+                setOffsetDraft({
+                  offsetX: Number(e.target.value) || 0,
+                  offsetY: offsetDraft.offsetY,
+                })
+              }
+              className="h-8 w-20 text-xs"
+              dir="ltr"
+              placeholder="X"
+            />
+            <Input
+              type="number"
+              value={offsetDraft.offsetY}
+              onChange={(e) =>
+                setOffsetDraft({
+                  offsetX: offsetDraft.offsetX,
+                  offsetY: Number(e.target.value) || 0,
+                })
+              }
+              className="h-8 w-20 text-xs"
+              dir="ltr"
+              placeholder="Y"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() =>
+                setOffsetDraft({
+                  offsetX: offsetDraft.offsetX,
+                  offsetY: offsetDraft.offsetY - 10,
+                })
+              }
+            >
+              <ArrowUp className="w-3 h-3" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() =>
+                setOffsetDraft({
+                  offsetX: offsetDraft.offsetX + 10,
+                  offsetY: offsetDraft.offsetY,
+                })
+              }
+            >
+              <ArrowRight className="w-3 h-3" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() =>
+                setOffsetDraft({
+                  offsetX: offsetDraft.offsetX - 10,
+                  offsetY: offsetDraft.offsetY,
+                })
+              }
+            >
+              <ArrowLeft className="w-3 h-3" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() =>
+                setOffsetDraft({
+                  offsetX: offsetDraft.offsetX,
+                  offsetY: offsetDraft.offsetY + 10,
+                })
+              }
+            >
+              <ArrowDown className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            onClick={() => setOffsetDraft({ offsetX: 0, offsetY: 0 })}
+          >
+            تصفير الموضع
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Type className="w-3 h-3" />
+            حجم الخط
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() => setScaleDraft((prev) => clampScale(prev - 0.05))}
+            >
+              <Minus className="w-3 h-3" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              type="button"
+              onClick={() => setScaleDraft((prev) => clampScale(prev + 0.05))}
+            >
+              <Plus className="w-3 h-3" />
+            </Button>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            onClick={() => setScaleDraft(1)}
+          >
+            تصفير الحجم
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <Tag
       {...(tagProps as any)}
@@ -536,139 +692,18 @@ export function EditableText({
               إلغاء
             </Button>
           </div>
-          <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Move className="w-3 h-3" />
-                الموضع (px)
-              </span>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={offsetDraft.offsetX}
-                  onChange={(e) =>
-                    setOffsetDraft({
-                      offsetX: Number(e.target.value) || 0,
-                      offsetY: offsetDraft.offsetY,
-                    })
-                  }
-                  className="h-8 w-20 text-xs"
-                  dir="ltr"
-                  placeholder="X"
-                />
-                <Input
-                  type="number"
-                  value={offsetDraft.offsetY}
-                  onChange={(e) =>
-                    setOffsetDraft({
-                      offsetX: offsetDraft.offsetX,
-                      offsetY: Number(e.target.value) || 0,
-                    })
-                  }
-                  className="h-8 w-20 text-xs"
-                  dir="ltr"
-                  placeholder="Y"
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() =>
-                    setOffsetDraft({
-                      offsetX: offsetDraft.offsetX,
-                      offsetY: offsetDraft.offsetY - 10,
-                    })
-                  }
-                >
-                  <ArrowUp className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() =>
-                    setOffsetDraft({
-                      offsetX: offsetDraft.offsetX + 10,
-                      offsetY: offsetDraft.offsetY,
-                    })
-                  }
-                >
-                  <ArrowRight className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() =>
-                    setOffsetDraft({
-                      offsetX: offsetDraft.offsetX - 10,
-                      offsetY: offsetDraft.offsetY,
-                    })
-                  }
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() =>
-                    setOffsetDraft({
-                      offsetX: offsetDraft.offsetX,
-                      offsetY: offsetDraft.offsetY + 10,
-                    })
-                  }
-                >
-                  <ArrowDown className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                onClick={() => setOffsetDraft({ offsetX: 0, offsetY: 0 })}
-              >
-                تصفير الموضع
-              </Button>
-            </div>
+          <div className="hidden md:flex md:flex-col gap-2">
+            {advancedControls}
           </div>
-          <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Type className="w-3 h-3" />
-                حجم الخط
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() => setScaleDraft((prev) => clampScale(prev - 0.05))}
-                >
-                  <Minus className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  type="button"
-                  onClick={() => setScaleDraft((prev) => clampScale(prev + 0.05))}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
+          <div className="md:hidden">
+            <details className="rounded-md border border-border/60 bg-muted/30 p-2">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                خيارات متقدمة
+              </summary>
+              <div className="mt-2 space-y-2">
+                {advancedControls}
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                onClick={() => setScaleDraft(1)}
-              >
-                تصفير الحجم
-              </Button>
-            </div>
+            </details>
           </div>
           {multiline && (
             <div className="text-xs text-muted-foreground">
@@ -702,109 +737,134 @@ export function EditableText({
             </span>
           ) : null}
           {enabled && !isHidden ? (
-            <span
-              className="absolute top-1/2 z-20 inline-flex -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-              style={{ right: "100%", marginRight: "0.5rem" }}
-            >
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={startEditing}
-                title="تعديل"
-                disabled={upsertMutation.isPending}
+            <>
+              <span
+                className="hidden md:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                style={{ right: "100%", marginRight: "0.5rem" }}
               >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={handleToggleHidden}
-                title={isHidden ? "إظهار النص" : "إخفاء النص"}
-                disabled={upsertMutation.isPending}
-              >
-                {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={() => adjustScale(-0.05)}
-                title="تصغير النص"
-                disabled={upsertMutation.isPending}
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={() => adjustScale(0.05)}
-                title="تكبير النص"
-                disabled={upsertMutation.isPending}
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={resetScale}
-                title="تصفير الحجم"
-                disabled={upsertMutation.isPending}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={() => setShowMoveTools((prev) => !prev)}
-                title="تحريك"
-              >
-                <Move className="w-3 h-3" />
-              </button>
-              {showMoveTools ? (
-                <div className="absolute top-full right-0 mt-1 z-20 rounded-lg border border-white/15 bg-black/80 p-2 text-[10px] text-white shadow-lg">
-                  <div className="flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={startEditing}
+                  title="تعديل"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={handleToggleHidden}
+                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                  disabled={upsertMutation.isPending}
+                >
+                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => adjustScale(-0.05)}
+                  title="تصغير النص"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => adjustScale(0.05)}
+                  title="تكبير النص"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={resetScale}
+                  title="تصفير الحجم"
+                  disabled={upsertMutation.isPending}
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => setShowMoveTools((prev) => !prev)}
+                  title="تحريك"
+                >
+                  <Move className="w-3 h-3" />
+                </button>
+                {showMoveTools ? (
+                  <div className="absolute top-full right-0 mt-1 z-20 rounded-lg border border-white/15 bg-black/80 p-2 text-[10px] text-white shadow-lg">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                        onClick={() => nudgePosition(0, -6)}
+                        title="أعلى"
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                        onClick={() => nudgePosition(0, 6)}
+                        title="أسفل"
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                        onClick={() => nudgePosition(-6, 0)}
+                        title="يسار"
+                      >
+                        <ArrowLeft className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
+                        onClick={() => nudgePosition(6, 0)}
+                        title="يمين"
+                      >
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
                     <button
                       type="button"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
-                      onClick={() => nudgePosition(0, -6)}
-                      title="أعلى"
+                      className="mt-2 w-full rounded-md border border-white/15 px-2 py-1 text-[10px] hover:bg-black/70"
+                      onClick={resetPosition}
                     >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
-                      onClick={() => nudgePosition(0, 6)}
-                      title="أسفل"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
-                      onClick={() => nudgePosition(-6, 0)}
-                      title="يسار"
-                    >
-                      <ArrowLeft className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/15 hover:bg-black/70"
-                      onClick={() => nudgePosition(6, 0)}
-                      title="يمين"
-                    >
-                      <ArrowRight className="w-3 h-3" />
+                      تصفير الموضع
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    className="mt-2 w-full rounded-md border border-white/15 px-2 py-1 text-[10px] hover:bg-black/70"
-                    onClick={resetPosition}
-                  >
-                    تصفير الموضع
-                  </button>
-                </div>
-              ) : null}
-            </span>
+                ) : null}
+              </span>
+              <span className="md:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
+                  onClick={startEditing}
+                  title="تعديل"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
+                  onClick={handleToggleHidden}
+                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                  disabled={upsertMutation.isPending}
+                >
+                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                </button>
+                <span className="text-[10px] text-muted-foreground">
+                  اضغط تعديل لفتح الأدوات
+                </span>
+              </span>
+            </>
           ) : null}
         </>
       )}
@@ -857,16 +917,15 @@ export function EditableContactText({
 
   useEffect(() => {
     const element = anchorRef.current;
-    if (!element) return;
-    const li = element.closest("li");
-    if (!li) return;
+    const target = getEditCollapseTarget(element);
+    if (!target) return;
     if (shouldHide) {
-      li.setAttribute("data-edit-hidden", "true");
+      target.setAttribute("data-edit-hidden", "true");
     } else {
-      li.removeAttribute("data-edit-hidden");
+      target.removeAttribute("data-edit-hidden");
     }
     return () => {
-      li.removeAttribute("data-edit-hidden");
+      target.removeAttribute("data-edit-hidden");
     };
   }, [shouldHide]);
 
@@ -1022,32 +1081,57 @@ export function EditableContactText({
             </span>
           ) : null}
           {enabled && !isHidden ? (
-            <span
-              className="absolute top-1/2 z-20 inline-flex -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-              style={{ right: "100%", marginRight: "0.5rem" }}
-            >
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={() => {
-                  setIsEditing(true);
-                  setDraft(normalizedValue || fallback || "");
-                }}
-                title="تعديل"
-                disabled={upsertMutation.isPending}
+            <>
+              <span
+                className="hidden md:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                style={{ right: "100%", marginRight: "0.5rem" }}
               >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
-                onClick={handleToggleHidden}
-                title={isHidden ? "إظهار النص" : "إخفاء النص"}
-                disabled={upsertMutation.isPending}
-              >
-                {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-              </button>
-            </span>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={() => {
+                    setIsEditing(true);
+                    setDraft(normalizedValue || fallback || "");
+                  }}
+                  title="تعديل"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/50 hover:bg-black/70 transition"
+                  onClick={handleToggleHidden}
+                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                  disabled={upsertMutation.isPending}
+                >
+                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                </button>
+              </span>
+              <span className="md:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
+                  onClick={() => {
+                    setIsEditing(true);
+                    setDraft(normalizedValue || fallback || "");
+                  }}
+                  title="تعديل"
+                  disabled={upsertMutation.isPending}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
+                  onClick={handleToggleHidden}
+                  title={isHidden ? "إظهار النص" : "إخفاء النص"}
+                  disabled={upsertMutation.isPending}
+                >
+                  {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                </button>
+              </span>
+            </>
           ) : null}
         </>
       )}
