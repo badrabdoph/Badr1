@@ -5036,6 +5036,35 @@ function LiveEditor({
     );
   };
 
+  let sectionStatus: React.ReactNode = null;
+  if (normalizedGlobalQuery) {
+    if (sectionMatches.length) {
+      sectionStatus = (
+        <div className="flex flex-wrap items-center gap-2">
+          {sectionMatches.map((section) => (
+            <Button
+              key={section.id}
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setActiveSection(section.id);
+                setGlobalQuery("");
+              }}
+            >
+              {section.title}
+            </Button>
+          ))}
+        </div>
+      );
+    } else if (quickResults.length === 0) {
+      sectionStatus = (
+        <div className="text-xs text-muted-foreground">
+          لا توجد نتائج مطابقة للبحث الحالي.
+        </div>
+      );
+    }
+  }
+
   useEffect(() => {
     if (!sections.find((section) => section.id === activeSection)) {
       setActiveSection(sections[0].id);
@@ -5151,27 +5180,7 @@ function LiveEditor({
             </div>
           ) : null}
           {normalizedGlobalQuery ? (
-            sectionMatches.length ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {sectionMatches.map((section) => (
-                  <Button
-                    key={section.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setActiveSection(section.id);
-                      setGlobalQuery("");
-                    }}
-                  >
-                    {section.title}
-                  </Button>
-                ))}
-              </div>
-            ) : quickResults.length === 0 ? (
-              <div className="text-xs text-muted-foreground">
-                لا توجد نتائج مطابقة للبحث الحالي.
-              </div>
-            ) : null
+            sectionStatus
           ) : (
             <div className="text-xs text-muted-foreground">
               اكتب أي كلمة واضغط Enter للبحث داخل نصوص الموقع.
