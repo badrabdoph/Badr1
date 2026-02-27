@@ -5172,7 +5172,6 @@ function LiveEditor({
                 لا توجد نتائج مطابقة للبحث الحالي.
               </div>
             ) : null
-            )
           ) : (
             <div className="text-xs text-muted-foreground">
               اكتب أي كلمة واضغط Enter للبحث داخل نصوص الموقع.
