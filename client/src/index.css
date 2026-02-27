@@ -165,6 +165,20 @@
     [data-admin-panel] .w-7 {
       width: 2.5rem;
     }
+
+    [data-admin-panel] .rounded-full {
+      border-radius: 999px;
+    }
+
+    [data-admin-panel][data-admin-large="1"] {
+      font-size: 1.06rem;
+    }
+
+    [data-admin-panel][data-admin-large="1"] input,
+    [data-admin-panel][data-admin-large="1"] textarea,
+    [data-admin-panel][data-admin-large="1"] select {
+      font-size: 1rem;
+    }
   }
 
 

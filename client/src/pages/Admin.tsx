@@ -134,8 +134,23 @@ function AdminDashboard({
   onLogout: () => void;
   logoutPending: boolean;
 }) {
+  const [largeText, setLargeText] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("adminLargeText") === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("adminLargeText", largeText ? "1" : "0");
+  }, [largeText]);
+
   return (
-    <div className="min-h-screen bg-background" dir="rtl" data-admin-panel>
+    <div
+      className="min-h-screen bg-background"
+      dir="rtl"
+      data-admin-panel
+      data-admin-large={largeText ? "1" : "0"}
+    >
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -150,6 +165,14 @@ function AdminDashboard({
                 الموقع
               </Button>
             </Link>
+            <Button
+              variant={largeText ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setLargeText((prev) => !prev)}
+              className="hidden md:inline-flex"
+            >
+              {largeText ? "تصغير النص" : "تكبير النص"}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -4844,6 +4867,16 @@ function LiveEditor() {
               <Monitor className="w-4 h-4 ml-1" />
               معاينة
             </a>
+          </Button>
+        </div>
+        <div className="px-3 pb-2">
+          <Button
+            variant={largeText ? "secondary" : "outline"}
+            size="sm"
+            className="w-full"
+            onClick={() => setLargeText((prev) => !prev)}
+          >
+            {largeText ? "تصغير النص" : "تكبير النص"}
           </Button>
         </div>
       </div>
