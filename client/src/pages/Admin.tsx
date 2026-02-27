@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, type Dispatch, type SetStateAction } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,7 +193,7 @@ function AdminDashboard({
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <LiveEditor />
+        <LiveEditor largeText={largeText} setLargeText={setLargeText} />
       </main>
     </div>
   );
@@ -4756,7 +4756,13 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
 // ============================================
 // Live Editor Component
 // ============================================
-function LiveEditor() {
+function LiveEditor({
+  largeText,
+  setLargeText,
+}: {
+  largeText: boolean;
+  setLargeText: Dispatch<SetStateAction<boolean>>;
+}) {
   const [activeSection, setActiveSection] = useState(() => {
     if (typeof window === "undefined") return "content";
     return window.sessionStorage.getItem("adminActiveSection") ?? "content";
