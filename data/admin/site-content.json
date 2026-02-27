@@ -60,17 +60,6 @@
     "updatedAt": "2026-02-27T15:08:14.001Z"
   },
   {
-    "id": 1772203598753,
-    "key": "package_2_feature_5",
-    "value": "__META__:{\"text\":\"\",\"hidden\":true}",
-    "category": "services",
-    "label": "ميزة 5 - سيشن برو",
-    "offsetX": 0,
-    "offsetY": 0,
-    "createdAt": "2026-02-27T14:46:37.988Z",
-    "updatedAt": "2026-02-27T14:46:37.988Z"
-  },
-  {
     "id": 1772204720411,
     "key": "package_2_feature_2",
     "value": "‏Moodboard مخصص قبل السيشن",
