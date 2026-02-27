@@ -42,14 +42,45 @@ export default function Faq() {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
 
-  const normalized = query.trim().toLowerCase();
+  const normalizeArabic = (value: string) => {
+    return (value ?? "")
+      .toLowerCase()
+      .replace(/[إأآ]/g, "ا")
+      .replace(/ة/g, "ه")
+      .replace(/ى/g, "ي")
+      .replace(/[ؤئ]/g, "ء")
+      .replace(/[^\u0621-\u063A\u0641-\u064A0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+  const normalized = normalizeArabic(query);
   const filtered = useMemo(() => {
     if (!normalized) return faqs;
-    return faqs.filter(
-      (item) =>
-        item.question.toLowerCase().includes(normalized) ||
-        item.answer.toLowerCase().includes(normalized)
-    );
+    const queryTokens = normalized.split(" ").filter(Boolean);
+    return faqs
+      .map((item) => {
+        const haystack = normalizeArabic(`${item.question} ${item.answer}`);
+        const questionNorm = normalizeArabic(item.question);
+        let score = 0;
+
+        if (haystack.includes(normalized)) score += 100;
+        if (questionNorm.startsWith(normalized)) score += 60;
+
+        const textTokens = haystack.split(" ").filter(Boolean);
+        queryTokens.forEach((token) => {
+          if (!token) return;
+          if (haystack.includes(token)) score += 12;
+          const fuzzyHit = textTokens.some(
+            (t) => t.startsWith(token) || token.startsWith(t)
+          );
+          if (fuzzyHit) score += 8;
+        });
+
+        return { item, score };
+      })
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((row) => row.item);
   }, [faqs, normalized]);
 
   const formatWhatsAppHref = (value: string) => {
