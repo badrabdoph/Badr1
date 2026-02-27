@@ -75,6 +75,7 @@ import { servicesStyles } from "@/styles/servicesStyles";
 import { parseContentValue, serializeContentValue } from "@/lib/contentMeta";
 import { buildContentCatalog } from "@/lib/contentCatalog";
 import { useTestimonialsData } from "@/hooks/useSiteData";
+import { isExplicitlyHidden, isExplicitlyVisible } from "@/lib/visibility";
 
 export default function Admin() {
   const utils = trpc.useUtils();
@@ -610,7 +611,7 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
         title: image.title ?? "",
         category: image.category ?? "wedding",
         url: image.url ?? "",
-        visible: image.visible !== false,
+        visible: isExplicitlyVisible(image.visible),
         sortOrder: Number.isFinite(image.sortOrder) ? Number(image.sortOrder) : 0,
         offsetX: toOffset(image.offsetX),
         offsetY: toOffset(image.offsetY),
@@ -644,8 +645,8 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
 
-  const visibleImages = (images ?? []).filter((img) => img.visible !== false);
-  const hiddenImages = (images ?? []).filter((img) => img.visible === false);
+  const visibleImages = (images ?? []).filter((img) => isExplicitlyVisible(img.visible));
+  const hiddenImages = (images ?? []).filter((img) => isExplicitlyHidden(img.visible));
 
   const toggleImageVisibility = async (id: number, visible: boolean) => {
     await updateMutation.mutateAsync({ id, visible });
@@ -654,7 +655,7 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
   const renderImageCard = (image: any) => {
     const draft = drafts[image.id];
     const isEditing = editingId === image.id;
-    const isVisible = image.visible !== false;
+    const isVisible = isExplicitlyVisible(image.visible);
     return (
       <div key={image.id} className="border border-white/10 rounded-lg p-4 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -675,14 +676,16 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
             <Badge variant={isVisible ? "secondary" : "outline"}>
               {isVisible ? "ظاهر" : "مخفي"}
             </Badge>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => toggleImageVisibility(image.id, !isVisible)}
-              disabled={updateMutation.isPending}
-            >
-              {isVisible ? "إخفاء" : "استعادة"}
-            </Button>
+            {!isVisible ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => toggleImageVisibility(image.id, true)}
+                disabled={updateMutation.isPending}
+              >
+                استعادة
+              </Button>
+            ) : null}
             <Button size="sm" variant="outline" onClick={() => (isEditing ? closeEdit() : openEdit(image))}>
               {isEditing ? "إغلاق" : "تعديل"}
             </Button>
@@ -690,16 +693,26 @@ function PortfolioManager({ onRefresh }: ManagerProps) {
               size="sm"
               variant="destructive"
               onClick={() =>
-                requestConfirm({
-                  title: "حذف الصورة",
-                  description: `هل تريد حذف صورة "${image.title}" نهائيًا؟`,
-                  confirmLabel: "حذف",
-                  cancelLabel: "إلغاء",
-                  onConfirm: () => deleteMutation.mutate({ id: image.id }),
-                })
+                requestConfirm(
+                  isVisible
+                    ? {
+                        title: "إخفاء الصورة",
+                        description: `سيتم نقل صورة "${image.title}" إلى الصور المخفية ويمكن استعادتها لاحقًا.`,
+                        confirmLabel: "إخفاء",
+                        cancelLabel: "إلغاء",
+                        onConfirm: () => toggleImageVisibility(image.id, false),
+                      }
+                    : {
+                        title: "حذف الصورة",
+                        description: `هل تريد حذف صورة "${image.title}" نهائيًا؟`,
+                        confirmLabel: "حذف",
+                        cancelLabel: "إلغاء",
+                        onConfirm: () => deleteMutation.mutate({ id: image.id }),
+                      }
+                )
               }
             >
-              حذف
+              {isVisible ? "حذف" : "حذف نهائي"}
             </Button>
           </div>
         </div>
@@ -1637,7 +1650,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
         category: pkg.category ?? "session",
         features: Array.isArray(pkg.features) ? pkg.features.join("\n") : "",
         popular: Boolean(pkg.popular),
-        visible: pkg.visible !== false,
+        visible: isExplicitlyVisible(pkg.visible),
         sortOrder: Number.isFinite(pkg.sortOrder) ? Number(pkg.sortOrder) : 0,
         offsetX: toOffset(pkg.offsetX),
         offsetY: toOffset(pkg.offsetY),
@@ -1687,8 +1700,8 @@ function PackagesManager({ onRefresh }: ManagerProps) {
     wedding: contentMap.services_wedding_title || "Full Day",
     addon: contentMap.services_addons_title || "إضافات",
   };
-  const visiblePackages = (packages ?? []).filter((pkg) => pkg.visible !== false);
-  const hiddenPackages = (packages ?? []).filter((pkg) => pkg.visible === false);
+  const visiblePackages = (packages ?? []).filter((pkg) => isExplicitlyVisible(pkg.visible));
+  const hiddenPackages = (packages ?? []).filter((pkg) => isExplicitlyHidden(pkg.visible));
   const sortByOrder = (list: any[]) =>
     [...list].sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0));
   const categoryOrder = [
@@ -1746,7 +1759,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
   const renderPackageCard = (pkg: any) => {
     const draft = drafts[pkg.id];
     const isEditing = editingId === pkg.id;
-    const isVisible = pkg.visible !== false;
+    const isVisible = isExplicitlyVisible(pkg.visible);
     const previewKind =
       pkg.category === "wedding"
         ? "wedding"
@@ -1786,14 +1799,16 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             <Badge variant={isVisible ? "secondary" : "outline"}>
               {isVisible ? "ظاهر" : "مخفي"}
             </Badge>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => togglePackageVisibility(pkg.id, !isVisible)}
-              disabled={updateMutation.isPending}
-            >
-              {isVisible ? "إخفاء" : "استعادة"}
-            </Button>
+            {!isVisible ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => togglePackageVisibility(pkg.id, true)}
+                disabled={updateMutation.isPending}
+              >
+                استعادة
+              </Button>
+            ) : null}
             <Button
               size="sm"
               variant="outline"
@@ -1805,16 +1820,26 @@ function PackagesManager({ onRefresh }: ManagerProps) {
               size="sm"
               variant="destructive"
               onClick={() =>
-                requestConfirm({
-                  title: "حذف الباقة",
-                  description: `هل تريد حذف الباقة "${pkg.name}" نهائيًا؟`,
-                  confirmLabel: "حذف",
-                  cancelLabel: "إلغاء",
-                  onConfirm: () => deleteMutation.mutate({ id: pkg.id }),
-                })
+                requestConfirm(
+                  isVisible
+                    ? {
+                        title: "إخفاء الباقة",
+                        description: `سيتم نقل الباقة "${pkg.name}" إلى الباقات المخفية ويمكن استعادتها لاحقًا.`,
+                        confirmLabel: "إخفاء",
+                        cancelLabel: "إلغاء",
+                        onConfirm: () => togglePackageVisibility(pkg.id, false),
+                      }
+                    : {
+                        title: "حذف الباقة",
+                        description: `هل تريد حذف الباقة "${pkg.name}" نهائيًا؟`,
+                        confirmLabel: "حذف",
+                        cancelLabel: "إلغاء",
+                        onConfirm: () => deleteMutation.mutate({ id: pkg.id }),
+                      }
+                )
               }
             >
-              حذف
+              {isVisible ? "حذف" : "حذف نهائي"}
             </Button>
           </div>
         </div>
@@ -2258,15 +2283,15 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
     return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
 
-  const visibleTestimonials = (testimonials ?? []).filter((t) => t.visible !== false);
-  const hiddenTestimonials = (testimonials ?? []).filter((t) => t.visible === false);
+  const visibleTestimonials = (testimonials ?? []).filter((t) => isExplicitlyVisible(t.visible));
+  const hiddenTestimonials = (testimonials ?? []).filter((t) => isExplicitlyHidden(t.visible));
 
   const toggleTestimonialVisibility = async (id: number, visible: boolean) => {
     await updateMutation.mutateAsync({ id, visible });
   };
 
   const renderTestimonial = (testimonial: any) => {
-    const isVisible = testimonial.visible !== false;
+    const isVisible = isExplicitlyVisible(testimonial.visible);
     if (compact) {
       return (
         <div key={testimonial.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
@@ -2276,24 +2301,37 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
               <p className="mt-2 text-sm font-semibold">- {testimonial.name}</p>
             </div>
             <div className="flex items-center gap-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => toggleTestimonialVisibility(testimonial.id, !isVisible)}
-              >
-                {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </Button>
+              {!isVisible ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => toggleTestimonialVisibility(testimonial.id, true)}
+                  title="استعادة"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              ) : null}
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() =>
-                  requestConfirm({
-                    title: "حذف الرأي",
-                    description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
-                    confirmLabel: "حذف",
-                    cancelLabel: "إلغاء",
-                    onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
-                  })
+                  requestConfirm(
+                    isVisible
+                      ? {
+                          title: "إخفاء الرأي",
+                          description: `سيتم نقل رأي "${testimonial.name}" إلى الآراء المخفية ويمكن استعادته لاحقًا.`,
+                          confirmLabel: "إخفاء",
+                          cancelLabel: "إلغاء",
+                          onConfirm: () => toggleTestimonialVisibility(testimonial.id, false),
+                        }
+                      : {
+                          title: "حذف الرأي",
+                          description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
+                          confirmLabel: "حذف",
+                          cancelLabel: "إلغاء",
+                          onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
+                        }
+                  )
                 }
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
@@ -2313,24 +2351,36 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
               <p className="font-semibold">- {testimonial.name}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => toggleTestimonialVisibility(testimonial.id, !isVisible)}
-              >
-                {isVisible ? "إخفاء" : "استعادة"}
-              </Button>
+              {!isVisible ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleTestimonialVisibility(testimonial.id, true)}
+                >
+                  استعادة
+                </Button>
+              ) : null}
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() =>
-                  requestConfirm({
-                    title: "حذف الرأي",
-                    description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
-                    confirmLabel: "حذف",
-                    cancelLabel: "إلغاء",
-                    onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
-                  })
+                  requestConfirm(
+                    isVisible
+                      ? {
+                          title: "إخفاء الرأي",
+                          description: `سيتم نقل رأي "${testimonial.name}" إلى الآراء المخفية ويمكن استعادته لاحقًا.`,
+                          confirmLabel: "إخفاء",
+                          cancelLabel: "إلغاء",
+                          onConfirm: () => toggleTestimonialVisibility(testimonial.id, false),
+                        }
+                      : {
+                          title: "حذف الرأي",
+                          description: `هل تريد حذف رأي "${testimonial.name}" نهائيًا؟`,
+                          confirmLabel: "حذف",
+                          cancelLabel: "إلغاء",
+                          onConfirm: () => deleteMutation.mutate({ id: testimonial.id }),
+                        }
+                  )
                 }
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
@@ -2818,7 +2868,7 @@ function SectionsManager({ onRefresh }: ManagerProps) {
 
   const getSectionVisibility = (key: string) => {
     const section = sections?.find((s) => s.key === key);
-    return section?.visible ?? true;
+    return isExplicitlyVisible(section?.visible);
   };
 
   return (

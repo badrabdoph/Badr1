@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { parseContentValue } from "@/lib/contentMeta";
+import { isExplicitlyVisible } from "@/lib/visibility";
 import {
   additionalServices,
   contactInfo as fallbackContact,
@@ -46,7 +47,7 @@ function normalizePackages(list: PackageLike[]) {
       emoji: pkg.emoji ?? undefined,
       badge: pkg.badge ?? undefined,
       priceNote: pkg.priceNote ?? undefined,
-      visible: pkg.visible !== false,
+      visible: isExplicitlyVisible(pkg.visible),
       sortOrder: pkg.sortOrder ?? 0,
       offsetX: typeof pkg.offsetX === "number" ? pkg.offsetX : 0,
       offsetY: typeof pkg.offsetY === "number" ? pkg.offsetY : 0,
@@ -160,7 +161,7 @@ export function useTestimonialsData() {
       .map((item: any) => ({
         name: item.name,
         quote: item.quote,
-        visible: item.visible !== false,
+        visible: isExplicitlyVisible(item.visible),
         sortOrder: item.sortOrder ?? 0,
         offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
         offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
@@ -191,7 +192,7 @@ export function usePortfolioData() {
   const gallery = useMemo(() => {
     if (data && data.length) {
       return data
-        .filter((img: any) => img.visible !== false)
+        .filter((img: any) => isExplicitlyVisible(img.visible))
         .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((img: any) => ({
           id: img.id,
