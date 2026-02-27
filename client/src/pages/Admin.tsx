@@ -1228,6 +1228,14 @@ function ContentManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
+  const deleteMutation = trpc.siteContent.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف النص");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
@@ -1301,6 +1309,69 @@ function ContentManager({ onRefresh }: ManagerProps) {
         label: label ?? key,
       });
     }
+  };
+
+  const persistHiddenState = async (
+    key: string,
+    category: string,
+    label: string,
+    hidden: boolean
+  ) => {
+    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
+    const nextValue = serializeContentValue({
+      text: editingContent[key] || "",
+      hidden,
+      scale: editingMeta[key]?.scale,
+    });
+    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
+    await upsertMutation.mutateAsync({
+      key,
+      value: nextValue,
+      category,
+      label,
+      offsetX: pos.offsetX,
+      offsetY: pos.offsetY,
+    });
+    setEditingMeta((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], hidden },
+    }));
+    if (prevValue !== nextValue) {
+      pushEdit({
+        kind: "siteContent",
+        key,
+        prev: prevValue,
+        next: nextValue,
+        category,
+        label,
+      });
+    }
+  };
+
+  const handleDeleteContent = (key: string, label: string) => {
+    requestConfirm({
+      title: "حذف نهائي للنص",
+      description: `هل تريد حذف "${label}" نهائيًا؟ سيعود للنص الافتراضي تلقائيًا.`,
+      confirmLabel: "حذف",
+      cancelLabel: "إلغاء",
+      onConfirm: async () => {
+        await deleteMutation.mutateAsync({ key });
+        setEditingMeta((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        setEditingPositions((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        setEditingContent((prev) => ({
+          ...prev,
+          [key]: catalog.fallbackMap[key] ?? "",
+        }));
+      },
+    });
   };
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -1381,6 +1452,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
       item.label.toLowerCase().includes(normalizedSearch)
     );
   });
+  const hiddenItems = filteredItems.filter((item) => editingMeta[item.key]?.hidden);
 
   const groupedItems = useMemo(() => {
     const buckets: Record<string, typeof filteredItems> = {};
@@ -1502,6 +1574,56 @@ function ContentManager({ onRefresh }: ManagerProps) {
                 </div>
               </div>
             ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <EyeOff className="w-5 h-5" />
+            النصوص المخفية
+          </CardTitle>
+          <CardDescription>
+            يمكنك استعادة أي نص مخفي أو حذفه نهائيًا ليعود للنص الافتراضي.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {hiddenItems.length > 0 ? (
+            hiddenItems.map((item) => (
+              <div
+                key={item.key}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
+              >
+                <div className="text-sm">
+                  <div className="font-semibold">{item.label}</div>
+                  <div className="text-xs text-muted-foreground">{item.key}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => persistHiddenState(item.key, item.category, item.label, false)}
+                    disabled={upsertMutation.isPending}
+                  >
+                    استعادة
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDeleteContent(item.key, item.label)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    حذف نهائي
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <EyeOff className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>لا توجد نصوص مخفية</p>
+            </div>
           )}
         </CardContent>
       </Card>
