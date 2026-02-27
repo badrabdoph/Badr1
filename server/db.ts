@@ -11,6 +11,7 @@ import {
   siteSections, 
   packages, 
   testimonials, 
+  faqs,
   contactInfo,
   shareLinks,
   InsertSiteContent,
@@ -19,6 +20,7 @@ import {
   InsertSiteSection,
   InsertPackage,
   InsertTestimonial,
+  InsertFaq,
   InsertContactInfo,
   InsertShareLink,
 } from "../drizzle/schema";
@@ -64,6 +66,11 @@ import {
   createFileTestimonial,
   updateFileTestimonial,
   deleteFileTestimonial,
+  listFileFaqs,
+  getFileFaqById,
+  createFileFaq,
+  updateFileFaq,
+  deleteFileFaq,
   listFileContactInfo,
   getFileContactInfoByKey,
   upsertFileContactInfo,
@@ -291,6 +298,17 @@ async function ensureAdminSchema(db: ReturnType<typeof drizzle>) {
       )
     `);
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS faqs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        question VARCHAR(300) NOT NULL,
+        answer TEXT NOT NULL,
+        visible TINYINT(1) NOT NULL DEFAULT 1,
+        sortOrder INT DEFAULT 0,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS contact_info (
         id INT AUTO_INCREMENT PRIMARY KEY,
         \`key\` VARCHAR(100) NOT NULL UNIQUE,
@@ -392,6 +410,7 @@ async function runCleanupOnce(db: ReturnType<typeof drizzle>) {
     await db.delete(siteContent).where(eq(siteContent.value, ""));
     await db.delete(contactInfo).where(eq(contactInfo.value, ""));
     await db.delete(testimonials).where(eq(testimonials.visible, false));
+    await db.delete(faqs).where(eq(faqs.visible, false));
     await db.delete(portfolioImages).where(eq(portfolioImages.visible, false));
     await db.delete(siteSections).where(eq(siteSections.visible, false));
     await db.delete(siteImages).where(eq(siteImages.url, ""));
@@ -1125,6 +1144,82 @@ export async function deleteTestimonial(id: number) {
     flagDbDisabledForError(error);
     console.warn("[Database] Failed to delete testimonial, falling back to file store:", error);
     return await deleteFileTestimonial(id);
+  }
+}
+
+// ============================================
+// FAQs Functions
+// ============================================
+
+export async function getAllFaqs() {
+  if (useFileStore) return await listFileFaqs();
+  const db = await getDb();
+  if (!db) return await listFileFaqs();
+  try {
+    return await db.select().from(faqs).orderBy(asc(faqs.sortOrder));
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to load faqs, falling back to file store:", error);
+    return await listFileFaqs();
+  }
+}
+
+export async function getFaqById(id: number) {
+  if (useFileStore) return await getFileFaqById(id);
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select().from(faqs).where(eq(faqs.id, id)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to load faq, falling back to file store:", error);
+    return await getFileFaqById(id);
+  }
+}
+
+export async function createFaq(data: InsertFaq) {
+  if (useFileStore) return await createFileFaq(data);
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(faqs).values(data);
+    const insertId = result[0].insertId;
+    return await getFaqById(insertId);
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to create faq, falling back to file store:", error);
+    return await createFileFaq(data);
+  }
+}
+
+export async function updateFaq(id: number, data: Partial<InsertFaq>) {
+  if (useFileStore) return await updateFileFaq(id, data);
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    await db.update(faqs).set(data).where(eq(faqs.id, id));
+    return await getFaqById(id);
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to update faq, falling back to file store:", error);
+    return await updateFileFaq(id, data);
+  }
+}
+
+export async function deleteFaq(id: number) {
+  if (useFileStore) return await deleteFileFaq(id);
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    await db.delete(faqs).where(eq(faqs.id, id));
+    return true;
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to delete faq, falling back to file store:", error);
+    return await deleteFileFaq(id);
   }
 }
 

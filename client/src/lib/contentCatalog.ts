@@ -225,6 +225,19 @@ export function buildContentCatalog({ packages, testimonials }: BuildOptions = {
     fallback: "أهم حاجة… الناس تطلع مبسوطة ومرتاحه من أول لحظة لحد التسليم ❤️",
     category: "home",
   });
+  add({ key: "faq_kicker", fallback: "FAQs", category: "faq" });
+  add({ key: "faq_title", fallback: "الأسئلة الشائعة", category: "faq" });
+  add({
+    key: "faq_subtitle",
+    fallback: "كل إجابة واضحة وسريعة عشان تختار براحة.",
+    category: "faq",
+  });
+  add({
+    key: "faq_search_placeholder",
+    fallback: "ابحث عن سؤالك هنا...",
+    category: "faq",
+  });
+  add({ key: "faq_social_title", fallback: "تابعنا على السوشيال", category: "faq" });
 
   add({ key: "about_kicker", fallback: "ستايل سينمائي • تفاصيل • تسليم احترافي", category: "about" });
   add({ key: "about_title", fallback: aboutContent.title || "عن بدر", category: "about" });

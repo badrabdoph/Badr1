@@ -9,6 +9,7 @@ import {
   sessionPackages,
   sessionPackagesWithPrints,
   socialLinks as fallbackSocial,
+  faqItems as fallbackFaqItems,
   testimonials as fallbackTestimonials,
   weddingPackages,
   siteImages,
@@ -165,6 +166,39 @@ export function useTestimonialsData() {
         sortOrder: item.sortOrder ?? 0,
         offsetX: typeof item.offsetX === "number" ? item.offsetX : 0,
         offsetY: typeof item.offsetY === "number" ? item.offsetY : 0,
+      }))
+      .filter((t: any) => t.visible)
+      .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }, [data]);
+
+  return list;
+}
+
+export function useFaqData() {
+  const { data, refetch } = trpc.faqs.getAll.useQuery(undefined, {
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "siteFaqUpdatedAt") {
+        refetch();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [refetch]);
+
+  const list = useMemo(() => {
+    const source = data && data.length ? data : fallbackFaqItems;
+    return source
+      .map((item: any, index: number) => ({
+        id: item.id ?? index,
+        question: item.question,
+        answer: item.answer,
+        visible: isExplicitlyVisible(item.visible),
+        sortOrder: item.sortOrder ?? 0,
       }))
       .filter((t: any) => t.visible)
       .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));

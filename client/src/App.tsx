@@ -9,6 +9,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { useContactData } from "@/hooks/useSiteData";
 import Home from "./pages/Home";
 import About from "./pages/About";
+import Faq from "./pages/Faq";
 import Portfolio from "./pages/Portfolio";
 import Services from "./pages/Services";
 import Contact from "./pages/Contact";
@@ -100,6 +101,7 @@ function Router() {
           {(params) => <Share token={params.token} />}
         </Route>
         <Route path="/about" component={About} />
+        <Route path="/faq" component={Faq} />
         <Route path="/portfolio" component={Portfolio} />
         <Route path="/services" component={Services} />
         <Route path="/package-details" component={PackageDetails} />

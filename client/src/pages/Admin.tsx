@@ -53,6 +53,7 @@ import {
   Phone,
   Camera,
   Heart,
+  HelpCircle,
   Receipt,
   PlusCircle,
   RotateCcw,
@@ -3537,6 +3538,257 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
 }
 
 // ============================================
+// FAQs Manager Component
+// ============================================
+function FaqManager({ onRefresh }: ManagerProps) {
+  const { data: faqs, refetch, isLoading } = trpc.faqs.getAll.useQuery();
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
+  const createMutation = trpc.faqs.create.useMutation({
+    onSuccess: () => {
+      toast.success("تم إضافة السؤال");
+      refetch();
+      onRefresh?.();
+      setNewFaq({ question: "", answer: "" });
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const updateMutation = trpc.faqs.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث السؤال");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const deleteMutation = trpc.faqs.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف السؤال");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
+  const [drafts, setDrafts] = useState<Record<number, { question: string; answer: string; sortOrder: number }>>({});
+
+  useEffect(() => {
+    if (!faqs) return;
+    const next: Record<number, { question: string; answer: string; sortOrder: number }> = {};
+    faqs.forEach((item: any) => {
+      next[item.id] = {
+        question: item.question ?? "",
+        answer: item.answer ?? "",
+        sortOrder: item.sortOrder ?? 0,
+      };
+    });
+    setDrafts(next);
+  }, [faqs]);
+
+  const handleCreate = async () => {
+    if (!newFaq.question.trim() || !newFaq.answer.trim()) {
+      toast.error("يرجى إدخال السؤال والإجابة");
+      return;
+    }
+    const maxSort = Math.max(0, ...(faqs ?? []).map((f: any) => f.sortOrder ?? 0));
+    await createMutation.mutateAsync({
+      question: newFaq.question.trim(),
+      answer: newFaq.answer.trim(),
+      sortOrder: maxSort + 1,
+    });
+  };
+
+  const handleSave = async (id: number) => {
+    const draft = drafts[id];
+    if (!draft) return;
+    if (!draft.question.trim() || !draft.answer.trim()) {
+      toast.error("يرجى إدخال السؤال والإجابة");
+      return;
+    }
+    await updateMutation.mutateAsync({
+      id,
+      question: draft.question.trim(),
+      answer: draft.answer.trim(),
+      sortOrder: draft.sortOrder ?? 0,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const visibleFaqs = (faqs ?? []).filter((f: any) => isExplicitlyVisible(f.visible));
+  const hiddenFaqs = (faqs ?? []).filter((f: any) => isExplicitlyHidden(f.visible));
+
+  const toggleFaqVisibility = async (id: number, visible: boolean) => {
+    await updateMutation.mutateAsync({ id, visible });
+  };
+
+  const renderFaq = (faq: any) => {
+    const isVisible = isExplicitlyVisible(faq.visible);
+    const draft = drafts[faq.id] ?? {
+      question: faq.question ?? "",
+      answer: faq.answer ?? "",
+      sortOrder: faq.sortOrder ?? 0,
+    };
+
+    return (
+      <Card key={faq.id}>
+        <CardContent className="pt-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Input
+              value={draft.question}
+              onChange={(e) =>
+                setDrafts((prev) => ({
+                  ...prev,
+                  [faq.id]: { ...draft, question: e.target.value },
+                }))
+              }
+              placeholder="نص السؤال"
+              className="md:col-span-2"
+            />
+            <Input
+              type="number"
+              value={draft.sortOrder}
+              onChange={(e) =>
+                setDrafts((prev) => ({
+                  ...prev,
+                  [faq.id]: { ...draft, sortOrder: Number(e.target.value) },
+                }))
+              }
+              placeholder="الترتيب"
+            />
+          </div>
+          <Textarea
+            value={draft.answer}
+            onChange={(e) =>
+              setDrafts((prev) => ({
+                ...prev,
+                [faq.id]: { ...draft, answer: e.target.value },
+              }))
+            }
+            rows={4}
+            placeholder="نص الإجابة"
+          />
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSave(faq.id)}
+              disabled={updateMutation.isPending}
+            >
+              <Save className="w-4 h-4 ml-2" />
+              حفظ
+            </Button>
+            <div className="flex items-center gap-2">
+              {!isVisible ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleFaqVisibility(faq.id, true)}
+                >
+                  استعادة
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    requestConfirm({
+                      title: "إخفاء السؤال",
+                      description: `سيتم نقل السؤال إلى الأسئلة المخفية ويمكن استعادته لاحقًا.`,
+                      confirmLabel: "إخفاء",
+                      cancelLabel: "إلغاء",
+                      onConfirm: () => toggleFaqVisibility(faq.id, false),
+                    })
+                  }
+                >
+                  إخفاء
+                </Button>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() =>
+                  requestConfirm({
+                    title: "حذف السؤال نهائيًا",
+                    description: "هل تريد حذف السؤال نهائيًا؟ لا يمكن التراجع بعد الحذف.",
+                    confirmLabel: "حذف",
+                    cancelLabel: "إلغاء",
+                    onConfirm: () => deleteMutation.mutate({ id: faq.id }),
+                  })
+                }
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            إضافة سؤال جديد
+          </CardTitle>
+          <CardDescription>أضف سؤال وإجابة ليظهروا في صفحة الأسئلة الشائعة.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="نص السؤال"
+            value={newFaq.question}
+            onChange={(e) => setNewFaq({ ...newFaq, question: e.target.value })}
+          />
+          <Textarea
+            placeholder="نص الإجابة"
+            value={newFaq.answer}
+            onChange={(e) => setNewFaq({ ...newFaq, answer: e.target.value })}
+            rows={4}
+          />
+          <Button onClick={handleCreate} disabled={createMutation.isPending}>
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : <Plus className="w-4 h-4 ml-2" />}
+            إضافة السؤال
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        {visibleFaqs.map(renderFaq)}
+      </div>
+
+      {visibleFaqs.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>لا توجد أسئلة بعد</p>
+        </div>
+      )}
+
+      {hiddenFaqs.length > 0 ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <EyeOff className="w-4 h-4" />
+          أسئلة مخفية (يمكن الاستعادة)
+        </div>
+      ) : null}
+
+      <div className="space-y-4">
+        {hiddenFaqs.map(renderFaq)}
+      </div>
+
+      <ConfirmDialog />
+    </div>
+  );
+}
+
+// ============================================
 // Contact Manager Component
 // ============================================
 function ContactManager({ onRefresh }: ManagerProps) {
@@ -4540,6 +4792,7 @@ function LiveEditor() {
     window.localStorage.setItem("siteContactUpdatedAt", stamp);
     window.localStorage.setItem("siteTestimonialsUpdatedAt", stamp);
     window.localStorage.setItem("sitePortfolioUpdatedAt", stamp);
+    window.localStorage.setItem("siteFaqUpdatedAt", stamp);
     if (showToast) toast.success("تم تحديث المزامنة");
   };
 
@@ -4657,6 +4910,13 @@ function LiveEditor() {
       description: "إضافة وحذف الآراء والتحكم في ظهورها.",
       icon: MessageSquare,
       render: () => <TestimonialsManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "faq",
+      title: "الأسئلة الشائعة",
+      description: "إضافة الأسئلة والإجابات وترتيبها.",
+      icon: HelpCircle,
+      render: () => <FaqManager onRefresh={refreshPreview} />,
     },
     {
       id: "contact",

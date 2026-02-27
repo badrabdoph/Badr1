@@ -3,6 +3,7 @@ import { Router, Route, Switch, Redirect, useLocation } from "wouter";
 import { Facebook, Instagram, Loader2, XCircle } from "lucide-react";
 import Home from "@/pages/Home";
 import About from "@/pages/About";
+import Faq from "@/pages/Faq";
 import Services from "@/pages/Services";
 import Contact from "@/pages/Contact";
 import Portfolio from "@/pages/Portfolio";
@@ -51,6 +52,7 @@ function SiteRoutes() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
+      <Route path="/faq" component={Faq} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/services" component={Services} />
       <Route path="/package-details" component={PackageDetails} />

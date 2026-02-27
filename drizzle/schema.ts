@@ -129,6 +129,22 @@ export type Testimonial = typeof testimonials.$inferSelect;
 export type InsertTestimonial = typeof testimonials.$inferInsert;
 
 /**
+ * FAQs table - stores frequently asked questions
+ */
+export const faqs = mysqlTable("faqs", {
+  id: int("id").autoincrement().primaryKey(),
+  question: varchar("question", { length: 300 }).notNull(),
+  answer: text("answer").notNull(),
+  visible: boolean("visible").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Faq = typeof faqs.$inferSelect;
+export type InsertFaq = typeof faqs.$inferInsert;
+
+/**
  * Contact info table - stores contact information
  */
 export const contactInfo = mysqlTable("contact_info", {

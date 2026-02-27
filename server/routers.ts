@@ -581,6 +581,45 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
       }),
   }),
 
+  // FAQs Management
+  faqs: router({
+    getAll: publicProcedure.query(async () => {
+      return await db.getAllFaqs();
+    }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getFaqById(input.id);
+      }),
+    create: adminProcedure
+      .input(z.object({
+        question: z.string(),
+        answer: z.string(),
+        visible: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createFaq(input);
+      }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        question: z.string().optional(),
+        answer: z.string().optional(),
+        visible: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateFaq(id, data);
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteFaq(input.id);
+      }),
+  }),
+
   // Contact Info Management
   contactInfo: router({
     getAll: publicProcedure.query(async () => {
