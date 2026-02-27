@@ -692,10 +692,10 @@ export function EditableText({
               إلغاء
             </Button>
           </div>
-          <div className="hidden md:flex md:flex-col gap-2">
+          <div className="hidden lg:flex lg:flex-col gap-2">
             {advancedControls}
           </div>
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <details className="rounded-md border border-border/60 bg-muted/30 p-2">
               <summary className="cursor-pointer text-xs text-muted-foreground">
                 خيارات متقدمة
@@ -739,7 +739,7 @@ export function EditableText({
           {enabled && !isHidden ? (
             <>
               <span
-                className="hidden md:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                className="hidden lg:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
                 style={{ right: "100%", marginRight: "0.5rem" }}
               >
                 <button
@@ -841,7 +841,7 @@ export function EditableText({
                   </div>
                 ) : null}
               </span>
-              <span className="md:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
+              <span className="lg:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
                 <button
                   type="button"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
@@ -1083,7 +1083,7 @@ export function EditableContactText({
           {enabled && !isHidden ? (
             <>
               <span
-                className="hidden md:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+                className="hidden lg:inline-flex absolute top-1/2 z-20 -translate-y-1/2 items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-1 text-[10px] text-white shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
                 style={{ right: "100%", marginRight: "0.5rem" }}
               >
                 <button
@@ -1108,7 +1108,7 @@ export function EditableContactText({
                   {isHidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                 </button>
               </span>
-              <span className="md:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
+              <span className="lg:hidden mt-2 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-2 py-1">
                 <button
                   type="button"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-background hover:bg-accent transition"
