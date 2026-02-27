@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Camera,
@@ -193,6 +193,7 @@ export default function Home() {
   const portfolioRef = useRef<HTMLElement | null>(null);
   const { contactInfo, socialLinks } = useContactData();
   const { enabled: inlineEditEnabled } = useInlineEditMode();
+  const [, setLocation] = useLocation();
   const content = useContentData();
   const contentMap = content.contentMap ?? {};
   const testimonials = useTestimonialsData();
@@ -545,6 +546,15 @@ export default function Home() {
               const isSignature = card.id === "home-service-sessions";
               const baseKey = `home_service_${card.id}`;
 
+              const handleCardClick = (event?: MouseEvent<HTMLDivElement>) => {
+                if (inlineEditEnabled) {
+                  event?.preventDefault();
+                  event?.stopPropagation();
+                  return;
+                }
+                setLocation("/services");
+              };
+
               return (
                 <div
                   key={card.id}
@@ -556,7 +566,18 @@ export default function Home() {
                       : "border-white/10 hover:border-primary/30 hover:-translate-y-1 hover:shadow-[0_25px_80px_rgba(0,0,0,0.55)]",
                     "premium-border",
                     tone,
+                    "cursor-pointer",
                   ].join(" ")}
+                  role="link"
+                  tabIndex={0}
+                  aria-label="فتح صفحة الخدمات"
+                  onClick={handleCardClick}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleCardClick();
+                    }
+                  }}
                 >
                   <div
                     className={[

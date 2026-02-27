@@ -92,7 +92,11 @@ export default function Share({ token, code }: ShareProps) {
 
   if (isError || !isValid || !basePath) {
     const whatsapp = (contactInfo.whatsappNumber ?? "").replace(/[^\d]/g, "");
+    const requestMessage = "ابعتلي رابط جديد للويب سايت ❤️";
     const whatsappHref = whatsapp ? `https://wa.me/${whatsapp}` : "";
+    const whatsappRequestHref = whatsapp
+      ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(requestMessage)}`
+      : "";
     const socials = [
       {
         key: "instagram",
@@ -182,6 +186,23 @@ export default function Share({ token, code }: ShareProps) {
               <div className="hero-follow-glow hero-follow-glow--compact" aria-hidden="true" />
             </div>
           )}
+
+          {whatsappRequestHref ? (
+            <div className="relative z-10 share-request-cta">
+              <a
+                href={whatsappRequestHref}
+                target="_blank"
+                rel="noreferrer"
+                className="share-request-btn"
+              >
+                <span className="share-request-pulse" aria-hidden="true" />
+                <span className="share-request-label">اطلب رابط جديد</span>
+                <span className="share-request-icon" aria-hidden="true">
+                  <WhatsAppIcon size={18} />
+                </span>
+              </a>
+            </div>
+          ) : null}
         </div>
       </div>
     );
