@@ -1228,14 +1228,6 @@ function ContentManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
-  const deleteMutation = trpc.siteContent.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف النص");
-      refetch();
-      onRefresh?.();
-    },
-    onError: (error) => toast.error(error.message),
-  });
   const { requestConfirm, ConfirmDialog } = useConfirmDialog();
 
   const [editingContent, setEditingContent] = useState<Record<string, string>>({});
@@ -1311,108 +1303,6 @@ function ContentManager({ onRefresh }: ManagerProps) {
     }
   };
 
-  const persistHiddenState = async (
-    key: string,
-    category: string,
-    label: string,
-    hidden: boolean
-  ) => {
-    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
-    const nextValue = serializeContentValue({
-      text: editingContent[key] || "",
-      hidden,
-      scale: editingMeta[key]?.scale,
-    });
-    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
-    await upsertMutation.mutateAsync({
-      key,
-      value: nextValue,
-      category,
-      label,
-      offsetX: pos.offsetX,
-      offsetY: pos.offsetY,
-    });
-    setEditingMeta((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], hidden },
-    }));
-    if (prevValue !== nextValue) {
-      pushEdit({
-        kind: "siteContent",
-        key,
-        prev: prevValue,
-        next: nextValue,
-        category,
-        label,
-      });
-    }
-  };
-
-  const handleDeleteContent = (key: string, label: string) => {
-    requestConfirm({
-      title: "حذف نهائي للنص",
-      description: `هل تريد حذف "${label}" نهائيًا؟ سيعود للنص الافتراضي تلقائيًا.`,
-      confirmLabel: "حذف",
-      cancelLabel: "إلغاء",
-      onConfirm: async () => {
-        await deleteMutation.mutateAsync({ key });
-        setEditingMeta((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-        setEditingPositions((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-        setEditingContent((prev) => ({
-          ...prev,
-          [key]: catalog.fallbackMap[key] ?? "",
-        }));
-      },
-    });
-  };
-
-  const handleRestoreContent = async (
-    key: string,
-    category: string,
-    label: string,
-    status: "hidden" | "cleared"
-  ) => {
-    if (status === "hidden") {
-      await persistHiddenState(key, category, label, false);
-      return;
-    }
-    const pos = editingPositions[key] ?? { offsetX: 0, offsetY: 0 };
-    const fallback = catalog.fallbackMap[key] ?? "";
-    const prevValue = (content ?? []).find((item) => item.key === key)?.value ?? "";
-    const nextValue = serializeContentValue({
-      text: fallback,
-      hidden: false,
-      scale: editingMeta[key]?.scale,
-    });
-    await upsertMutation.mutateAsync({
-      key,
-      value: nextValue,
-      category,
-      label,
-      offsetX: pos.offsetX,
-      offsetY: pos.offsetY,
-    });
-    setEditingContent((prev) => ({ ...prev, [key]: fallback }));
-    setEditingMeta((prev) => ({ ...prev, [key]: { ...prev[key], hidden: false } }));
-    if (prevValue !== nextValue) {
-      pushEdit({
-        kind: "siteContent",
-        key,
-        prev: prevValue,
-        next: nextValue,
-        category,
-        label,
-      });
-    }
-  };
 
   const [searchTerm, setSearchTerm] = useState("");
   const handleCopyKey = async (key: string) => {
@@ -1484,15 +1374,6 @@ function ContentManager({ onRefresh }: ManagerProps) {
     });
   }, [content, catalog.items]);
 
-  const contentState = useMemo(() => {
-    const map = new Map<string, { text: string; hidden: boolean; raw: string }>();
-    (content ?? []).forEach((item: any) => {
-      const parsed = parseContentValue(item.value);
-      map.set(item.key, { text: parsed.text, hidden: parsed.hidden, raw: parsed.raw });
-    });
-    return map;
-  }, [content]);
-
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredItems = items.filter((item) => {
     if (!normalizedSearch) return true;
@@ -1501,20 +1382,6 @@ function ContentManager({ onRefresh }: ManagerProps) {
       item.label.toLowerCase().includes(normalizedSearch)
     );
   });
-  const hiddenItems = filteredItems.filter((item) => contentState.get(item.key)?.hidden);
-  const clearedItems = filteredItems.filter((item) => {
-    const state = contentState.get(item.key);
-    if (!state) return false;
-    if (state.hidden) return false;
-    const text = (state.text ?? "").trim();
-    if (text.length) return false;
-    const fallback = (catalog.fallbackMap[item.key] ?? "").trim();
-    return fallback.length > 0;
-  });
-  const flaggedItems = [
-    ...hiddenItems.map((item) => ({ ...item, status: "hidden" as const })),
-    ...clearedItems.map((item) => ({ ...item, status: "cleared" as const })),
-  ].sort((a, b) => a.label.localeCompare(b.label, "ar"));
 
   const groupedItems = useMemo(() => {
     const buckets: Record<string, typeof filteredItems> = {};
@@ -1640,6 +1507,156 @@ function ContentManager({ onRefresh }: ManagerProps) {
         </CardContent>
       </Card>
 
+      <ConfirmDialog />
+    </div>
+  );
+}
+
+// ============================================
+// Hidden Edits Manager Component
+// ============================================
+function HiddenEditsManager({ onRefresh }: ManagerProps) {
+  const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
+  const { data: packagesData } = trpc.packages.getAll.useQuery();
+  const testimonials = useTestimonialsData();
+  const upsertMutation = trpc.siteContent.upsert.useMutation({
+    onSuccess: () => {
+      toast.success("تم حفظ التغييرات");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const deleteMutation = trpc.siteContent.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف النص");
+      refetch();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const { requestConfirm, ConfirmDialog } = useConfirmDialog();
+
+  const [filterStatus, setFilterStatus] = useState<"all" | "hidden" | "cleared">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const fallbackPackages = useMemo(
+    () => [
+      ...sessionPackages.map((pkg) => ({ ...pkg, category: "session" })),
+      ...sessionPackagesWithPrints.map((pkg) => ({ ...pkg, category: "prints" })),
+      ...weddingPackages.map((pkg) => ({ ...pkg, category: "wedding" })),
+      ...additionalServices.map((pkg) => ({ ...pkg, category: "addon" })),
+    ],
+    []
+  );
+
+  const packageList = useMemo(() => {
+    if (packagesData && packagesData.length) return packagesData as any[];
+    return fallbackPackages;
+  }, [packagesData, fallbackPackages]);
+
+  const catalog = useMemo(
+    () => buildContentCatalog({ packages: packageList, testimonials }),
+    [packageList, testimonials]
+  );
+
+  const items = useMemo(() => {
+    const contentList = content ?? [];
+    const metaByKey = new Map<string, { label?: string; category?: string }>();
+    contentList.forEach((item: any) => {
+      metaByKey.set(item.key, { label: item.label, category: item.category });
+    });
+
+    const catalogItems = catalog.items;
+    const catalogKeys = new Set(catalogItems.map((item) => item.key));
+    const extraItems = contentList
+      .filter((item: any) => !catalogKeys.has(item.key))
+      .map((item: any) => ({
+        key: item.key,
+        label: item.label ?? item.key,
+        category: item.category ?? "shared",
+      }));
+
+    return [...catalogItems, ...extraItems].map((item) => {
+      const meta = metaByKey.get(item.key);
+      return {
+        key: item.key,
+        label: meta?.label ?? item.label ?? item.key,
+        category: meta?.category ?? item.category ?? "shared",
+      };
+    });
+  }, [content, catalog.items]);
+
+  const contentState = useMemo(() => {
+    const map = new Map<string, { text: string; hidden: boolean; raw: string }>();
+    (content ?? []).forEach((item: any) => {
+      const parsed = parseContentValue(item.value);
+      map.set(item.key, { text: parsed.text, hidden: parsed.hidden, raw: parsed.raw });
+    });
+    return map;
+  }, [content]);
+
+  const hiddenItems = items.filter((item) => contentState.get(item.key)?.hidden);
+  const clearedItems = items.filter((item) => {
+    const state = contentState.get(item.key);
+    if (!state) return false;
+    if (state.hidden) return false;
+    const text = (state.text ?? "").trim();
+    if (text.length) return false;
+    const fallback = (catalog.fallbackMap[item.key] ?? "").trim();
+    return fallback.length > 0;
+  });
+
+  const flaggedItems = [
+    ...hiddenItems.map((item) => ({ ...item, status: "hidden" as const })),
+    ...clearedItems.map((item) => ({ ...item, status: "cleared" as const })),
+  ].sort((a, b) => a.label.localeCompare(b.label, "ar"));
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filtered = flaggedItems.filter((item) => {
+    if (filterStatus !== "all" && item.status !== filterStatus) return false;
+    if (!normalizedSearch) return true;
+    return (
+      item.key.toLowerCase().includes(normalizedSearch) ||
+      item.label.toLowerCase().includes(normalizedSearch)
+    );
+  });
+
+  const handleDeleteContent = (key: string, label: string) => {
+    requestConfirm({
+      title: "حذف نهائي للنص",
+      description: `هل تريد حذف "${label}" نهائيًا؟ سيعود للنص الافتراضي تلقائيًا.`,
+      confirmLabel: "حذف",
+      cancelLabel: "إلغاء",
+      onConfirm: () => deleteMutation.mutateAsync({ key }),
+    });
+  };
+
+  const handleRestore = async (
+    key: string,
+    category: string,
+    label: string,
+    status: "hidden" | "cleared"
+  ) => {
+    const entry = contentState.get(key);
+    const currentText = entry?.text ?? "";
+    const fallback = catalog.fallbackMap[key] ?? "";
+    const nextText = status === "hidden" ? currentText : fallback;
+    const nextValue = serializeContentValue({ text: nextText, hidden: false });
+    await upsertMutation.mutateAsync({
+      key,
+      value: nextValue,
+      category,
+      label,
+    });
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  }
+
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1650,9 +1667,31 @@ function ContentManager({ onRefresh }: ManagerProps) {
             استعد أي تعديل مخفي أو محذوف، أو احذفه نهائيًا ليعود للنص الافتراضي.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {flaggedItems.length > 0 ? (
-            flaggedItems.map((item) => (
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="ابحث بالاسم أو المفتاح..."
+              className="max-w-sm"
+            />
+            <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="كل التعديلات" />
+              </SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="all">كل التعديلات</SelectItem>
+                <SelectItem value="hidden">المخفية فقط</SelectItem>
+                <SelectItem value="cleared">المحذوفة فقط</SelectItem>
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary" className="text-xs">
+              {filtered.length} نتيجة
+            </Badge>
+          </div>
+
+          {filtered.length > 0 ? (
+            filtered.map((item) => (
               <div
                 key={item.key}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
@@ -1661,7 +1700,10 @@ function ContentManager({ onRefresh }: ManagerProps) {
                   <div className="font-semibold">{item.label}</div>
                   <div className="text-xs text-muted-foreground">{item.key}</div>
                   <div className="mt-1">
-                    <Badge variant={item.status === "hidden" ? "outline" : "secondary"} className="text-[10px]">
+                    <Badge
+                      variant={item.status === "hidden" ? "outline" : "secondary"}
+                      className="text-[10px]"
+                    >
                       {item.status === "hidden" ? "مخفي" : "محذوف"}
                     </Badge>
                   </div>
@@ -1670,9 +1712,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() =>
-                      handleRestoreContent(item.key, item.category, item.label, item.status)
-                    }
+                    onClick={() => handleRestore(item.key, item.category, item.label, item.status)}
                     disabled={upsertMutation.isPending || deleteMutation.isPending}
                   >
                     استعادة
@@ -3755,6 +3795,13 @@ function LiveEditor() {
       description: "كل نصوص الموقع في خانات قابلة للتعديل والحفظ.",
       icon: Pencil,
       render: () => <ContentManager onRefresh={refreshPreview} />,
+    },
+    {
+      id: "hidden-edits",
+      title: "التعديلات المخفية والمحذوفة",
+      description: "استعادة أو حذف نهائي للتعديلات المخفية والمحذوفة.",
+      icon: EyeOff,
+      render: () => <HiddenEditsManager onRefresh={refreshPreview} />,
     },
     {
       id: "about",
