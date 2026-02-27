@@ -378,6 +378,10 @@
     min-height: 56px;
     min-width: 190px;
   }
+
+  .about-work-btn {
+    animation: about-work-pulse 3.2s ease-in-out infinite;
+  }
   @media (max-width: 640px) {
     .cta-size {
       padding: 1.2rem 2rem;
@@ -616,6 +620,18 @@
     0%, 100% { transform: translateY(0); opacity: 0.7; }
     50% { transform: translateY(2px); opacity: 1; }
   }
+  @keyframes about-work-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(255, 200, 80, 0.2) inset,
+        0 18px 55px rgba(255, 200, 80, 0.18);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(255, 200, 80, 0.35) inset,
+        0 26px 70px rgba(255, 200, 80, 0.28);
+    }
+  }
   @keyframes social-shine {
     0% { transform: translateX(-120%); }
     70% { transform: translateX(120%); }
@@ -641,7 +657,8 @@
   .hero-follow-glow,
   .hero-social-btn::after,
   .share-request-btn::after,
-  .share-request-pulse {
+  .share-request-pulse,
+  .about-work-btn {
     animation: none !important;
   }
 }

@@ -208,6 +208,11 @@ export default function Home() {
   const heroOffsetY = imageMap.heroImage?.offsetY ?? 0;
   const getValue = (key: string, fallback: string = "") =>
     (contentMap[key] as string | undefined) ?? fallback;
+  const offerBadge = getValue("home_offer_badge", "خصم الشهر");
+  const offerText = getValue(
+    "home_offer_ticker",
+    "عرض الشهر: خصم خاص + هدايا مطبوعات لفترة محدودة — احجز باقتك الآن."
+  );
   const handleAboutStoryClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (inlineEditEnabled) {
       event.preventDefault();
@@ -470,6 +475,37 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      <section className="home-offer-ticker">
+        <div className="container mx-auto px-4">
+          <div className="offer-ticker-shell">
+            <span className="offer-ticker-badge">
+              <EditableText
+                value={offerBadge}
+                fallback="خصم الشهر"
+                fieldKey="home_offer_badge"
+                category="home"
+                label="شارة شريط العروض"
+              />
+            </span>
+            <div className="offer-ticker-rail" aria-live="polite">
+              <div className="offer-ticker-track">
+                <span className="offer-ticker-text">
+                  <EditableText
+                    value={offerText}
+                    fallback="عرض الشهر: خصم خاص + هدايا مطبوعات لفترة محدودة — احجز باقتك الآن."
+                    fieldKey="home_offer_ticker"
+                    category="home"
+                    label="نص شريط العروض"
+                    multiline
+                  />
+                </span>
+                <span className="offer-ticker-text" aria-hidden="true">{offerText}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* SERVICES PREVIEW */}
       <section id="services" className="py-16 md:py-20 relative">
@@ -1092,6 +1128,67 @@ export default function Home() {
           );
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
+        }
+
+        .home-offer-ticker {
+          padding: 16px 0 10px;
+          position: relative;
+          z-index: 5;
+        }
+        .offer-ticker-shell {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.35);
+          background: rgba(12,12,16,0.7);
+          padding: 10px 18px;
+          box-shadow: 0 12px 35px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.04);
+          overflow: hidden;
+        }
+        .offer-ticker-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,210,120,0.45);
+          background: rgba(255,210,120,0.12);
+          color: #f7e4bf;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          white-space: nowrap;
+          box-shadow: inset 0 0 14px rgba(255,210,120,0.18);
+        }
+        .offer-ticker-rail {
+          position: relative;
+          overflow: hidden;
+          flex: 1;
+        }
+        .offer-ticker-track {
+          display: flex;
+          align-items: center;
+          gap: 36px;
+          white-space: nowrap;
+          animation: offer-ticker 12s linear infinite;
+        }
+        .offer-ticker-text {
+          font-size: 13px;
+          color: rgba(255,245,220,0.92);
+          letter-spacing: 0.04em;
+        }
+        @keyframes offer-ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @media (max-width: 640px) {
+          .offer-ticker-shell { padding: 8px 14px; }
+          .offer-ticker-text { font-size: 12px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .offer-ticker-track { animation: none; }
         }
 
         .package-card {

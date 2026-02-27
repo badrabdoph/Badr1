@@ -204,6 +204,12 @@ export function buildContentCatalog({ packages, testimonials }: BuildOptions = {
     category: "home",
   });
   add({ key: "home_services_button", fallback: "شوف الباقات", category: "home" });
+  add({ key: "home_offer_badge", fallback: "خصم الشهر", category: "home" });
+  add({
+    key: "home_offer_ticker",
+    fallback: "عرض الشهر: خصم خاص + هدايا مطبوعات لفترة محدودة — احجز باقتك الآن.",
+    category: "home",
+  });
   add({ key: "home_gallery_hint", fallback: "اسحب لمشاهدة المزيد", category: "home" });
   add({ key: "home_portfolio_kicker", fallback: "المعرض", category: "home" });
   add({
@@ -235,6 +241,7 @@ export function buildContentCatalog({ packages, testimonials }: BuildOptions = {
     category: "about",
   });
   add({ key: "about_portfolio_link", fallback: "شوف المعرض", category: "about" });
+  add({ key: "about_work_button", fallback: "شوف الشغل", category: "about" });
   add({ key: "about_features_kicker", fallback: "ليه تختارني؟", category: "about" });
   add({ key: "about_features_title", fallback: "تفاصيل بتفرق", category: "about" });
   add({ key: "about_features_desc", fallback: "نفس الجودة… في كل باقة. ونفس الاهتمام… في كل لقطة.", category: "about" });

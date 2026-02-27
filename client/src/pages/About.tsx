@@ -220,15 +220,18 @@ export default function About() {
 
               <div className="mt-8">
                 <a href={externalPortfolioUrl} target="_blank" rel="noreferrer">
-                  <Button variant="link" className="text-primary p-0 text-lg hover:no-underline group">
+                  <Button
+                    variant="outline"
+                    className="about-work-btn group border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none cta-glow cta-size"
+                  >
                     <EditableText
-                      value={contentMap.about_portfolio_link}
-                      fallback="شوف المعرض"
-                      fieldKey="about_portfolio_link"
+                      value={contentMap.about_work_button}
+                      fallback="شوف الشغل"
+                      fieldKey="about_work_button"
                       category="about"
-                      label="زر شوف المعرض (من أنا)"
-                    />{" "}
-                    <ArrowLeft className="mr-2 transition-transform group-hover:-translate-x-2" />
+                      label="زر شوف الشغل (من أنا)"
+                    />
+                    <ArrowLeft className="mr-2 w-4 h-4 transition-transform group-hover:-translate-x-2" />
                   </Button>
                 </a>
               </div>
