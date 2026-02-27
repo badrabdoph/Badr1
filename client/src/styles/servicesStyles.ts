@@ -48,14 +48,14 @@ export const servicesStyles = `
           justify-content: center;
           padding: 4px 10px;
           border-radius: 999px;
-          border: 1px solid rgba(255,210,120,0.55);
-          background: linear-gradient(120deg, rgba(255,210,120,0.28), rgba(255,255,255,0.08));
-          color: rgba(255,245,220,0.95);
+          border: 1px solid rgba(255,210,120,0.9);
+          background: linear-gradient(120deg, rgba(255,210,120,0.82), rgba(255,255,255,0.35));
+          color: rgba(255,255,245,0.98);
           font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.12em;
-          text-shadow: 0 0 12px rgba(255,210,130,0.55);
-          box-shadow: 0 10px 28px rgba(0,0,0,0.32);
+          text-shadow: 0 0 16px rgba(255,210,130,0.65);
+          box-shadow: 0 12px 32px rgba(0,0,0,0.42), 0 0 18px rgba(255,210,130,0.35);
         }
         .popular-badge--top {
           position: absolute;
@@ -64,8 +64,8 @@ export const servicesStyles = `
           transform: translateX(-50%);
           padding: 6px 14px;
           z-index: 3;
-          background: linear-gradient(120deg, rgba(255,210,120,0.4), rgba(255,255,255,0.1));
-          box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 0 18px rgba(255,210,130,0.25);
+          background: linear-gradient(120deg, rgba(255,210,120,0.9), rgba(255,255,255,0.45));
+          box-shadow: 0 14px 36px rgba(0,0,0,0.45), 0 0 20px rgba(255,210,130,0.4);
         }
         .package-price {
           font-variant-numeric: tabular-nums;

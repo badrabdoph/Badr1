@@ -40,6 +40,7 @@ const FILES = {
   portfolioImages: "portfolio-images.json",
   siteSections: "site-sections.json",
   packages: "packages.json",
+  packagesHistory: "packages-history.json",
   testimonials: "testimonials.json",
   contactInfo: "contact-info.json",
 } as const;
@@ -53,6 +54,14 @@ type PositionedSiteImage = SiteImage & Positionable;
 type PositionedPortfolioImage = PortfolioImage & Positionable;
 type PositionedPackage = Package & Positionable;
 type PositionedTestimonial = Testimonial & Positionable;
+
+export type PackageHistoryEntry = {
+  id: number;
+  packageId: number;
+  action: "create" | "update" | "delete" | "restore" | "snapshot";
+  snapshot: PositionedPackage;
+  createdAt: Date;
+};
 
 type DateField = "createdAt" | "updatedAt" | "expiresAt" | "revokedAt";
 const DATE_FIELDS: DateField[] = ["createdAt", "updatedAt", "expiresAt", "revokedAt"];
@@ -440,6 +449,10 @@ export async function createFilePackage(
     description: data.description ?? null,
     features: data.features ?? null,
     category: data.category,
+    badge: (data as any).badge ?? null,
+    priceNote: (data as any).priceNote ?? null,
+    emoji: (data as any).emoji ?? null,
+    featured: (data as any).featured ?? false,
     popular: data.popular ?? false,
     visible: data.visible ?? true,
     sortOrder: data.sortOrder ?? 0,
@@ -450,6 +463,7 @@ export async function createFilePackage(
   } as PositionedPackage;
   list.push(record);
   await writeJson(FILES.packages, list);
+  await recordFilePackageHistory("create", record);
   return record;
 }
 
@@ -467,17 +481,76 @@ export async function updateFilePackage(
   } as PositionedPackage;
   list[index] = updated;
   await writeJson(FILES.packages, list);
+  await recordFilePackageHistory("update", updated);
   return updated;
 }
 
 export async function deleteFilePackage(id: number) {
   const list = await readJson<PositionedPackage[]>(FILES.packages, []);
+  const target = list.find((item) => item.id === id);
+  if (target) {
+    await recordFilePackageHistory("delete", target);
+  }
   const next = list.filter((item) => item.id !== id);
   const existed = next.length !== list.length;
   if (existed) {
     await writeJson(FILES.packages, next);
   }
   return existed;
+}
+
+// Packages History
+export async function listFilePackageHistory(): Promise<PackageHistoryEntry[]> {
+  const data = await readJson<PackageHistoryEntry[]>(FILES.packagesHistory, []);
+  return data.sort((a, b) => {
+    const aTime = new Date(a.createdAt as any).getTime();
+    const bTime = new Date(b.createdAt as any).getTime();
+    return bTime - aTime;
+  });
+}
+
+export async function clearFilePackageHistory(): Promise<boolean> {
+  await writeJson(FILES.packagesHistory, []);
+  return true;
+}
+
+export async function recordFilePackageHistory(
+  action: PackageHistoryEntry["action"],
+  snapshot: PositionedPackage
+): Promise<PackageHistoryEntry> {
+  const list = await readJson<PackageHistoryEntry[]>(FILES.packagesHistory, []);
+  const entry: PackageHistoryEntry = {
+    id: Date.now(),
+    packageId: snapshot.id,
+    action,
+    snapshot,
+    createdAt: new Date(),
+  };
+  list.push(entry);
+  await writeJson(FILES.packagesHistory, list);
+  return entry;
+}
+
+export async function restoreFilePackage(
+  snapshot: PositionedPackage,
+  action: PackageHistoryEntry["action"] = "restore"
+): Promise<PositionedPackage> {
+  const list = await readJson<PositionedPackage[]>(FILES.packages, []);
+  const index = list.findIndex((item) => item.id === snapshot.id);
+  const now = new Date();
+  const record: PositionedPackage = {
+    ...snapshot,
+    createdAt: snapshot.createdAt ?? now,
+    updatedAt: now,
+  } as PositionedPackage;
+  if (index === -1) {
+    list.push(record);
+  } else {
+    list[index] = record;
+  }
+  await writeJson(FILES.packages, list);
+  await recordFilePackageHistory(action, record);
+  return record;
 }
 
 // Testimonials

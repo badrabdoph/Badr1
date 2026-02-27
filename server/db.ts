@@ -55,6 +55,10 @@ import {
   createFilePackage,
   updateFilePackage,
   deleteFilePackage,
+  listFilePackageHistory,
+  recordFilePackageHistory,
+  restoreFilePackage,
+  clearFilePackageHistory,
   listFileTestimonials,
   getFileTestimonialById,
   createFileTestimonial,
@@ -63,6 +67,7 @@ import {
   listFileContactInfo,
   getFileContactInfoByKey,
   upsertFileContactInfo,
+  type PackageHistoryEntry,
 } from "./_core/adminFileStore";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -85,6 +90,82 @@ function stripPositionFields<T extends Record<string, any>>(data: T): Omit<T, "o
   if (!data) return data as Omit<T, "offsetX" | "offsetY">;
   const { offsetX, offsetY, ...rest } = data;
   return rest as Omit<T, "offsetX" | "offsetY">;
+}
+
+function toDbPackageData(snapshot: any): InsertPackage {
+  return {
+    name: snapshot?.name ?? "",
+    price: snapshot?.price ?? "",
+    description: snapshot?.description ?? null,
+    features: snapshot?.features ?? null,
+    category: snapshot?.category ?? "session",
+    popular: snapshot?.popular ?? false,
+    visible: snapshot?.visible ?? true,
+    sortOrder: snapshot?.sortOrder ?? 0,
+  } as InsertPackage;
+}
+
+async function recordPackageHistory(
+  action: PackageHistoryEntry["action"],
+  snapshot: any
+) {
+  try {
+    await recordFilePackageHistory(action, snapshot);
+  } catch (error) {
+    console.warn("[Database] Failed to record package history:", error);
+  }
+}
+
+export async function getPackageHistory(): Promise<PackageHistoryEntry[]> {
+  return await listFilePackageHistory();
+}
+
+export async function clearPackageHistory() {
+  return await clearFilePackageHistory();
+}
+
+export async function snapshotPackageHistory() {
+  const list = await getAllPackages();
+  for (const pkg of list) {
+    await recordPackageHistory("snapshot", pkg as any);
+  }
+  return true;
+}
+
+export async function restorePackageFromHistory(entryId: number) {
+  const history = await listFilePackageHistory();
+  const entry = history.find((item) => item.id === entryId);
+  if (!entry) return null;
+  const snapshot = entry.snapshot as any;
+  if (useFileStore) {
+    return await restoreFilePackage(snapshot, "restore");
+  }
+  const db = await getDb();
+  if (!db) {
+    return await restoreFilePackage(snapshot, "restore");
+  }
+  try {
+    const existing = await db
+      .select({ id: packages.id })
+      .from(packages)
+      .where(eq(packages.id, snapshot.id))
+      .limit(1);
+    const payload = toDbPackageData(snapshot);
+    if (existing.length) {
+      await db.update(packages).set(payload).where(eq(packages.id, snapshot.id));
+    } else {
+      await db.insert(packages).values({ id: snapshot.id, ...payload });
+    }
+    const restored = await getPackageById(snapshot.id);
+    if (restored) {
+      await recordPackageHistory("restore", restored);
+    }
+    return restored;
+  } catch (error) {
+    flagDbDisabledForError(error);
+    console.warn("[Database] Failed to restore package, falling back to file store:", error);
+    return await restoreFilePackage(snapshot, "restore");
+  }
 }
 
 function shouldDisableDbForError(error: unknown) {
@@ -913,7 +994,11 @@ export async function createPackage(data: InsertPackage & Positionable) {
     const dbData = stripPositionFields(data);
     const result = await db.insert(packages).values(dbData);
     const insertId = result[0].insertId;
-    return await getPackageById(insertId);
+    const created = await getPackageById(insertId);
+    if (created) {
+      await recordPackageHistory("create", created);
+    }
+    return created;
   } catch (error) {
     flagDbDisabledForError(error);
     console.warn("[Database] Failed to create package, falling back to file store:", error);
@@ -932,7 +1017,11 @@ export async function updatePackage(
   try {
     const dbData = stripPositionFields(data);
     await db.update(packages).set(dbData).where(eq(packages.id, id));
-    return await getPackageById(id);
+    const updated = await getPackageById(id);
+    if (updated) {
+      await recordPackageHistory("update", updated);
+    }
+    return updated;
   } catch (error) {
     flagDbDisabledForError(error);
     console.warn("[Database] Failed to update package, falling back to file store:", error);
@@ -945,7 +1034,11 @@ export async function deletePackage(id: number) {
   const db = await getDb();
   if (!db) return await deleteFilePackage(id);
   try {
+    const snapshot = await getPackageById(id);
     await db.delete(packages).where(eq(packages.id, id));
+    if (snapshot) {
+      await recordPackageHistory("delete", snapshot);
+    }
     return true;
   } catch (error) {
     flagDbDisabledForError(error);

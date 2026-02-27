@@ -520,6 +520,22 @@ ${input.message ? `**تفاصيل إضافية:** ${input.message}` : ""}
       .mutation(async ({ input }) => {
         return await db.deletePackage(input.id);
       }),
+    history: router({
+      getAll: adminProcedure.query(async () => {
+        return await db.getPackageHistory();
+      }),
+      restore: adminProcedure
+        .input(z.object({ entryId: z.number() }))
+        .mutation(async ({ input }) => {
+          return await db.restorePackageFromHistory(input.entryId);
+        }),
+      clear: adminProcedure.mutation(async () => {
+        return await db.clearPackageHistory();
+      }),
+      snapshot: adminProcedure.mutation(async () => {
+        return await db.snapshotPackageHistory();
+      }),
+    }),
   }),
 
   // Testimonials Management

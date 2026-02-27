@@ -1518,6 +1518,7 @@ function ContentManager({ onRefresh }: ManagerProps) {
 function HiddenEditsManager({ onRefresh }: ManagerProps) {
   const { data: content, refetch, isLoading } = trpc.siteContent.getAll.useQuery();
   const { data: packagesData } = trpc.packages.getAll.useQuery();
+  const { data: packageHistory } = trpc.packages.history.getAll.useQuery();
   const testimonials = useTestimonialsData();
   const utils = trpc.useUtils();
   const packagesById = useMemo(() => {
@@ -1546,8 +1547,35 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     },
     onError: (error) => toast.error(error.message),
   });
+  const restoreHistoryMutation = trpc.packages.history.restore.useMutation({
+    onSuccess: () => {
+      toast.success("تم استعادة النسخة");
+      utils.packages.getAll.invalidate();
+      utils.packages.history.getAll.invalidate();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const clearHistoryMutation = trpc.packages.history.clear.useMutation({
+    onSuccess: () => {
+      toast.success("تم تفريغ سجل الباقات");
+      utils.packages.history.getAll.invalidate();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const snapshotHistoryMutation = trpc.packages.history.snapshot.useMutation({
+    onSuccess: () => {
+      toast.success("تم إنشاء لقطة حالية للباقات");
+      utils.packages.history.getAll.invalidate();
+      onRefresh?.();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const deleteMutation = trpc.siteContent.delete.useMutation({
     onSuccess: () => {
+      if (bulkDeleting) return;
       toast.success("تم حذف النص");
       refetch();
       onRefresh?.();
@@ -1730,6 +1758,15 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
       items: group.items.sort((a, b) => a.label.localeCompare(b.label, "ar")),
     }));
   }, [filtered, packagesById]);
+  const allContentEdits = useMemo(() => flaggedItems, [flaggedItems]);
+  const hiddenContentEdits = useMemo(
+    () => hiddenItems.map((item) => ({ ...item, status: "hidden" as const })),
+    [hiddenItems]
+  );
+  const clearedContentEdits = useMemo(
+    () => clearedItems.map((item) => ({ ...item, status: "cleared" as const })),
+    [clearedItems]
+  );
 
   const resolveTextPreview = (key: string) => {
     const state = contentState.get(key);
@@ -1749,6 +1786,66 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
       confirmLabel: "حذف",
       cancelLabel: "إلغاء",
       onConfirm: () => deleteMutation.mutateAsync({ key }),
+    });
+  };
+
+  const runBulkDelete = async (
+    list: Array<{ key: string }>,
+    successMessage: string
+  ) => {
+    setBulkDeleting(true);
+    try {
+      for (const item of list) {
+        await deleteMutation.mutateAsync({ key: item.key });
+      }
+      toast.success(successMessage);
+      refetch();
+      onRefresh?.();
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleClearContentEdits = () => {
+    if (!allContentEdits.length) {
+      toast.info("لا توجد تعديلات لمسحها");
+      return;
+    }
+    requestConfirm({
+      title: "تفريغ التعديلات المخفية والمحذوفة",
+      description:
+        "سيتم حذف جميع التعديلات المخفية والمحذوفة نهائيًا والرجوع للنصوص الافتراضية.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: () => runBulkDelete(allContentEdits, "تم تفريغ التعديلات المخفية والمحذوفة"),
+    });
+  };
+
+  const handleClearHiddenEdits = () => {
+    if (!hiddenContentEdits.length) {
+      toast.info("لا توجد تعديلات مخفية لمسحها");
+      return;
+    }
+    requestConfirm({
+      title: "تفريغ المخفي فقط",
+      description: "سيتم حذف كل العناصر المخفية والرجوع للنصوص الافتراضية.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: () => runBulkDelete(hiddenContentEdits, "تم تفريغ التعديلات المخفية"),
+    });
+  };
+
+  const handleClearClearedEdits = () => {
+    if (!clearedContentEdits.length) {
+      toast.info("لا توجد تعديلات محذوفة لمسحها");
+      return;
+    }
+    requestConfirm({
+      title: "تفريغ المحذوف فقط",
+      description: "سيتم حذف كل العناصر المحذوفة والرجوع للنصوص الافتراضية.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: () => runBulkDelete(clearedContentEdits, "تم تفريغ التعديلات المحذوفة"),
     });
   };
 
@@ -1865,6 +1962,110 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     return diffs;
   }, [packagesData, defaultPackagesByName]);
 
+  const packageHistoryGroups = useMemo(() => {
+    const entries = (packageHistory ?? []).slice().sort((a: any, b: any) => {
+      const aTime = new Date(a.createdAt as any).getTime();
+      const bTime = new Date(b.createdAt as any).getTime();
+      return bTime - aTime;
+    });
+    const groups = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        entries: any[];
+      }
+    >();
+    entries.forEach((entry: any) => {
+      const id = String(entry.packageId ?? entry.snapshot?.id ?? "");
+      const name =
+        packagesById.get(id) ??
+        entry.snapshot?.name ??
+        `الباقة ${entry.packageId ?? ""}`;
+      const existing = groups.get(id);
+      if (!existing) {
+        groups.set(id, { id, name, entries: [entry] });
+      } else {
+        existing.entries.push(entry);
+      }
+    });
+    return Array.from(groups.values());
+  }, [packageHistory, packagesById]);
+
+  const historyCount = (packageHistory ?? []).length;
+  const lastHistoryEntry = (packageHistory ?? [])
+    .slice()
+    .sort((a: any, b: any) => {
+      const aTime = new Date(a.createdAt as any).getTime();
+      const bTime = new Date(b.createdAt as any).getTime();
+      return bTime - aTime;
+    })[0];
+
+  const lastSnapshotEntry = (packageHistory ?? [])
+    .filter((entry: any) => entry.action === "snapshot")
+    .sort((a: any, b: any) => {
+      const aTime = new Date(a.createdAt as any).getTime();
+      const bTime = new Date(b.createdAt as any).getTime();
+      return bTime - aTime;
+    })[0];
+
+  const formatHistoryTime = (value: any) => {
+    if (!value) return "—";
+    try {
+      return new Date(value).toLocaleString("ar-EG");
+    } catch {
+      return String(value);
+    }
+  };
+
+  const handleClearHistory = () => {
+    requestConfirm({
+      title: "تفريغ سجل الباقات",
+      description: "سيتم حذف جميع السجلات نهائيًا ولا يمكن الرجوع عنها.",
+      confirmLabel: "تفريغ",
+      cancelLabel: "إلغاء",
+      onConfirm: () => clearHistoryMutation.mutate(),
+    });
+  };
+
+  const handleSnapshotHistory = () => {
+    requestConfirm({
+      title: "إنشاء لقطة حالية",
+      description: "سيتم حفظ نسخة من كل الباقات الحالية في السجل.",
+      confirmLabel: "إنشاء لقطة",
+      cancelLabel: "إلغاء",
+      onConfirm: () => snapshotHistoryMutation.mutate(),
+    });
+  };
+
+  const diffPackageSnapshot = (current: any, previous?: any) => {
+    if (!previous) return ["نسخة أولى أو نسخة بعد الحذف"];
+    const lines: string[] = [];
+    const compare = (label: string, curr: any, prev: any) => {
+      const a = curr ?? "";
+      const b = prev ?? "";
+      if (String(a) !== String(b)) {
+        lines.push(`${label}: ${b || "—"} → ${a || "—"}`);
+      }
+    };
+    compare("الاسم", current?.name, previous?.name);
+    compare("السعر", current?.price, previous?.price);
+    compare("الوصف", current?.description, previous?.description);
+    compare("شارة الباقة", current?.badge, previous?.badge);
+    compare("ملاحظة السعر", current?.priceNote, previous?.priceNote);
+    compare(
+      "الأكثر طلبًا",
+      current?.popular ? "نعم" : "لا",
+      previous?.popular ? "نعم" : "لا"
+    );
+    const currFeatures = Array.isArray(current?.features) ? current.features : [];
+    const prevFeatures = Array.isArray(previous?.features) ? previous.features : [];
+    if (JSON.stringify(currFeatures) !== JSON.stringify(prevFeatures)) {
+      lines.push(`المميزات: ${prevFeatures.length} → ${currFeatures.length}`);
+    }
+    return lines.length ? lines : ["بدون تغيير ظاهر"];
+  };
+
   const restorePackageField = async (
     pkgId: number,
     field: "price" | "description" | "features" | "badge" | "priceNote" | "popular",
@@ -1930,10 +2131,38 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <EyeOff className="w-5 h-5" />
-            التعديلات المخفية والمحذوفة
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <EyeOff className="w-5 h-5" />
+              التعديلات المخفية والمحذوفة
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleClearHiddenEdits}
+                disabled={deleteMutation.isPending || bulkDeleting}
+              >
+                تفريغ المخفي فقط
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleClearClearedEdits}
+                disabled={deleteMutation.isPending || bulkDeleting}
+              >
+                تفريغ المحذوف فقط
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleClearContentEdits}
+                disabled={deleteMutation.isPending || bulkDeleting}
+              >
+                تفريغ الكل
+              </Button>
+            </div>
+          </div>
           <CardDescription>
             استعد أي تعديل مخفي أو محذوف، أو احذفه نهائيًا ليعود للنص الافتراضي.
           </CardDescription>
@@ -2124,6 +2353,105 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
             <div className="text-center py-8 text-muted-foreground">
               <Package className="w-10 h-10 mx-auto mb-3 opacity-50" />
               <p>لا توجد تغييرات على الباقات حالياً</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              سجل تغييرات الباقات
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="secondary" className="text-[10px]">
+                  {historyCount} نسخة
+                </Badge>
+                <span>
+                  آخر تعديل: {lastHistoryEntry ? formatHistoryTime(lastHistoryEntry.createdAt) : "—"}
+                </span>
+                <span>
+                  آخر لقطة: {lastSnapshotEntry ? formatHistoryTime(lastSnapshotEntry.createdAt) : "—"}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSnapshotHistory}
+                disabled={snapshotHistoryMutation.isPending}
+              >
+                إنشاء لقطة حالية
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleClearHistory}
+                disabled={clearHistoryMutation.isPending}
+              >
+                تفريغ السجل
+              </Button>
+            </div>
+          </div>
+          <CardDescription>
+            كل تعديل محفوظ بتاريخ ونسخة يمكن الرجوع إليها.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {packageHistoryGroups.length > 0 ? (
+            packageHistoryGroups.map((group) => (
+              <div key={group.id} className="space-y-3 rounded-lg border border-border/60 bg-muted/10 p-3">
+                <div className="text-sm font-semibold">كارت {group.name}</div>
+                <div className="space-y-2">
+                  {group.entries.map((entry: any, index: number) => {
+                    const current = entry.snapshot ?? {};
+                    const previous = group.entries[index + 1]?.snapshot;
+                    const lines = diffPackageSnapshot(current, previous);
+                    const actionLabel =
+                      entry.action === "create"
+                        ? "إنشاء"
+                        : entry.action === "delete"
+                        ? "حذف"
+                        : entry.action === "restore"
+                        ? "استعادة"
+                        : entry.action === "snapshot"
+                        ? "لقطة"
+                        : "تعديل";
+                    return (
+                      <div
+                        key={entry.id}
+                        className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-border/60 bg-background/40 px-3 py-2"
+                      >
+                        <div className="text-sm">
+                          <div className="font-semibold">
+                            {actionLabel} — {formatHistoryTime(entry.createdAt)}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground space-y-1">
+                            {lines.map((line, idx) => (
+                              <div key={`${entry.id}-${idx}`}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => restoreHistoryMutation.mutate({ entryId: entry.id })}
+                          disabled={restoreHistoryMutation.isPending}
+                        >
+                          استعادة هذه النسخة
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="w-10 h-10 mx-auto mb-3 opacity-50" />
+              <p>لا يوجد سجل تغييرات للباقات بعد</p>
             </div>
           )}
         </CardContent>
@@ -4182,6 +4510,13 @@ function LiveEditor() {
 
   const sections = [
     {
+      id: "links",
+      title: "الروابط المؤقتة",
+      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
+      icon: Link2,
+      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
+    },
+    {
       id: "content",
       title: "تعديل النصوص",
       description: "كل نصوص الموقع في خانات قابلة للتعديل والحفظ.",
@@ -4229,13 +4564,6 @@ function LiveEditor() {
       description: "أرقام التواصل وروابط السوشيال.",
       icon: Phone,
       render: () => <ContactManager onRefresh={refreshPreview} />,
-    },
-    {
-      id: "links",
-      title: "الروابط المؤقتة",
-      description: "إنشاء روابط معاينة مؤقتة وإدارتها.",
-      icon: Link2,
-      render: () => <ShareLinksManager onRefresh={refreshPreview} />,
     },
   ];
 
