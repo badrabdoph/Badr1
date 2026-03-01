@@ -4776,8 +4776,7 @@ function LiveEditor({
   setLargeText: Dispatch<SetStateAction<boolean>>;
 }) {
   const [activeSection, setActiveSection] = useState(() => {
-    if (typeof window === "undefined") return "content";
-    return window.sessionStorage.getItem("adminActiveSection") ?? "content";
+    return "links";
   });
   const [globalQuery, setGlobalQuery] = useState("");
   const [contentSearchText, setContentSearchText] = useState("");
@@ -5197,18 +5196,18 @@ function LiveEditor({
         <Card>
           <CardContent className="pt-6 space-y-2">
             <div className="text-sm font-semibold">التنقل السريع</div>
-            <Select value={active.id} onValueChange={setActiveSection}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="اختر القسم" />
-              </SelectTrigger>
-              <SelectContent align="start">
-                {sections.map((section) => (
-                  <SelectItem key={section.id} value={section.id}>
-                    {section.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={active.id}
+              onChange={(event) => setActiveSection(event.target.value)}
+              aria-label="اختر القسم"
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm"
+            >
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.title}
+                </option>
+              ))}
+            </select>
             <div className="text-xs text-muted-foreground">
               {active.description}
             </div>
