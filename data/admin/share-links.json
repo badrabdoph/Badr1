@@ -25,5 +25,14 @@
     "createdAt": "2026-03-01T00:30:22.651Z",
     "updatedAt": "2026-03-01T00:30:22.651Z",
     "revokedAt": null
+  },
+  {
+    "id": 1772397843473,
+    "code": "j472",
+    "note": null,
+    "expiresAt": "2026-03-02T20:44:02.973Z",
+    "createdAt": "2026-03-01T20:44:02.973Z",
+    "updatedAt": "2026-03-01T20:44:02.973Z",
+    "revokedAt": null
   }
 ]
