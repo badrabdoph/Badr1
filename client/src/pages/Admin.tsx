@@ -154,12 +154,12 @@ function AdminDashboard({
     >
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
             <h1 className="text-xl font-bold">لوحة التحكم</h1>
             <span className="text-sm text-muted-foreground">مرحباً، المدير</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link href="/">
               <Button variant="outline" size="sm">
                 <Home className="w-4 h-4 ml-2" />
@@ -1144,7 +1144,7 @@ function AboutManager({ onRefresh }: ManagerProps) {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label>صورة من أنا</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center">
               <Input
                 value={editingImages.aboutImage || ""}
                 onChange={(e) => setEditingImages({ ...editingImages, aboutImage: e.target.value })}
@@ -1177,7 +1177,7 @@ function AboutManager({ onRefresh }: ManagerProps) {
 
           {groups.map((group, idx) => (
             <div key={group.title} className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h4 className="text-base font-semibold">{group.title}</h4>
                 {idx > 0 ? <Separator className="flex-1" /> : null}
               </div>
@@ -1185,7 +1185,7 @@ function AboutManager({ onRefresh }: ManagerProps) {
                 {group.items.map((item) => (
                   <div key={item.key} className="space-y-2">
                     <Label>{item.label}</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center">
                       {item.multiline ? (
                         <Textarea
                           value={editingContent[item.key] || ""}
@@ -1451,7 +1451,7 @@ function ContentManager({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ابحث بالكلمة داخل النص أو بالاسم أو المفتاح..."
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
             <Badge variant="secondary" className="text-xs">
               {filteredItems.length} نص
@@ -1472,9 +1472,9 @@ function ContentManager({
                 <div className="space-y-4">
                   {group.items.map((item) => (
                     <div key={item.key} className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
                         <Label>{item.label}</Label>
-                        <span className="text-xs text-muted-foreground">{item.key}</span>
+                        <span className="text-xs text-muted-foreground break-all">{item.key}</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -1501,7 +1501,7 @@ function ContentManager({
                           </Badge>
                         ) : null}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center">
                         <Textarea
                           value={editingContent[item.key] || ""}
                           onChange={(e) =>
@@ -2283,10 +2283,10 @@ function HiddenEditsManager({ onRefresh }: ManagerProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ابحث بالاسم أو المفتاح..."
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="كل التعديلات" />
               </SelectTrigger>
               <SelectContent align="start">
@@ -3141,7 +3141,7 @@ function PackagesManager({ onRefresh }: ManagerProps) {
             onChange={(e) => setNewPackage({ ...newPackage, features: e.target.value })}
             rows={4}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -3195,10 +3195,10 @@ function PackagesManager({ onRefresh }: ManagerProps) {
               value={packageSearch}
               onChange={(e) => setPackageSearch(e.target.value)}
               placeholder="ابحث بالاسم أو السعر..."
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
             />
             <Select value={packageCategoryFilter} onValueChange={setPackageCategoryFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="كل الأقسام" />
               </SelectTrigger>
               <SelectContent align="start">
@@ -3406,7 +3406,7 @@ function TestimonialsManager({ onRefresh, compact }: ManagerProps & { compact?: 
     return (
       <Card key={testimonial.id}>
         <CardContent className="pt-6">
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1">
               <p className="text-lg italic mb-4">"{testimonial.quote}"</p>
               <p className="font-semibold">- {testimonial.name}</p>
@@ -4027,32 +4027,36 @@ function ContactManager({ onRefresh }: ManagerProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {contactFields.map((field) => (
-            <div key={field.key} className="flex gap-2 items-center">
-              <Label className="w-32 shrink-0">{field.label}</Label>
-              <Input
-                value={editingContact[field.key] || ""}
-                onChange={(e) => setEditingContact({ ...editingContact, [field.key]: e.target.value })}
-                placeholder={field.label}
-                dir="ltr"
-                ref={(el) => {
-                  contactInputRefs.current[field.key] = el;
-                }}
-              />
-              <Button
-                size="icon"
-                variant="secondary"
-                onClick={() => focusContactField(field.key)}
-                aria-label={`تعديل ${field.label}`}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-              <Button
-                size="icon"
-                onClick={() => handleSaveContact(field.key, field.label)}
-                disabled={upsertContactMutation.isPending}
-              >
-                <Save className="w-4 h-4" />
-              </Button>
+            <div key={field.key} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Label className="w-full sm:w-32 shrink-0">{field.label}</Label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-1">
+                <Input
+                  value={editingContact[field.key] || ""}
+                  onChange={(e) => setEditingContact({ ...editingContact, [field.key]: e.target.value })}
+                  placeholder={field.label}
+                  dir="ltr"
+                  ref={(el) => {
+                    contactInputRefs.current[field.key] = el;
+                  }}
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={() => focusContactField(field.key)}
+                    aria-label={`تعديل ${field.label}`}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    onClick={() => handleSaveContact(field.key, field.label)}
+                    disabled={upsertContactMutation.isPending}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
         </CardContent>
@@ -4074,7 +4078,7 @@ function ContactManager({ onRefresh }: ManagerProps) {
                 {group.items.map((item) => (
                   <div key={item.key} className="space-y-2">
                     <Label>{item.label}</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 items-start sm:flex-row sm:items-center">
                       {item.multiline ? (
                         <Textarea
                           value={editingContent[item.key] || ""}
@@ -4192,7 +4196,7 @@ function SectionsManager({ onRefresh }: ManagerProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {defaultSections.map((section) => (
-            <div key={section.key} className="flex items-center justify-between p-4 border rounded-lg">
+            <div key={section.key} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">{section.name}</p>
                 <p className="text-sm text-muted-foreground">الصفحة: {section.page === "home" ? "الرئيسية" : section.page}</p>
@@ -4616,11 +4620,11 @@ function ShareLinksManager({ onRefresh }: ManagerProps) {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ابحث بالكود أو الملاحظة..."
-                className="sm:max-w-sm"
+                className="w-full sm:max-w-sm"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="فلترة الحالة" />
                   </SelectTrigger>
                   <SelectContent align="start">
@@ -5086,12 +5090,12 @@ function LiveEditor({
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">{active.title}</h2>
           <p className="text-sm text-muted-foreground">{active.description}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end">
           <Button
             variant="outline"
             size="sm"
@@ -5129,7 +5133,7 @@ function LiveEditor({
               value={globalQuery}
               onChange={(e) => setGlobalQuery(e.target.value)}
               placeholder="ابحث في الأقسام أو نصوص الموقع..."
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -5252,7 +5256,7 @@ function LiveEditor({
       </div>
 
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur">
-        <div className="grid grid-cols-4 gap-2 px-3 py-2">
+        <div className="admin-bottom-actions grid grid-cols-4 gap-2 px-3 py-2">
           <Button
             variant="outline"
             size="sm"

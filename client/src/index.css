@@ -198,6 +198,27 @@
     }
   }
 
+  [data-admin-panel] .admin-package-preview {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  [data-admin-panel] .admin-package-preview > * {
+    min-width: 280px;
+  }
+
+  @media (max-width: 480px) {
+    [data-admin-panel] .admin-bottom-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    [data-admin-panel] .admin-bottom-actions button {
+      font-size: 0.75rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+  }
+
 
   /* ✨ Modern cinematic grain + subtle glow (premium look) */
   body::before {
